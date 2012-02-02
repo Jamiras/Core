@@ -48,6 +48,50 @@ namespace Jamiras.Database
 
         #endregion
 
+        #region PrepareCommand
+
+        /// <summary>
+        /// Prepares a command that has bound values.
+        /// </summary>
+        /// <param name="query">Command to execute.</param>
+        /// <returns>Helper object for binding tokens and executing the command.</returns>
+        public static IDatabaseCommand PrepareCommand(this IDatabase database, string command, object arg0)
+        {
+            return database.PrepareCommand(String.Format(command, arg0));
+        }
+
+        /// <summary>
+        /// Prepares a command that has bound values.
+        /// </summary>
+        /// <param name="query">Command to execute.</param>
+        /// <returns>Helper object for binding tokens and executing the command.</returns>
+        public static IDatabaseCommand PrepareCommand(this IDatabase database, string command, object arg0, object arg1)
+        {
+            return database.PrepareCommand(String.Format(command, arg0, arg1));
+        }
+
+        /// <summary>
+        /// Prepares a command that has bound values.
+        /// </summary>
+        /// <param name="query">Command to execute.</param>
+        /// <returns>Helper object for binding tokens and executing the command.</returns>
+        public static IDatabaseCommand PrepareCommand(this IDatabase database, string command, object arg0, object arg1, object arg2)
+        {
+            return database.PrepareCommand(String.Format(command, arg0, arg1, arg2));
+        }
+
+        /// <summary>
+        /// Prepares a command that has bound values.
+        /// </summary>
+        /// <param name="query">Command to execute.</param>
+        /// <returns>Helper object for binding tokens and executing the command.</returns>
+        public static IDatabaseCommand PrepareCommand(this IDatabase database, string command, params object[] args)
+        {
+            return database.PrepareCommand(String.Format(command, args));
+        }
+
+        #endregion
+
         #region ExecuteCommand
 
         /// <summary>

@@ -38,6 +38,16 @@ namespace Jamiras.Database
         }
 
         /// <summary>
+        /// Prepares a command that has bound values.
+        /// </summary>
+        /// <param name="command">Command to execute.</param>
+        /// <returns>Helper object for binding tokens and executing the command.</returns>
+        public IDatabaseCommand PrepareCommand(string command)
+        {
+            return new AccessDatabaseCommand(_connection, command);
+        }
+
+        /// <summary>
         /// Executes an update or insert command.
         /// </summary>
         /// <param name="command">Command to execute.</param>
