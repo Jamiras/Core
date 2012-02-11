@@ -80,9 +80,13 @@ namespace Jamiras.Database
         /// <returns>An IDatabase handle to the database if successful, null if not.</returns>
         public static IDatabase Connect(string fileName)
         {
-            string connectionString = "Provider=Microsoft.Jet.OLEDB.4.0; Data Source=" + fileName;
-            var connection = new System.Data.OleDb.OleDbConnection(connectionString);
+            string connectionString;
+            if (fileName.EndsWith(".accdb", System.StringComparison.OrdinalIgnoreCase))
+                connectionString = "Provider=Microsoft.ACE.OLEDB.12.0; Data Source=" + fileName;
+            else
+                connectionString = "Provider=Microsoft.Jet.OLEDB.4.0; Data Source=" + fileName;
 
+            var connection = new System.Data.OleDb.OleDbConnection(connectionString);
             connection.Open();
 
             while (connection.State == System.Data.ConnectionState.Connecting)
