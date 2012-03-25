@@ -69,6 +69,9 @@ namespace Jamiras.Database
         /// <returns>Escaped value.</returns>
         public string Escape(string value)
         {
+            if (value == null)
+                return string.Empty;
+
             int idx = value.IndexOf('\'');
             if (idx == -1)
                 idx = value.IndexOf('[');
