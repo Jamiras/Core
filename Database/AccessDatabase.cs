@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text;
 
 namespace Jamiras.Database
 {
@@ -68,7 +69,24 @@ namespace Jamiras.Database
         /// <returns>Escaped value.</returns>
         public string Escape(string value)
         {
-            return value.Replace("'", "''");
+            int idx = value.IndexOf('\'');
+            if (idx == -1)
+                idx = value.IndexOf('[');
+            if (idx == -1)
+                return value;
+
+            StringBuilder builder = new StringBuilder();
+            foreach (char c in value)
+            {
+                if (c == '\'')
+                    builder.Append("''");
+                else if (c == '[')
+                    builder.Append("[[]");
+                else
+                    builder.Append(c);
+            }
+
+            return builder.ToString();
         }
 
         #endregion
