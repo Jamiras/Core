@@ -1,16 +1,13 @@
 ﻿using System.Diagnostics;
 using System.Text;
+using Jamiras.Components;
 
 namespace Jamiras.Database
 {
+    [Export(typeof(IDatabase))]
     [DebuggerDisplay("{_connection.DataSource}")]
     public class AccessDatabase : IDatabase
     {
-        private AccessDatabase(System.Data.OleDb.OleDbConnection connection)
-        {
-            _connection = connection;
-        }
-
         private System.Data.OleDb.OleDbConnection _connection;
 
         #region IDatabase Members
@@ -98,8 +95,7 @@ namespace Jamiras.Database
         /// Attempts to open an Access database.
         /// </summary>
         /// <param name="fileName">Path to the Access database.</param>
-        /// <returns>An IDatabase handle to the database if successful, null if not.</returns>
-        public static IDatabase Connect(string fileName)
+        public bool Connect(string fileName)
         {
             string connectionString;
             if (fileName.EndsWith(".accdb", System.StringComparison.OrdinalIgnoreCase))
@@ -114,9 +110,9 @@ namespace Jamiras.Database
                 System.Threading.Thread.Sleep(100);
 
             if (connection.State == System.Data.ConnectionState.Open)
-                return new AccessDatabase(connection);
+                _connection = connection;
 
-            return null;
+            return (connection.State == System.Data.ConnectionState.Open);
         }
     }
 }

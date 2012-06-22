@@ -58,6 +58,9 @@ namespace Jamiras.Commands
 
         bool ICommand.CanExecute(object parameter)
         {
+            if (parameter == null && typeof(TParameter).IsValueType)
+                return false;
+
             return CanExecute((TParameter)parameter);
         }
 

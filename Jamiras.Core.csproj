@@ -61,8 +61,11 @@
   <ItemGroup>
     <Compile Include="Commands\CommandBase.cs" />
     <Compile Include="Commands\DelegateCommand.cs" />
+    <Compile Include="Components\ImportingConstructorAttribute.cs" />
+    <Compile Include="Components\ExportAttribute.cs" />
     <Compile Include="Components\ExpressionExtensions.cs" />
     <Compile Include="Components\PropertyChangedObject.cs" />
+    <Compile Include="Components\ServiceRepository.cs" />
     <Compile Include="Database\AccessDatabase.cs" />
     <Compile Include="Database\AccessDatabaseCommand.cs" />
     <Compile Include="Database\AccessDatabaseQuery.cs" />
