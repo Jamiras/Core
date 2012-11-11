@@ -40,7 +40,7 @@ namespace Jamiras.ViewModels
         /// </summary>
         protected override void OnPropertyChanged(PropertyChangedEventArgs e)
         {
-            bool valid = _isValid;
+            bool revalidate = false;
 
             Func<string> validationFunction;
             if (_validationFunctions.TryGetValue(e.PropertyName, out validationFunction))
@@ -51,13 +51,14 @@ namespace Jamiras.ViewModels
                 if (!_errorState.TryGetValue(e.PropertyName, out currentError) || currentError != error)
                 {
                     _errorState[e.PropertyName] = error;
-                    valid = !_errorState.Any(kvp => !String.IsNullOrEmpty(kvp.Value));
+                    revalidate = true;
                 }
             }
 
             base.OnPropertyChanged(e);
 
-            IsValid = valid;
+            if (revalidate)
+                IsValid = !_errorState.Any(kvp => !String.IsNullOrEmpty(kvp.Value));
         }
 
         #region IDataErrorInfo Members
