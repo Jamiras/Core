@@ -66,6 +66,12 @@ namespace Jamiras.ViewModels
         private readonly Dictionary<string, Func<string>> _validationFunctions;
         private readonly Dictionary<string, string> _errorState;
 
+        /// <summary>
+        /// Registers a delegate for validating a property of the ViewModel.
+        /// </summary>
+        /// <param name="property">Property to validate.</param>
+        /// <param name="validationFunction">Function to call to validate the property.</param>
+        /// <remarks>Only one function may be registered per property.</remarks>
         protected void AddValidation(string property, Func<string> validationFunction)
         {
             _validationFunctions[property] = validationFunction;
@@ -97,7 +103,7 @@ namespace Jamiras.ViewModels
         /// <summary>
         /// Gets the list of current errors
         /// </summary>
-        /// <returns></returns>
+        /// <returns>String containing all current errors for the ViewModel (separated by newlines).</returns>
         public virtual string Validate()
         {
             StringBuilder builder = new StringBuilder();

@@ -9,16 +9,11 @@ namespace Jamiras.Commands
     /// <summary>
     /// Base class for simple implementations of <see cref="ICommand"/>.
     /// </summary>
-    public abstract class CommandBase : ICommand
+    /// <remarks>
+    /// CanExecute will be re-evaluated any time a dependency property changes.
+    /// </remarks>
+    public abstract class DependencyCommandBase : ICommand
     {
-        /// <summary>
-        /// Constructs a new <see cref="CommandBase"/>.
-        /// </summary>
-        protected CommandBase()
-        {
-            _canExecute = true;
-        }
-
         #region ICommand Members
 
         /// <summary>
@@ -27,41 +22,33 @@ namespace Jamiras.Commands
         /// <returns>True if the command can be executed, false if not.</returns>
         bool ICommand.CanExecute(object parameter)
         {
-            return CanExecute;
+            return CanExecute();
         }
 
         /// <summary>
         /// Gets whether or not the command can be executed.
         /// </summary>
         /// <returns>True if the command can be executed, false if not.</returns>
-        public bool CanExecute
+        public virtual bool CanExecute()
         {
-            get { return _canExecute; }
-            protected set
-            {
-                if (_canExecute != value)
-                {
-                    _canExecute = value;
-                    OnCanExecuteChanged(EventArgs.Empty);
-                }
-            }
+            return true;
         }
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private bool _canExecute;
 
         /// <summary>
-        /// Raised when the CanExecute property changes.
+        /// Raised when the CanExecute should be re-evaluated.
         /// </summary>
-        public event EventHandler CanExecuteChanged;
+        public event EventHandler CanExecuteChanged
+        {
+            add { CommandManager.RequerySuggested += value; }
+            remove { CommandManager.RequerySuggested -= value; }
+        }
 
         /// <summary>
         /// Called when the CanExecute property changes.
         /// </summary>
         protected virtual void OnCanExecuteChanged(EventArgs e)
         {
-            var handler = CanExecuteChanged;
-            if (handler != null)
-                handler(this, e);
+            CommandManager.InvalidateRequerySuggested();
         }
 
         /// <summary>
@@ -69,6 +56,7 @@ namespace Jamiras.Commands
         /// </summary>
         void ICommand.Execute(object parameter)
         {
+            UpdateLastFocusedControl();
             Execute();
         }
 
@@ -78,13 +66,28 @@ namespace Jamiras.Commands
         public abstract void Execute();
 
         #endregion
+
+        internal static void UpdateLastFocusedControl()
+        {
+            TextBox textBox = Keyboard.FocusedElement as TextBox;
+            if (textBox != null)
+            {
+                BindingExpression be = textBox.GetBindingExpression(TextBox.TextProperty);
+                if (be != null)
+                    be.UpdateSource();
+            }
+        }
     }
 
     /// <summary>
     /// Base class for implementations of <see cref="ICommand"/> that accept a parameter.
     /// </summary>
     /// <typeparam name="TParameter">The type of parameter passed to CanExecute and Execute.</typeparam>
-    public abstract class CommandBase<TParameter> : ICommand
+    /// <remarks>
+    /// CanExecute will be re-evaluated any time a bound property changes 
+    /// (particularly useful when binding CommandParameters to the command)
+    /// </remarks>
+    public abstract class DependencyCommandBase<TParameter> : ICommand
     {
         #region ICommand Members
 
@@ -95,11 +98,8 @@ namespace Jamiras.Commands
         /// <returns>True if the command can be executed, false if not.</returns>
         bool ICommand.CanExecute(object parameter)
         {
-            if (!(parameter is TParameter))
-            {
-                if (parameter != null || default(TParameter) != null)
-                    return false;
-            }
+            if (parameter == null && typeof(TParameter).IsValueType)
+                return false;
 
             return CanExecute((TParameter)parameter);
         }
@@ -117,23 +117,23 @@ namespace Jamiras.Commands
         /// <summary>
         /// Raised when the CanExecute should be re-evaluated.
         /// </summary>
-        public event EventHandler CanExecuteChanged;
+        public event EventHandler CanExecuteChanged
+        {
+            add { CommandManager.RequerySuggested += value; }
+            remove { CommandManager.RequerySuggested -= value; }
+        }
 
         /// <summary>
         /// Raises the CanExecuteChanged event.
         /// </summary>
         protected virtual void OnCanExecuteChanged(EventArgs e)
         {
-            var handler = CanExecuteChanged;
-            if (handler != null)
-                handler(this, e);
+            CommandManager.InvalidateRequerySuggested();
         }
 
-        /// <summary>
-        /// Executes the command.
-        /// </summary>
         void ICommand.Execute(object parameter)
         {
+            DependencyCommandBase.UpdateLastFocusedControl();
             Execute((TParameter)parameter);
         }
 

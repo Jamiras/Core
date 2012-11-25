@@ -1,16 +1,27 @@
 ﻿using System;
 using System.Diagnostics;
 using Jamiras.Commands;
+using Jamiras.Components;
+using Jamiras.Services;
 
 namespace Jamiras.ViewModels
 {
     public abstract class DialogViewModelBase : ViewModelBase
     {
         protected DialogViewModelBase()
+            : this(ServiceRepository.Instance.FindService<IDialogService>())
         {
+        }
+
+        protected DialogViewModelBase(IDialogService dialogService)
+        {
+            _dialogService = dialogService;
+
             _okButtonText = "OK";
             _isCancelButtonVisible = true;
         }
+
+        private readonly IDialogService _dialogService;
 
         /// <summary>
         /// Gets or sets the dialog caption.
@@ -83,7 +94,8 @@ namespace Jamiras.ViewModels
             }
             else
             {
-                DialogService.ShowDialog(new MessageBoxViewModel(errors));
+                var viewModel = new MessageBoxViewModel(errors, _dialogService);
+                viewModel.ShowDialog();
             }
         }
 
@@ -124,7 +136,7 @@ namespace Jamiras.ViewModels
         /// <returns>How the dialog was closed.</returns>
         public DialogResult ShowDialog()
         {
-            return DialogService.ShowDialog(this);
+            return _dialogService.ShowDialog(this);
         }
     }
 

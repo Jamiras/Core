@@ -5,15 +5,18 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using Jamiras.Components;
+using Jamiras.ViewModels;
 
-namespace Jamiras.ViewModels
+namespace Jamiras.Services
 {
-    public static class DialogService
+    [Export(typeof(IDialogService))]
+    internal class DialogService : IDialogService
     {
         /// <summary>
         /// Gets or sets the main window of the application.
         /// </summary>
-        public static Window MainWindow
+        public Window MainWindow
         {
             get { return _mainWindow; }
             set
@@ -28,18 +31,18 @@ namespace Jamiras.ViewModels
             }
         }
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static Window _mainWindow;
+        private Window _mainWindow;
 
-        private static Stack<Window> _dialogStack;
+        private Stack<Window> _dialogStack;
 
-        private static Dictionary<Type, Func<DialogViewModelBase, FrameworkElement>> _createViewDelegates;
+        private Dictionary<Type, Func<DialogViewModelBase, FrameworkElement>> _createViewDelegates;
 
         /// <summary>
         /// Registers a callback that creates the View for a ViewModel.
         /// </summary>
         /// <param name="viewModelType">Type of ViewModel to create View for (must inherit from DialogViewModelBase)</param>
         /// <param name="createViewDelegate">Delegate that returns a View instance.</param>
-        public static void RegisterDialogHandler(Type viewModelType, Func<DialogViewModelBase, FrameworkElement> createViewDelegate)
+        public void RegisterDialogHandler(Type viewModelType, Func<DialogViewModelBase, FrameworkElement> createViewDelegate)
         {
             if (!typeof(DialogViewModelBase).IsAssignableFrom(viewModelType))
                 throw new ArgumentException(viewModelType.Name + " does not inherit from DialogViewModelBase", "viewModelType");
@@ -64,7 +67,7 @@ namespace Jamiras.ViewModels
         /// </summary>
         /// <param name="viewModel">ViewModel to show dialog for.</param>
         /// <returns>How the dialog was dismissed.</returns>
-        public static DialogResult ShowDialog(DialogViewModelBase viewModel)
+        public DialogResult ShowDialog(DialogViewModelBase viewModel)
         {
             if (_mainWindow == null)
                 throw new InvalidOperationException("Cannot show dialog without setting MainWindow");
@@ -118,7 +121,7 @@ namespace Jamiras.ViewModels
             return viewModel.DialogResult;
         }
 
-        private static FrameworkElement GetView(DialogViewModelBase viewModel, Type type)
+        private FrameworkElement GetView(DialogViewModelBase viewModel, Type type)
         {
             Func<DialogViewModelBase, FrameworkElement> createViewDelegate;
             if (_createViewDelegates.TryGetValue(type, out createViewDelegate))

@@ -1,14 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using Jamiras.Components;
+using Jamiras.Services;
 
 namespace Jamiras.ViewModels
 {
     public class MessageBoxViewModel : DialogViewModelBase
     {
         public MessageBoxViewModel(string message)
+            : this(message, ServiceRepository.Instance.FindService<IDialogService>())
+        {
+        }
+
+        public MessageBoxViewModel(string message, IDialogService dialogService)
+            : base(dialogService)
         {
             _message = message;
             IsCancelButtonVisible = false;

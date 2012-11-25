@@ -1,9 +1,10 @@
 ﻿using System.Diagnostics;
+using Jamiras.Components;
 
 namespace Jamiras.ViewModels
 {
     [DebuggerDisplay("{Label} ({Id})")]
-    public class LookupItem : ViewModelBase
+    public class LookupItem : PropertyChangedObject
     {
         public LookupItem(int id, string label)
         {
