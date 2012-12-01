@@ -18,6 +18,20 @@ namespace Jamiras.Database
         bool IsColumnNull(int columnIndex);
 
         /// <summary>
+        /// Gets the value of the column at the specified index as a byte.
+        /// </summary>
+        /// <param name="columnIndex">Index of column to examine.</param>
+        /// <returns>Value of the column as a byte.</returns>
+        int GetByte(int columnIndex);
+
+        /// <summary>
+        /// Gets the value of the column at the specified index as a short integer.
+        /// </summary>
+        /// <param name="columnIndex">Index of column to examine.</param>
+        /// <returns>Value of the column as a short integer.</returns>
+        int GetInt16(int columnIndex);
+
+        /// <summary>
         /// Gets the value of the column at the specified index as an integer.
         /// </summary>
         /// <param name="columnIndex">Index of column to examine.</param>

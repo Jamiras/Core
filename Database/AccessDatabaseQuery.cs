@@ -41,6 +41,26 @@ namespace Jamiras.Database
         }
 
         /// <summary>
+        /// Gets the value of the column at the specified index as a byte.
+        /// </summary>
+        /// <param name="columnIndex">Index of column to examine.</param>
+        /// <returns>Value of the column as a byte.</returns>
+        public int GetByte(int columnIndex)
+        {
+            return _reader.GetByte(columnIndex);
+        }
+
+        /// <summary>
+        /// Gets the value of the column at the specified index as a short integer.
+        /// </summary>
+        /// <param name="columnIndex">Index of column to examine.</param>
+        /// <returns>Value of the column as a short integer.</returns>
+        public int GetInt16(int columnIndex)
+        {
+            return _reader.GetInt16(columnIndex);
+        }
+
+        /// <summary>
         /// Gets the value of the column at the specified index as an integer.
         /// </summary>
         /// <param name="columnIndex">Index of column to examine.</param>
