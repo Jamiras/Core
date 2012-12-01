@@ -17,6 +17,9 @@ namespace Jamiras.Services
             }
 
             repository.RegisterService(typeof(DialogService));
+            repository.RegisterService(typeof(FileSystemService));
+            repository.RegisterService(typeof(PersistantDataRepository));
+            repository.RegisterService(typeof(WindowSettingsRepository));
         }
     }
 }
