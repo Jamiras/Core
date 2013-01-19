@@ -67,6 +67,7 @@
     <Compile Include="Components\ExpressionExtensions.cs" />
     <Compile Include="Components\PropertyChangedObject.cs" />
     <Compile Include="Components\ServiceRepository.cs" />
+    <Compile Include="Components\SortFunctions.cs" />
     <Compile Include="Database\AccessDatabase.cs" />
     <Compile Include="Database\AccessDatabaseCommand.cs" />
     <Compile Include="Database\AccessDatabaseQuery.cs" />
