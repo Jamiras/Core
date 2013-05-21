@@ -14,12 +14,14 @@
                 </ResourceDictionary.MergedDictionaries>
             </ResourceDictionary>
         </Grid.Resources>
+        
         <TextBox x:Name="calendarTextBox"
                  Text="{Binding SelectedDate, StringFormat='d', RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type jamiras:DatePicker}}}"
                  MaxLength="10"
                  GotFocus="TextBoxGotFocus"
                  Margin="0">
         </TextBox>
+        
         <Button x:Name="openCalendarButton"
                 Command="{Binding OpenCalendarCommand, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type jamiras:DatePicker}}}"
                 Style="{StaticResource NoBorderButtonStyle}"

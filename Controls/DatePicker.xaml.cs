@@ -43,7 +43,7 @@ namespace Jamiras.Controls
             DependencyProperty.Register("IsCalendarVisible", typeof(bool), typeof(DatePicker));
 
         public static readonly DependencyProperty SelectedDateProperty = DependencyProperty.Register("SelectedDate",
-            typeof(DateTime), typeof(DatePicker), new FrameworkPropertyMetadata(SelectedDateChanged, CoerceDate));
+            typeof(DateTime), typeof(DatePicker), new FrameworkPropertyMetadata(DateTime.MinValue, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, SelectedDateChanged, CoerceDate));
 
         public DateTime SelectedDate
         {
