@@ -7,6 +7,8 @@
                 Value="Transparent" />
         <Setter Property="BorderThickness"
                 Value="0" />
+        <Setter Property="Background"
+                Value="Transparent" />
         <Setter Property="HorizontalContentAlignment"
                 Value="Center" />
         <Setter Property="VerticalContentAlignment"
@@ -70,11 +72,11 @@
                             </DoubleAnimationUsingKeyFrames>
                         </Storyboard>
                     </ControlTemplate.Resources>
-                    <Border BorderBrush="Transparent"
+                    <Border BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="1"
                             CornerRadius="2"
                             x:Name="BorderOuter">
-                        <Border Background="Transparent"
+                        <Border Background="{TemplateBinding Background}"
                                 CornerRadius="2"
                                 x:Name="BorderInner"
                                 Margin="0"
