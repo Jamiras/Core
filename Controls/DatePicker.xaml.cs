@@ -14,6 +14,8 @@ namespace Jamiras.Controls
         public DatePicker()
         {
             InitializeComponent();
+
+            SetCalendarDate(DateTime.Today);
         }
 
         private void TextBoxGotFocus(object sender, RoutedEventArgs e)
@@ -34,17 +36,17 @@ namespace Jamiras.Controls
             DependencyProperty.Register("IsCalendarVisible", typeof(bool), typeof(DatePicker));
 
         public static readonly DependencyProperty SelectedDateProperty = DependencyProperty.Register("SelectedDate",
-            typeof(DateTime), typeof(DatePicker), new FrameworkPropertyMetadata(DateTime.MinValue, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, SelectedDateChanged, CoerceDate));
+            typeof(DateTime?), typeof(DatePicker), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, SelectedDateChanged, CoerceDate));
 
-        public DateTime SelectedDate
+        public DateTime? SelectedDate
         {
-            get { return (DateTime)GetValue(SelectedDateProperty); }
+            get { return (DateTime?)GetValue(SelectedDateProperty); }
             set { SetValue(SelectedDateProperty, value); }
         }
 
         private static object CoerceDate(DependencyObject d, object value)
         {
-            if (!(value is DateTime))
+            if (value != null && !(value is DateTime))
                 value = Convert.ToDateTime(value);
             return value;
         }
@@ -52,10 +54,17 @@ namespace Jamiras.Controls
         private static void SelectedDateChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
         {
             var picker = (DatePicker)sender;
-            var date = (DateTime)e.NewValue;
-            picker.popupCalendar.SelectedMonth = date.Month;
-            picker.popupCalendar.SelectedYear = date.Year;
-            picker.popupCalendar.SelectedDay = date.Day;
+            if (e.NewValue == null)
+                picker.SetCalendarDate(DateTime.Today);
+            else
+                picker.SetCalendarDate((DateTime)e.NewValue);
+        }
+
+        private void SetCalendarDate(DateTime date)
+        {
+            popupCalendar.SelectedMonth = date.Month;
+            popupCalendar.SelectedYear = date.Year;
+            popupCalendar.SelectedDay = date.Day;
         }
 
         private void CalendarDateClicked(object sender, EventArgs e)
