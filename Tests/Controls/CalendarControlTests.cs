@@ -69,12 +69,17 @@ namespace Jamiras.Core.Tests.Controls
             _control.SelectedMonth = 5;
             _control.SelectedYear = 2013;
 
-            Assert.That(_control.CalendarDays.Count(), Is.EqualTo(35));
-            Assert.That(_control.CalendarDays.ElementAt(0).Day, Is.EqualTo(0));
-            Assert.That(_control.CalendarDays.ElementAt(2).Day, Is.EqualTo(0));
+            Assert.That(_control.CalendarDays.Count(), Is.EqualTo(42));
+            Assert.That(_control.CalendarDays.ElementAt(0).Day, Is.EqualTo(28));
+            Assert.That(_control.CalendarDays.ElementAt(2).Day, Is.EqualTo(30));
             Assert.That(_control.CalendarDays.ElementAt(3).Day, Is.EqualTo(1));
             Assert.That(_control.CalendarDays.ElementAt(33).Day, Is.EqualTo(31));
-            Assert.That(_control.CalendarDays.ElementAt(34).Day, Is.EqualTo(0));
+            Assert.That(_control.CalendarDays.ElementAt(34).Day, Is.EqualTo(1));
+            Assert.That(_control.CalendarDays.ElementAt(41).Day, Is.EqualTo(8));
+
+            Assert.That(_control.CalendarDays.ElementAt(2).IsInSelectedMonth, Is.False);
+            Assert.That(_control.CalendarDays.ElementAt(15).IsInSelectedMonth, Is.True);
+            Assert.That(_control.CalendarDays.ElementAt(34).IsInSelectedMonth, Is.False);
         }
 
         [Test]

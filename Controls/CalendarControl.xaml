@@ -111,10 +111,10 @@
                             <ContentControl.Style>
                                 <Style TargetType="{x:Type ContentControl}">
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Day}"
-                                                     Value="0">
-                                            <Setter Property="Visibility"
-                                                    Value="Hidden" />
+                                        <DataTrigger Binding="{Binding IsInSelectedMonth}"
+                                                     Value="False">
+                                            <Setter Property="Foreground"
+                                                    Value="#808080" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>

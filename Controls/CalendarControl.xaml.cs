@@ -64,22 +64,24 @@ namespace Jamiras.Controls
         {
             if (SelectedYear > 0 && SelectedMonth > 0)
             {
-                var first = new DateTime(SelectedYear, SelectedMonth, 1);
+                var date = new DateTime(SelectedYear, SelectedMonth, 1);
                 var days = new List<CalendarDay>();
 
-                Debug.Assert((int)DayOfWeek.Sunday == 0);
-                for (int i = 0; i < (int)first.DayOfWeek; i++)
-                    days.Add(new CalendarDay(0));
+                while (date.DayOfWeek != DayOfWeek.Sunday)
+                    date = date.AddDays(-1);
 
-                for (int i = 1; i <= GetDaysInMonth(); i++)
-                    days.Add(new CalendarDay(i));
+                for (int i = 0; i < 42; i++)
+                {
+                    CalendarDay day = new CalendarDay(date, (date.Month == SelectedMonth));
+                    days.Add(day);
 
-                while ((days.Count % 7) != 0)
-                    days.Add(new CalendarDay(0));
+                    date = date.AddDays(1);
+                }
 
                 if (SelectedDay != 0)
                 {
-                    var day = days.FirstOrDefault(d => d.Day == SelectedDay);
+                    date = new DateTime(SelectedYear, SelectedMonth, SelectedDay);
+                    var day = days.FirstOrDefault(d => d.Date == date);
                     if (day != null)
                         day.IsSelected = true;
                     else
@@ -199,12 +201,18 @@ namespace Jamiras.Controls
         [DebuggerDisplay("{Day}")]
         public class CalendarDay : ViewModelBase
         {
-            public CalendarDay(int day)
+            public CalendarDay(DateTime date, bool isInSelectedMonth)
             {
-                Day = day;
+                Date = date;
+                Day = date.Day;
+                IsInSelectedMonth = isInSelectedMonth;
             }
 
+            public DateTime Date { get; private set; }
+
             public int Day { get; private set; }
+
+            public bool IsInSelectedMonth { get; private set; }
 
             public bool IsSelected
             {
@@ -227,6 +235,11 @@ namespace Jamiras.Controls
             var day = (CalendarDay)((ContentControl)sender).DataContext;
             if (day.Day != 0)
             {
+                if (!day.IsInSelectedMonth)
+                {
+                    SelectedYear = day.Date.Year;
+                    SelectedMonth = day.Date.Month;
+                }
                 SelectedDay = day.Day;
                 OnDateClicked(EventArgs.Empty);
             }
