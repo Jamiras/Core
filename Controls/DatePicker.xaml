@@ -5,8 +5,10 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:jamiras="clr-namespace:Jamiras.Controls"
              mc:Ignorable="d" 
+             HorizontalAlignment="Stretch"
              d:DesignHeight="300" d:DesignWidth="300">
-    <Grid>
+    <Grid MinWidth="90"
+          HorizontalAlignment="Stretch">
         <Grid.Resources>
             <ResourceDictionary>
                 <ResourceDictionary.MergedDictionaries>
@@ -20,6 +22,16 @@
                  MaxLength="10"
                  GotFocus="TextBoxGotFocus"
                  Margin="0">
+            <TextBox.Style>
+                <Style TargetType="{x:Type TextBox}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type jamiras:DatePicker}}}" Value="False">
+                            <Setter Property="IsReadOnly"
+                                    Value="True" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBox.Style>
         </TextBox>
         
         <Button x:Name="openCalendarButton"
