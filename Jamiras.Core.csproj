@@ -81,6 +81,8 @@
     <Compile Include="Database\IDatabaseCommand.cs" />
     <Compile Include="Database\IDatabaseExtensions.cs" />
     <Compile Include="Database\IDatabaseQuery.cs" />
+    <Compile Include="IO\BitReader.cs" />
+    <Compile Include="IO\BitWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\DialogService.cs" />
     <Compile Include="Services\CoreServices.cs" />
