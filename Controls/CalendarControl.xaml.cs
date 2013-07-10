@@ -171,7 +171,7 @@ namespace Jamiras.Controls
                 int newValue = (int)e.NewValue;
                 if (newValue > 0)
                 {
-                    day = days.FirstOrDefault(d => d.Day == newValue);
+                    day = days.FirstOrDefault(d => d.Day == newValue && d.IsInSelectedMonth);
                     if (day != null)
                         day.IsSelected = true;
                 }
