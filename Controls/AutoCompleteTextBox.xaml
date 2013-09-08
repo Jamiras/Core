@@ -1,0 +1,55 @@
+﻿<UserControl x:Class="Jamiras.Controls.AutoCompleteTextBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:j="clr-namespace:Jamiras.Controls">
+    <Grid Name="grid">
+        <TextBox Name="autoCompleteTextBox" 
+                 Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" 
+                 MaxLength="{Binding MaxLength}" PreviewKeyDown="textBox_PreviewKeyDown" GotFocus="textBox_GotFocus" Margin="0">
+            <TextBox.Style>
+                <Style TargetType="{x:Type TextBox}">
+                    <Setter Property="Background" Value="{Binding MatchColor}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding SelectedId}" Value="0">
+                            <Setter Property="Background" Value="{Binding Background}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBox.Style>
+        </TextBox>
+        <Popup PlacementTarget="{Binding ElementName=autoCompleteTextBox}" Placement="Bottom" 
+                StaysOpen="False" AllowsTransparency="True"
+                Width="{Binding ActualWidth, ElementName=autoCompleteTextBox}"
+                IsOpen="{Binding IsPopupOpen}">
+            <ListBox Grid.Row="1" Name="suggestionsListBox" PreviewKeyDown="listBox_PreviewKeyDown">
+                <ListBox.Style>
+                    <Style TargetType="{x:Type ListBox}">
+                        <Setter Property="ItemsSource"
+                                Value="{Binding Suggestions}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasSuggestions}"
+                                         Value="False">
+                                <Setter Property="ItemsSource"
+                                        Value="{Binding NoMatchesList}" />
+                            </DataTrigger>                           
+                        </Style.Triggers>
+                    </Style>
+                </ListBox.Style>
+                <ListBox.Resources>
+                    <Style TargetType="{x:Type ListBoxItem}">
+                        <Style.Resources>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}">#F0F0F0</SolidColorBrush>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}">Black</SolidColorBrush>
+                        </Style.Resources>
+                        <EventSetter Event="PreviewMouseLeftButtonDown" Handler="item_Click" />
+                    </Style>
+                </ListBox.Resources>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Label}" /> 
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Popup>
+    </Grid>
+</UserControl>

@@ -74,6 +74,9 @@
     <Compile Include="Controls\DatePicker.xaml.cs">
       <DependentUpon>DatePicker.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Controls\AutoCompleteTextBox.xaml.cs">
+      <DependentUpon>AutoCompleteTextBox.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Database\AccessDatabase.cs" />
     <Compile Include="Database\AccessDatabaseCommand.cs" />
     <Compile Include="Database\AccessDatabaseQuery.cs" />
@@ -107,6 +110,10 @@
     <Page Include="Controls\DatePicker.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\AutoCompleteTextBox.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Controls\Styles\NoBorderButtonStyle.xaml">
       <SubType>Designer</SubType>
