@@ -70,7 +70,7 @@ namespace Jamiras.Controls
             set { SetValue(SelectedIdProperty, value); }
         }
 
-        public DependencyProperty MatchColorProperty = 
+        public static readonly DependencyProperty MatchColorProperty = 
             DependencyProperty.Register("MatchColor", typeof(Brush), typeof(AutoCompleteTextBox),
             new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(0xE0, 0xFF, 0xE0))));
                 
