@@ -1,27 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Windows.Controls;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using Jamiras.Commands;
 
 namespace Jamiras.Controls
 {
-    public class FormattedTextBlock : ContentControl
+    public class FormattedTextBlock : TextBlock
     {
         public FormattedTextBlock()
         {
-            _textBlock = new TextBlock();
-            this.Content = _textBlock;
-
             _hyperlinkCommand = new DelegateCommand<string>(OnHyperlinkClicked);
         }
 
-        private TextBlock _textBlock;
-        private ICommand _hyperlinkCommand;
+        private readonly ICommand _hyperlinkCommand;
 
         public static readonly DependencyProperty LinkCommandProperty = DependencyProperty.Register("LinkCommand",
             typeof(ICommand), typeof(FormattedTextBlock));
@@ -32,10 +27,10 @@ namespace Jamiras.Controls
             set { SetValue(LinkCommandProperty, value); }
         }
 
-        public static readonly DependencyProperty TextProperty = DependencyProperty.Register("Text",
+        public static readonly new DependencyProperty TextProperty = DependencyProperty.Register("Text",
             typeof(string), typeof(FormattedTextBlock), new FrameworkPropertyMetadata(OnTextChanged));
 
-        public string Text
+        public new string Text
         {
             get { return (string)GetValue(TextProperty); }
             set { SetValue(TextProperty, value); }
@@ -48,13 +43,13 @@ namespace Jamiras.Controls
 
         private void ParseText(string input)
         {
-            _textBlock.Inlines.Clear();
+            Inlines.Clear();
             if (String.IsNullOrEmpty(input))
                 return;
 
             bool isBold = false, isItalic = false, isLink = false, isHeading = false, isRedirectedLink = false;
             Stack<InlineCollection> formatStack = new Stack<InlineCollection>();
-            formatStack.Push(_textBlock.Inlines);
+            formatStack.Push(Inlines);
 
             int index = 0, start = 0;
             while (index < input.Length)
