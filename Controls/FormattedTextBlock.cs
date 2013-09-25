@@ -88,6 +88,7 @@ namespace Jamiras.Controls
                 return;
 
             bool isBold = false, isItalic = false, isLink = false, isHeading = false, isRedirectedLink = false;
+            bool isNewLine = true;
             Stack<InlineCollection> formatStack = new Stack<InlineCollection>();
             formatStack.Push(Inlines);
 
@@ -116,11 +117,15 @@ namespace Jamiras.Controls
                         break;
 
                     case '=':
+                        if (!isNewLine)
+                            goto default;
+
                         int headingLevel = 1;
                         while (index + headingLevel < input.Length && input[index + headingLevel] == '=')
                             headingLevel++;
                         if (headingLevel == 1)
                             goto default;
+
                         if (isHeading)
                         {
                             if (index == 0 || input[index - 1] != ' ')
@@ -141,6 +146,9 @@ namespace Jamiras.Controls
                         break;
 
                     case ':':
+                        if (!isNewLine)
+                            goto default;
+
                         int indent = 1;
                         while (index + indent < input.Length && input[index + indent] == ':')
                             indent++;
@@ -203,12 +211,15 @@ namespace Jamiras.Controls
                         formatStack.Peek().Add(new LineBreak());
                         index++;
                         start = index;
-                        break;
+                        isNewLine = true;
+                        continue;
 
                     default:
                         index++;
                         break;
                 }
+
+                isNewLine = false;
             }
 
             FlushInline(formatStack.Peek(), input, start, index);
