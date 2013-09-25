@@ -13,18 +13,58 @@ namespace Jamiras.Controls
     {
         public FormattedTextBlock()
         {
-            _hyperlinkCommand = new DelegateCommand<string>(OnHyperlinkClicked);
+            _hyperlinkCommand = new HyperlinkCommand(this);
         }
 
-        private readonly ICommand _hyperlinkCommand;
+        private class HyperlinkCommand : ICommand
+        {
+            public HyperlinkCommand(FormattedTextBlock owner)
+            {
+                _owner = owner;
+            }
+
+            private readonly FormattedTextBlock _owner;
+
+            #region ICommand Members
+
+            public bool CanExecute(object parameter)
+            {
+                var command = _owner.LinkCommand;
+                return (command != null && command.CanExecute(parameter));
+            }
+
+            public event EventHandler CanExecuteChanged;
+
+            public void RaiseCanExecuteChanged()
+            {
+                if (CanExecuteChanged != null)
+                    CanExecuteChanged(this, EventArgs.Empty);
+            }
+
+            public void Execute(object parameter)
+            {
+                var command = _owner.LinkCommand;
+                if (command != null)
+                    command.Execute(parameter);
+            }
+
+            #endregion
+        }
+
+        private readonly HyperlinkCommand _hyperlinkCommand;
 
         public static readonly DependencyProperty LinkCommandProperty = DependencyProperty.Register("LinkCommand",
-            typeof(ICommand), typeof(FormattedTextBlock));
-
+            typeof(ICommand), typeof(FormattedTextBlock), new FrameworkPropertyMetadata(OnLinkChanged));
+        
         public ICommand LinkCommand
         {
             get { return (ICommand)GetValue(LinkCommandProperty); }
             set { SetValue(LinkCommandProperty, value); }
+        }
+
+        private static void OnLinkChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            ((FormattedTextBlock)sender)._hyperlinkCommand.RaiseCanExecuteChanged();
         }
 
         public static readonly new DependencyProperty TextProperty = DependencyProperty.Register("Text",
@@ -192,13 +232,6 @@ namespace Jamiras.Controls
             formatStack.Peek().Add(inline);
             formatStack.Push(inline.Inlines);
             return true;
-        }
-
-        private void OnHyperlinkClicked(string link)
-        {
-            var command = LinkCommand;
-            if (command != null)
-                command.Execute(link);
         }
     }
 }
