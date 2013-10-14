@@ -117,7 +117,7 @@ namespace Jamiras.Controls
                         break;
 
                     case '=':
-                        if (!isNewLine)
+                        if (!isNewLine && !isHeading)
                             goto default;
 
                         int headingLevel = 1;
