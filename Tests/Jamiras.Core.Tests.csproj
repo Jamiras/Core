@@ -88,8 +88,18 @@
   <ItemGroup>
     <Compile Include="Commands\CommandBaseTests.cs" />
     <Compile Include="Commands\DelegateCommandTests.cs" />
+    <Compile Include="Components\MultiplePropertyWatcherTests.cs" />
+    <Compile Include="Components\DoublePropertyWatcherTests.cs" />
+    <Compile Include="Components\NoPropertyWatcherTests.cs" />
+    <Compile Include="Components\OpenActionTests.cs" />
     <Compile Include="Components\PropertyChangedObjectTests.cs" />
+    <Compile Include="Components\PropertyChangedPropagatorTests.cs" />
+    <Compile Include="Components\PropertyObserverTests.cs" />
+    <Compile Include="Components\SinglePropertyWatcherTests.cs" />
     <Compile Include="Components\SortFunctionsTests.cs" />
+    <Compile Include="Components\TestPropertyChangedObject.cs" />
+    <Compile Include="Components\WeakActionTests.cs" />
+    <Compile Include="Components\WeakEventHandlerTests.cs" />
     <Compile Include="Controls\CalendarControlTests.cs" />
     <Compile Include="IO\BitReaderTests.cs" />
     <Compile Include="IO\BitWriterTests.cs" />
@@ -99,6 +109,7 @@
     <Compile Include="ViewModels\LookupItemTests.cs" />
     <Compile Include="ViewModels\MessageBoxViewModelTests.cs" />
     <Compile Include="ViewModels\ViewModelBaseTests.cs" />
+    <Compile Include="WeakReferenceTester.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Jamiras.Core.csproj">
