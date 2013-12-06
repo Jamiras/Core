@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Collections.Generic;
 
 namespace Jamiras.Components
 {
@@ -17,18 +18,32 @@ namespace Jamiras.Components
         /// <param name="source">Object to observe, may be <c>null</c>.</param>
         public PropertyObserver(TSource source)
         {
-            _watcher = new NoPropertyWatcher(source, DispatchPropertyChanged);
+            _handlers = EmptyTinyDictionary<string, WeakAction<object, PropertyChangedEventArgs>>.Instance;
+            Source = source;
         }
 
-        private IPropertyWatcher _watcher;
+        private ITinyDictionary<string, WeakAction<object, PropertyChangedEventArgs>> _handlers;
+        private INotifyPropertyChanged _source;
 
         /// <summary>
         /// Gets or sets the object being observed.
         /// </summary>
         public INotifyPropertyChanged Source
         {
-            get { return _watcher.Source; }
-            set { _watcher.Source = value; }
+            get { return _source; }
+            set 
+            {
+                if (!ReferenceEquals(_source, value))
+                {
+                    if (_source != null)
+                        _source.PropertyChanged -= SourcePropertyChanged;
+
+                    _source = value;
+
+                    if (_source != null)
+                        _source.PropertyChanged += SourcePropertyChanged;
+                }
+            }
         }
 
         /// <summary>
@@ -46,25 +61,32 @@ namespace Jamiras.Components
             if (handler == null)
                 throw new ArgumentNullException("handler");
 
-            _watcher = _watcher.AddHandler(propertyName, new WeakAction<object, PropertyChangedEventArgs>(handler.Method, handler.Target));
+            _handlers = _handlers.Add(propertyName, new WeakAction<object, PropertyChangedEventArgs>(handler.Method, handler.Target));
         }
 
-        private void DispatchPropertyChanged(string propertyName, object callbackData)
+        private void SourcePropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            var weakAction = (WeakAction<object, PropertyChangedEventArgs>)callbackData;
-            if (!weakAction.Invoke(_watcher.Source, new PropertyChangedEventArgs(propertyName)))
-                AuditHandlers();
+            WeakAction<object, PropertyChangedEventArgs> weakAction;
+            if (_handlers.TryGetValue(e.PropertyName, out weakAction))
+            {
+                if (!weakAction.Invoke(Source, e))
+                    AuditHandlers();
+            }
         }
 
         private void AuditHandlers()
         {
-            var properties = _watcher.WatchedProperties;
-            foreach (string property in properties)
+            var deadHandlers = new List<string>();
+
+            foreach (var kvp in _handlers)
             {
-                var weakAction = _watcher.GetCallbackData(property) as WeakAction<object, PropertyChangedEventArgs>;
+                var weakAction = kvp.Value as WeakAction<object, PropertyChangedEventArgs>;
                 if (weakAction != null && !weakAction.IsAlive)
-                    _watcher = _watcher.RemoveHandler(property);
+                    deadHandlers.Add(kvp.Key);
             }
+
+            foreach (var key in deadHandlers)
+                _handlers = _handlers.Remove(key);
         }
     }
 }

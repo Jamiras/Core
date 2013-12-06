@@ -15,10 +15,11 @@ namespace Jamiras.Components
         public PropertyChangedPropagator(TSource source, Action<PropertyChangedEventArgs> handler)
         {
             _handler = handler;
-            _watcher = new NoPropertyWatcher(source, DispatchPropertyChanged);
+            _propertyMap = EmptyTinyDictionary<string, string>.Instance;
         }
 
-        private IPropertyWatcher _watcher;
+        private INotifyPropertyChanged _source;
+        private ITinyDictionary<string, string> _propertyMap;
         private readonly Action<PropertyChangedEventArgs> _handler;
 
         /// <summary>
@@ -26,8 +27,27 @@ namespace Jamiras.Components
         /// </summary>
         public INotifyPropertyChanged Source
         {
-            get { return _watcher.Source; }
-            set { _watcher.Source = value; }
+            get { return _source; }
+            set
+            {
+                if (!ReferenceEquals(_source, value))
+                {
+                    if (_source != null)
+                        _source.PropertyChanged -= SourcePropertyChanged;
+
+                    _source = value;
+
+                    if (_source != null)
+                        _source.PropertyChanged += SourcePropertyChanged;
+                }
+            }
+        }
+
+        private void SourcePropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            string targetProperty;
+            if (_propertyMap.TryGetValue(e.PropertyName, out targetProperty))
+                _handler(new PropertyChangedEventArgs(targetProperty));
         }
 
         /// <summary>
@@ -38,12 +58,7 @@ namespace Jamiras.Components
         public void RegisterPropertyPassThrough(string sourcePropertyName, string targetPropertyName)
         {
             // TODO: support multiple targets dependant on single source?
-            _watcher = _watcher.AddHandler(sourcePropertyName, targetPropertyName);
-        }
-
-        private void DispatchPropertyChanged(string propertyName, object callbackData)
-        {
-            _handler(new PropertyChangedEventArgs((string)callbackData));
+            _propertyMap = _propertyMap.Add(sourcePropertyName, targetPropertyName);
         }
     }
 }

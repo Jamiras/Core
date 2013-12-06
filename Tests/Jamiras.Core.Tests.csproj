@@ -88,14 +88,10 @@
   <ItemGroup>
     <Compile Include="Commands\CommandBaseTests.cs" />
     <Compile Include="Commands\DelegateCommandTests.cs" />
-    <Compile Include="Components\MultiplePropertyWatcherTests.cs" />
-    <Compile Include="Components\DoublePropertyWatcherTests.cs" />
-    <Compile Include="Components\NoPropertyWatcherTests.cs" />
     <Compile Include="Components\OpenActionTests.cs" />
     <Compile Include="Components\PropertyChangedObjectTests.cs" />
     <Compile Include="Components\PropertyChangedPropagatorTests.cs" />
     <Compile Include="Components\PropertyObserverTests.cs" />
-    <Compile Include="Components\SinglePropertyWatcherTests.cs" />
     <Compile Include="Components\SortFunctionsTests.cs" />
     <Compile Include="Components\TestPropertyChangedObject.cs" />
     <Compile Include="Components\WeakActionTests.cs" />
