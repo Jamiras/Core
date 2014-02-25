@@ -23,12 +23,12 @@ namespace Jamiras.Components
         }
 
         private ITinyDictionary<string, WeakAction<object, PropertyChangedEventArgs>> _handlers;
-        private INotifyPropertyChanged _source;
+        private TSource _source;
 
         /// <summary>
         /// Gets or sets the object being observed.
         /// </summary>
-        public INotifyPropertyChanged Source
+        public TSource Source
         {
             get { return _source; }
             set 
@@ -80,7 +80,7 @@ namespace Jamiras.Components
 
             foreach (var kvp in _handlers)
             {
-                var weakAction = kvp.Value as WeakAction<object, PropertyChangedEventArgs>;
+                var weakAction = kvp.Value;
                 if (weakAction != null && !weakAction.IsAlive)
                     deadHandlers.Add(kvp.Key);
             }
