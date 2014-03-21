@@ -16,10 +16,10 @@ namespace Jamiras.Components
         /// <returns>The name of the property or method referenced in the lambda expression.</returns>
         public static string GetMemberName(this LambdaExpression expression)
         {
-            return GetMemberInfo(expression).Name;
+            return expression.GetMemberInfo().Name;
         }
 
-        private static MemberInfo GetMemberInfo(LambdaExpression expression)
+        internal static MemberInfo GetMemberInfo(this LambdaExpression expression)
         {
             var body = expression.Body as MemberExpression;
             if (body == null)

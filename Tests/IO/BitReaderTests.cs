@@ -127,5 +127,46 @@ namespace Jamiras.Core.Tests.IO
             Assert.That(reader.ReadBits(6), Is.EqualTo(0x2F)); // 101111
             Assert.That(reader.IsEndOfStream, Is.True);
         }
+
+        [Test]
+        [TestCase(0, 1, 1)]
+        [TestCase(1, 1, 0)]
+        [TestCase(0, 4, 10)]
+        [TestCase(1, 4, 4)]
+        [TestCase(7, 3, 5)]
+        [TestCase(6, 8, 0xDF)]
+        [TestCase(6, 16, 0xDFA0)]
+        public void TestPeekBitsInChunk(int offset, int bits, int expectedValue)
+        {
+            var reader = new BitReader(new MemoryStream(_testData1));
+            reader.Position = offset;
+            Assert.That(reader.Position, Is.EqualTo(offset), "position not updated");
+
+            var value = reader.PeekBits(bits);
+            Assert.That(value, Is.EqualTo(expectedValue), "peek value");
+            Assert.That(reader.Position, Is.EqualTo(offset), "position updated");
+
+            value = reader.ReadBits(bits);
+            Assert.That(value, Is.EqualTo(expectedValue), "read value");
+        }
+
+        [Test]
+        [TestCase(30, 4, 0x0B)]
+        [TestCase(28, 8, 0x2C)]
+        [TestCase(24, 16, 0xF2CC)]
+        [TestCase(25, 11, 0x72C)] // 111 0010 1100
+        public void TestPeekBitsAcrossChunks(int offset, int bits, int expectedValue)
+        {
+            var reader = new BitReader(new MemoryStream(_testData2));
+            reader.Position = offset;
+            Assert.That(reader.Position, Is.EqualTo(offset), "position not updated");
+
+            var value = reader.PeekBits(bits);
+            Assert.That(value, Is.EqualTo(expectedValue), "peek value");
+            Assert.That(reader.Position, Is.EqualTo(offset), "position updated");
+
+            value = reader.ReadBits(bits);
+            Assert.That(value, Is.EqualTo(expectedValue), "read value");
+        }
     }
 }

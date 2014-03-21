@@ -91,6 +91,50 @@ namespace Jamiras.IO
             return (int)value;
         }
 
+        /// <summary>
+        /// Returns the next <paramref name="bits"/> bits from the stream without updating the stream position.
+        /// </summary>
+        /// <param name="bits">Number of bits to read.</param>
+        /// <returns>Integer value constructed from the read bits.</returns>
+        public int PeekBits(int bits)
+        {
+            if (bits < 1 || bits > 31)
+                throw new ArgumentOutOfRangeException("bits", "bits must be between 1 and 31");
+
+            uint value = _currentData;
+            if (bits <= _availableBits)
+            {
+                var extraBits = _availableBits - bits;
+
+                if (extraBits > 0)
+                    value >>= extraBits;
+            }
+            else
+            {
+                int additionalBits = bits - _availableBits;
+
+                var currentData = _currentData;
+                var availableBits = _availableBits;
+                var streamPosition = _stream.Position;
+
+                FillCurrentData();
+                if (additionalBits > _availableBits)
+                    additionalBits = _availableBits;
+
+                if (additionalBits > 0)
+                {
+                    value <<= additionalBits;
+                    value |= (_currentData >> (_availableBits - additionalBits));
+                }
+
+                _stream.Position = streamPosition;
+                _availableBits = availableBits;
+                _currentData = currentData;
+            }
+
+            return (int)value;
+        }
+
         private void FillCurrentData()
         {
             var read = _stream.Read(_readBuffer, 0, 4);
@@ -134,22 +178,34 @@ namespace Jamiras.IO
             }
             set
             {
-                if (Position != value)
+                var position = Position;
+                if (position != value)
                 {
-                    var aligned = value / 32;
-                    _stream.Seek(aligned * 4, SeekOrigin.Begin);
-
-                    var skipBits = value % 32;
-                    if (skipBits > 0)
+                    int advanceBits = value - position;
+                    if (advanceBits > 0 && advanceBits <= _availableBits)
                     {
-                        FillCurrentData();
+                        _availableBits -= advanceBits;
 
-                        if (skipBits < _availableBits)
-                            _availableBits -= skipBits;
-                        else
-                            _availableBits = 0;
+                        if (_availableBits > 0)
+                            _currentData &= Masks[_availableBits];
+                    }
+                    else
+                    {
+                        var aligned = value / 32;
+                        _stream.Seek(aligned * 4, SeekOrigin.Begin);
 
-                        _currentData &= Masks[_availableBits];
+                        var skipBits = value % 32;
+                        if (skipBits > 0)
+                        {
+                            FillCurrentData();
+
+                            if (skipBits < _availableBits)
+                                _availableBits -= skipBits;
+                            else
+                                _availableBits = 0;
+
+                            _currentData &= Masks[_availableBits];
+                        }
                     }
                 }
             }
