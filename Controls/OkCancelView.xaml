@@ -1,0 +1,57 @@
+﻿<ContentControl x:Class="Jamiras.Controls.OkCancelView"
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                IsTabStop="False">
+    <ContentControl.Template>
+        <ControlTemplate TargetType="{x:Type ContentControl}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <ContentPresenter />
+
+                <Rectangle Height="1"
+                           Grid.Row="1"
+                           Fill="#E0E0E0"
+                           HorizontalAlignment="Stretch" />
+
+                <Border HorizontalAlignment="Stretch"
+                        Grid.Row="2"
+                        Background="#F0F0F0">
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right">
+                        <Button HorizontalAlignment="Right"
+                                AutomationProperties.AutomationId="okButton"
+                                Content="{Binding OkButtonText}"
+                                Command="{Binding OkCommand}"
+                                IsDefault="True"
+                                MinWidth="80"
+                                Margin="0,5,4,5" />
+                        <Button HorizontalAlignment="Right"
+                                AutomationProperties.AutomationId="cancelButton"
+                                Content="{Binding CancelButtonText}"
+                                Command="{Binding CancelCommand}"
+                                IsCancel="True"
+                                MinWidth="80"
+                                Margin="0,5,4,5">
+                            <Button.Style>
+                                <Style TargetType="{x:Type Button}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding CancelButtonText}"
+                                                     Value="{x:Null}">
+                                            <Setter Property="Visibility"
+                                                    Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </ControlTemplate>
+    </ContentControl.Template>
+</ContentControl>

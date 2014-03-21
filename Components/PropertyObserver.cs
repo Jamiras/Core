@@ -80,7 +80,7 @@ namespace Jamiras.Components
 
             foreach (var kvp in _handlers)
             {
-                var weakAction = kvp.Value as WeakAction<object, PropertyChangedEventArgs>;
+                var weakAction = kvp.Value;
                 if (weakAction != null && !weakAction.IsAlive)
                     deadHandlers.Add(kvp.Key);
             }

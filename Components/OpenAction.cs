@@ -111,6 +111,9 @@ namespace Jamiras.Components
     internal class OpenActionFactory<TTarget> : OpenAction.IOpenActionFactory
         where TTarget : class
     {
+        private Delegate _lastDelegate;
+        private MethodInfo _lastMethod;
+
         /// <summary>
         /// Creates a static delegate from an Action, allowing the action's target to be provided at a later time.
         /// </summary>
@@ -118,8 +121,21 @@ namespace Jamiras.Components
         /// <returns>An OpenAction not ties to any specific target.</returns>
         public Action<object, TParam> CreateOpenAction<TParam>(MethodInfo methodInfo)
         {
-            var helper = new OpenAction<TTarget, TParam>(methodInfo);
-            return helper.Dispatch;
+            Action<object, TParam> handler = null;
+
+            if (_lastMethod == methodInfo)
+                handler = _lastDelegate as Action<object, TParam>;
+
+            if (handler == null)
+            {
+                var helper = new OpenAction<TTarget, TParam>(methodInfo);
+                handler = helper.Dispatch;
+
+                _lastMethod = methodInfo;
+                _lastDelegate = handler;
+            }
+
+            return handler;
         }
 
         /// <summary>
@@ -129,8 +145,21 @@ namespace Jamiras.Components
         /// <returns>An OpenAction not ties to any specific target.</returns>
         public Action<object, TParam1, TParam2> CreateOpenAction<TParam1, TParam2>(MethodInfo methodInfo)
         {
-            var helper = new OpenAction<TTarget, TParam1, TParam2>(methodInfo);
-            return helper.Dispatch;
+            Action<object, TParam1, TParam2> handler = null;
+
+            if (_lastMethod == methodInfo)
+                handler = _lastDelegate as Action<object, TParam1, TParam2>;
+
+            if (handler == null)
+            {
+                var helper = new OpenAction<TTarget, TParam1, TParam2>(methodInfo);
+                handler = helper.Dispatch;
+
+                _lastMethod = methodInfo;
+                _lastDelegate = handler;
+            }
+
+            return handler;
         }
     }
 

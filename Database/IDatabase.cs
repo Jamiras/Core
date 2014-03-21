@@ -1,4 +1,6 @@
-﻿namespace Jamiras.Database
+﻿using System;
+
+namespace Jamiras.Database
 {
     public interface IDatabase
     {
@@ -34,5 +36,12 @@
         /// <param name="value">Value to escape.</param>
         /// <returns>Escaped value.</returns>
         string Escape(string value);
+
+        /// <summary>
+        /// Prepares a Date for a query string.
+        /// </summary>
+        /// <param name="date">Value to escape.</param>
+        /// <returns>Escaped value.</returns>
+        string Escape(DateTime date);
     }
 }

@@ -49,9 +49,6 @@
     <Reference Include="System.Xml.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
-    <Reference Include="System.Data.DataSetExtensions">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="WindowsBase">
@@ -73,6 +70,7 @@
     <Compile Include="Components\OpenAction.cs" />
     <Compile Include="Components\PropertyChangedObject.cs" />
     <Compile Include="Components\PropertyObserver.cs" />
+    <Compile Include="Components\RecencyBuffer.cs" />
     <Compile Include="Components\ServiceRepository.cs" />
     <Compile Include="Components\SortedTinyDictionary.cs" />
     <Compile Include="Components\SortFunctions.cs" />
@@ -81,6 +79,7 @@
     <Compile Include="Components\UnsortedTinyDictionary.cs" />
     <Compile Include="Components\WeakAction.cs" />
     <Compile Include="Components\WeakEventHandler.cs" />
+    <Compile Include="Components\WeakRepository.cs" />
     <Compile Include="Controls\CalendarControl.xaml.cs">
       <DependentUpon>CalendarControl.xaml</DependentUpon>
     </Compile>
@@ -91,6 +90,9 @@
       <DependentUpon>AutoCompleteTextBox.xaml</DependentUpon>
     </Compile>
     <Compile Include="Controls\FormattedTextBlock.cs" />
+    <Compile Include="Controls\OkCancelView.xaml.cs">
+      <DependentUpon>OkCancelView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Database\AccessDatabase.cs" />
     <Compile Include="Database\AccessDatabaseCommand.cs" />
     <Compile Include="Database\AccessDatabaseQuery.cs" />
@@ -105,8 +107,10 @@
     <Compile Include="Services\CoreServices.cs" />
     <Compile Include="Services\FileSystemService.cs" />
     <Compile Include="Services\IFileSystemService.cs" />
+    <Compile Include="Services\ILogService.cs" />
     <Compile Include="Services\IPersistantDataRepository.cs" />
     <Compile Include="Services\IWindowSettingsRepository.cs" />
+    <Compile Include="Services\LogService.cs" />
     <Compile Include="Services\PersistantDataRepository.cs" />
     <Compile Include="Services\WindowSettingsRepository.cs" />
     <Compile Include="ViewModels\DialogViewModelBase.cs" />
@@ -128,6 +132,10 @@
     <Page Include="Controls\AutoCompleteTextBox.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Controls\OkCancelView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Controls\Styles\NoBorderButtonStyle.xaml">
       <SubType>Designer</SubType>
