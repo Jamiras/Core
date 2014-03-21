@@ -13,7 +13,7 @@ namespace Jamiras.Core.Tests.ViewModels
         public void FixtureSetup()
         {
             var dialogService = new Mock<IDialogService>();
-            dialogService.Setup(d => d.ShowDialog(It.IsAny<MessageBoxViewModel>())).Returns(DialogResult.OK);
+            dialogService.Setup(d => d.ShowDialog(It.IsAny<MessageBoxViewModel>())).Returns(DialogResult.Ok);
             _dialogService = dialogService.Object;
         }
 
@@ -24,7 +24,7 @@ namespace Jamiras.Core.Tests.ViewModels
         {
             var viewModel = new MessageBoxViewModel("Hello, world!", _dialogService);
             Assert.That(viewModel, Is.InstanceOf<DialogViewModelBase>());
-            Assert.That(viewModel.IsCancelButtonVisible, Is.False);
+            Assert.That(viewModel.CancelButtonText, Is.Null);
             Assert.That(viewModel.DialogTitle, Is.Null);
             Assert.That(viewModel.DialogResult, Is.EqualTo(DialogResult.None));
             Assert.That(viewModel.Message, Is.EqualTo("Hello, world!"));
@@ -56,7 +56,7 @@ namespace Jamiras.Core.Tests.ViewModels
             viewModel.PropertyChanged += (o, e) => propertiesChanged.Add(e.PropertyName);
 
             viewModel.OkCommand.Execute();
-            Assert.That(viewModel.DialogResult, Is.EqualTo(DialogResult.OK));
+            Assert.That(viewModel.DialogResult, Is.EqualTo(DialogResult.Ok));
             Assert.That(propertiesChanged, Contains.Item("DialogResult"));
         }
     }

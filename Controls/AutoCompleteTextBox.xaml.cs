@@ -143,11 +143,6 @@ namespace Jamiras.Controls
             ((TextBox)sender).SelectAll();
         }
 
-        private void textBox_LostFocus(object sender, RoutedEventArgs e)
-        {
-            IsPopupOpen = false;
-        }
-
         private void textBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             switch (e.Key)

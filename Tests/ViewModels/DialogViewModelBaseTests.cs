@@ -33,7 +33,7 @@ namespace Jamiras.Core.Tests.ViewModels
             Assert.That(_viewModel.DialogTitle, Is.Null);
             Assert.That(_viewModel.DialogResult, Is.EqualTo(DialogResult.None));
             Assert.That(_viewModel.OkButtonText, Is.EqualTo("OK"));
-            Assert.That(_viewModel.IsCancelButtonVisible, Is.True);
+            Assert.That(_viewModel.CancelButtonText, Is.Null);
         }
 
         [Test]
@@ -65,7 +65,7 @@ namespace Jamiras.Core.Tests.ViewModels
             _viewModel.PropertyChanged += (o, e) => propertiesChanged.Add(e.PropertyName);
 
             _viewModel.OkCommand.Execute();
-            Assert.That(_viewModel.DialogResult, Is.EqualTo(DialogResult.OK));
+            Assert.That(_viewModel.DialogResult, Is.EqualTo(DialogResult.Ok));
             Assert.That(propertiesChanged, Contains.Item("DialogResult"));
         }
 
@@ -95,7 +95,7 @@ namespace Jamiras.Core.Tests.ViewModels
                     {
                         errorShown = true;
                         Assert.That(mbvm.Message, Is.EqualTo(error));
-                        return DialogResult.OK;
+                        return DialogResult.Ok;
                     });
 
             viewModel.OkCommand.Execute();
@@ -116,21 +116,21 @@ namespace Jamiras.Core.Tests.ViewModels
         }
 
         [Test]
-        public void TestIsCancelButtonVisible()
+        public void TestCancelButtonText()
         {
             List<string> propertiesChanged = new List<string>();
             _viewModel.PropertyChanged += (o, e) => propertiesChanged.Add(e.PropertyName);
 
-            _viewModel.IsCancelButtonVisible = false;
-            Assert.That(_viewModel.IsCancelButtonVisible, Is.False);
-            Assert.That(propertiesChanged, Contains.Item("IsCancelButtonVisible"));
+            _viewModel.CancelButtonText = "Cancel";
+            Assert.That(_viewModel.CancelButtonText, Is.EqualTo("Cancel"));
+            Assert.That(propertiesChanged, Contains.Item("CancelButtonText"));
         }
 
         [Test]
         public void TestShowDialogOk()
         {
-            _dialogService.Setup(d => d.ShowDialog(_viewModel)).Returns(DialogResult.OK);
-            Assert.That(_viewModel.ShowDialog(), Is.EqualTo(DialogResult.OK));
+            _dialogService.Setup(d => d.ShowDialog(_viewModel)).Returns(DialogResult.Ok);
+            Assert.That(_viewModel.ShowDialog(), Is.EqualTo(DialogResult.Ok));
             _dialogService.Verify(d => d.ShowDialog(_viewModel));
         }
 

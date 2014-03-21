@@ -18,7 +18,6 @@ namespace Jamiras.ViewModels
             _dialogService = dialogService;
 
             _okButtonText = "OK";
-            _isCancelButtonVisible = true;
         }
 
         private readonly IDialogService _dialogService;
@@ -90,7 +89,7 @@ namespace Jamiras.ViewModels
             string errors = Validate();
             if (String.IsNullOrEmpty(errors))
             {
-                DialogResult = DialogResult.OK;
+                DialogResult = DialogResult.Ok;
             }
             else
             {
@@ -100,22 +99,22 @@ namespace Jamiras.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets whether the Cancel button should be shown.
+        /// Gets or sets the Cancel button text.
         /// </summary>
-        public bool IsCancelButtonVisible
+        public string CancelButtonText
         {
-            get { return _isCancelButtonVisible; }
+            get { return _cancelButtonText; }
             set
             {
-                if (_isCancelButtonVisible != value)
+                if (_cancelButtonText != value)
                 {
-                    _isCancelButtonVisible = value;
-                    OnPropertyChanged(() => IsCancelButtonVisible);
+                    _cancelButtonText = value;
+                    OnPropertyChanged(() => CancelButtonText);
                 }
             }
         }
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private bool _isCancelButtonVisible;
+        private string _cancelButtonText;
 
         /// <summary>
         /// Gets the command associated to the Cancel button.
@@ -143,7 +142,7 @@ namespace Jamiras.ViewModels
     public enum DialogResult
     {
         None,
-        OK,
+        Ok,
         Cancel,
         Yes,
         No,

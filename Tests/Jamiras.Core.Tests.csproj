@@ -92,6 +92,7 @@
     <Compile Include="Components\PropertyChangedObjectTests.cs" />
     <Compile Include="Components\PropertyChangedPropagatorTests.cs" />
     <Compile Include="Components\PropertyObserverTests.cs" />
+    <Compile Include="Components\RecencyBufferTests.cs" />
     <Compile Include="Components\SortFunctionsTests.cs" />
     <Compile Include="Components\TestPropertyChangedObject.cs" />
     <Compile Include="Components\WeakActionTests.cs" />

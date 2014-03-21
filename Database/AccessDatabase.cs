@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Text;
 using Jamiras.Components;
 
@@ -87,6 +88,16 @@ namespace Jamiras.Database
             }
 
             return builder.ToString();
+        }
+
+        /// <summary>
+        /// Prepares a Date for a query string.
+        /// </summary>
+        /// <param name="date">Value to escape.</param>
+        /// <returns>Escaped value.</returns>
+        public string Escape(DateTime date)
+        {
+            return String.Format("#{0}#", date.ToShortDateString());
         }
 
         #endregion

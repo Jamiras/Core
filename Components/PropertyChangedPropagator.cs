@@ -16,6 +16,7 @@ namespace Jamiras.Components
         {
             _handler = handler;
             _propertyMap = EmptyTinyDictionary<string, string>.Instance;
+            _source = source;
         }
 
         private INotifyPropertyChanged _source;
@@ -32,13 +33,20 @@ namespace Jamiras.Components
             {
                 if (!ReferenceEquals(_source, value))
                 {
-                    if (_source != null)
-                        _source.PropertyChanged -= SourcePropertyChanged;
+                    if (_propertyMap.Count > 0)
+                    {
+                        if (_source != null)
+                            _source.PropertyChanged -= SourcePropertyChanged;
 
-                    _source = value;
+                        _source = value;
 
-                    if (_source != null)
-                        _source.PropertyChanged += SourcePropertyChanged;
+                        if (_source != null)
+                            _source.PropertyChanged += SourcePropertyChanged;
+                    }
+                    else
+                    {
+                        _source = value;
+                    }
                 }
             }
         }
@@ -57,6 +65,9 @@ namespace Jamiras.Components
         /// <param name="targetPropertyName">The property on the target object to raise when the source property changed.</param>
         public void RegisterPropertyPassThrough(string sourcePropertyName, string targetPropertyName)
         {
+            if (_propertyMap.Count == 0 && _source != null)
+                _source.PropertyChanged += SourcePropertyChanged;
+
             // TODO: support multiple targets dependant on single source?
             _propertyMap = _propertyMap.Add(sourcePropertyName, targetPropertyName);
         }
