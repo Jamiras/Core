@@ -52,6 +52,7 @@ namespace Jamiras.ViewModels
 
             if (!String.IsNullOrEmpty(errorMessage))
             {
+                errorMessage = FormatErrorMessage(errorMessage);
                 _errors = _errors.AddOrUpdate(localProperty.PropertyName, errorMessage);
                 IsValid = false;
             }
@@ -66,6 +67,11 @@ namespace Jamiras.ViewModels
 
                 SynchronizeValue(binding.Source, binding.SourceProperty, value);
             }
+        }
+
+        protected virtual string FormatErrorMessage(string errorMessage)
+        {
+            return String.Format(errorMessage, "Value");
         }
 
         /// <summary>

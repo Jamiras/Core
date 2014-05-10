@@ -25,6 +25,11 @@ namespace Jamiras.ViewModels.Fields
             set { SetValue(LabelProperty, value); }
         }
 
+        protected override string FormatErrorMessage(string errorMessage)
+        {
+            return String.Format(errorMessage, LabelWithoutAccelerators);
+        }
+
         protected string LabelWithoutAccelerators
         {
             get
