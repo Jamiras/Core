@@ -72,5 +72,12 @@ namespace Jamiras.Database
         /// <param name="columnIndex">Index of column to examine.</param>
         /// <returns>Value of the column as a float.</returns>
         float GetFloat(int columnIndex);
+
+        /// <summary>
+        /// Binds a value to a token.
+        /// </summary>
+        /// <param name="token">Token to bind to.</param>
+        /// <param name="value">Value to bind.</param>
+        void Bind(string token, object value);
     }
 }

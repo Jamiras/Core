@@ -13,8 +13,8 @@ namespace Jamiras.Database
             _command.CommandText = query;
         }
 
-        private readonly DbCommand _command;
-        private DbDataReader _reader;
+        private readonly System.Data.OleDb.OleDbCommand _command;
+        private System.Data.OleDb.OleDbDataReader _reader;
 
         #region IDatabaseQuery
 
@@ -125,6 +125,16 @@ namespace Jamiras.Database
                 return (float)_reader.GetDouble(columnIndex);
             
             return _reader.GetFloat(columnIndex);
+        }
+
+        /// <summary>
+        /// Binds a value to a token.
+        /// </summary>
+        /// <param name="token">Token to bind to.</param>
+        /// <param name="value">Value to bind.</param>
+        public void Bind(string token, object value)
+        {
+            _command.Parameters.Add(new System.Data.OleDb.OleDbParameter(token, value));
         }
 
         #endregion
