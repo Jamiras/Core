@@ -5,7 +5,6 @@ using Jamiras.ViewModels.Converters;
 
 namespace Jamiras.ViewModels
 {
-    [DebuggerDisplay("{SourceProperty.OwnerType.Name,nq}.{SourceProperty.PropertyName,nq} {Mode} {Source}")]
     public class ModelBinding
     {
         /// <param name="source">Source object.</param>
@@ -42,6 +41,11 @@ namespace Jamiras.ViewModels
             : this(source, sourceProperty, mode)
         {
             Converter = converter;
+        }
+
+        public override string ToString()
+        {   
+            return String.Format("{0} {1} {2}", SourceProperty.FullName, Mode, Source);
         }
 
         /// <summary>

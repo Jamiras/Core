@@ -16,12 +16,12 @@ namespace Jamiras.DataModels
         protected ModelBase()
         {
             _values = EmptyTinyDictionary<int, object>.Instance;
-            _propertyChangedHandlers = EmptyTinyDictionary<int, List<WeakReference>>.Instance;
+            _propertyChangedHandlers = EmptyTinyDictionary<int, List<WeakAction<object, ModelPropertyChangedEventArgs>>>.Instance;
             _lockObject = new object();
         }
 
         private ITinyDictionary<int, object> _values;
-        private ITinyDictionary<int, List<WeakReference>> _propertyChangedHandlers;
+        private ITinyDictionary<int, List<WeakAction<object, ModelPropertyChangedEventArgs>>> _propertyChangedHandlers;
         internal object _lockObject;
 
         /// <summary>
@@ -49,7 +49,7 @@ namespace Jamiras.DataModels
             if (!_values.TryGetValue(property.Key, out currentValue))
                 currentValue = property.DefaultValue;
 
-            if (value != currentValue)
+            if (!Object.Equals(value, currentValue))
             {
                 SetValueCore(property, value);
                 OnModelPropertyChanged(new ModelPropertyChangedEventArgs(property, currentValue, value));
@@ -77,33 +77,27 @@ namespace Jamiras.DataModels
 
             if (_propertyChangedHandlers.Count > 0)
             {
-                List<EventHandler<ModelPropertyChangedEventArgs>> handlers = null;
+                List<WeakAction<object, ModelPropertyChangedEventArgs>> handlers;
 
                 lock (_lockObject)
                 {
-                    List<WeakReference> dependencies;
-                    if (_propertyChangedHandlers.TryGetValue(e.Property.Key, out dependencies))
+                    if (_propertyChangedHandlers.TryGetValue(e.Property.Key, out handlers))
                     {
-                        handlers = new List<EventHandler<ModelPropertyChangedEventArgs>>();
-                        for (int i = dependencies.Count - 1; i >= 0; i--)
+                        for (int i = handlers.Count - 1; i >= 0; i--)
                         {
-                            var wr = dependencies[i];
-                            var handler = wr.Target as EventHandler<ModelPropertyChangedEventArgs>;
-                            if (handler != null && wr.IsAlive)
-                                handlers.Add(handler);
-                            else
-                                dependencies.RemoveAt(i);
+                            if (!handlers[i].IsAlive)
+                                handlers.RemoveAt(i);
                         }
-                    }
 
-                    if (dependencies.Count == 0)
-                        _propertyChangedHandlers = _propertyChangedHandlers.Remove(e.Property.Key);
+                        if (handlers.Count == 0)
+                            _propertyChangedHandlers = _propertyChangedHandlers.Remove(e.Property.Key);
+                    }
                 }
 
                 if (handlers != null)
                 {
                     foreach (var handler in handlers)
-                        handler(this, e);
+                        handler.Invoke(this, e);
                 }
             }
 
@@ -119,14 +113,14 @@ namespace Jamiras.DataModels
         {
             lock (_lockObject)
             {
-                List<WeakReference> dependencies;
-                if (!_propertyChangedHandlers.TryGetValue(property.Key, out dependencies))
+                List<WeakAction<object, ModelPropertyChangedEventArgs>> handlers;
+                if (!_propertyChangedHandlers.TryGetValue(property.Key, out handlers))
                 {
-                    dependencies = new List<WeakReference>();
-                    _propertyChangedHandlers = _propertyChangedHandlers.AddOrUpdate(property.Key, dependencies);
+                    handlers = new List<WeakAction<object, ModelPropertyChangedEventArgs>>();
+                    _propertyChangedHandlers = _propertyChangedHandlers.AddOrUpdate(property.Key, handlers);
                 }
 
-                dependencies.Add(new WeakReference(handler));
+                handlers.Add(new WeakAction<object, ModelPropertyChangedEventArgs>(handler.Method, handler.Target));
             }
         }
 
@@ -142,20 +136,19 @@ namespace Jamiras.DataModels
 
             lock (_lockObject)
             {
-                List<WeakReference> dependencies;
-                if (_propertyChangedHandlers.TryGetValue(property.Key, out dependencies))
+                List<WeakAction<object, ModelPropertyChangedEventArgs>> handlers;
+                if (_propertyChangedHandlers.TryGetValue(property.Key, out handlers))
                 {
-                    for (int i = dependencies.Count - 1; i >= 0; i--)
+                    for (int i = handlers.Count - 1; i >= 0; i--)
                     {
-                        var wr = dependencies[i];
-                        var h = wr.Target as EventHandler<ModelPropertyChangedEventArgs>;
-                        if (h == null || !wr.IsAlive)
-                            dependencies.RemoveAt(i);
-                        else if (h == handler)
-                            dependencies.RemoveAt(i);
+                        var wr = handlers[i];
+                        if (!wr.IsAlive)
+                            handlers.RemoveAt(i);
+                        else if (wr.Method == handler.Method && ReferenceEquals(wr.Target, handler.Target))
+                            handlers.RemoveAt(i);
                     }
 
-                    if (dependencies.Count == 0)
+                    if (handlers.Count == 0)
                         _propertyChangedHandlers = _propertyChangedHandlers.Remove(property.Key);
                 }
             }

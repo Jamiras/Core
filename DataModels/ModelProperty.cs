@@ -7,11 +7,19 @@ namespace Jamiras.DataModels
     /// <summary>
     /// Represents a single property on a <see cref="ModelBase"/>.
     /// </summary>
-    [DebuggerDisplay("{OwnerType.Name,nq}.{PropertyName,nq} ModelProperty")]
+    [DebuggerDisplay("{FullName,nq} ModelProperty")]
     public class ModelProperty
     {
         private ModelProperty()
         {
+        }
+
+        /// <summary>
+        /// Gets the name of the property and the type of model that owns the property.
+        /// </summary>
+        public string FullName
+        {
+            get { return String.Format("{0}.{1}", OwnerType.Name, PropertyName); }
         }
 
         /// <summary>

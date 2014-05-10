@@ -1,10 +1,16 @@
 ﻿using System;
 using Jamiras.DataModels;
+using Jamiras.DataModels.Metadata;
 
 namespace Jamiras.ViewModels.Fields
 {
     public class TextFieldViewModel : FieldViewModelBase
     {
+        public TextFieldViewModel(string label, StringFieldMetadata metadata)
+            : this(label, metadata.MaxLength)
+        {
+        }
+
         public TextFieldViewModel(string label, int maxLength)
         {
             Label = label;
@@ -44,7 +50,7 @@ namespace Jamiras.ViewModels.Fields
         protected override string Validate(ModelProperty property, object value)
         {
             if (property == TextFieldViewModel.TextProperty && IsRequired && String.IsNullOrEmpty((string)value))
-                return String.Format("{0} is required", Label);
+                return String.Format("{0} is required", LabelWithoutAccelerators);
 
             return base.Validate(property, value);
         }

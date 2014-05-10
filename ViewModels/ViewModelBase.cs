@@ -19,14 +19,14 @@ namespace Jamiras.ViewModels
         /// <summary>
         /// Binds a property on a model to the view model.
         /// </summary>
-        /// <param name="localProperty">View model property to bind.</param>
+        /// <param name="viewModelProperty">View model property to bind.</param>
         /// <param name="binding">Information about how the view model property is bound.</param>
-        public void SetBinding(ModelProperty localProperty, ModelBinding binding)
+        public void SetBinding(ModelProperty viewModelProperty, ModelBinding binding)
         {
             ModelBinding oldBinding;
-            if (_bindings.TryGetValue(localProperty.Key, out oldBinding))
+            if (_bindings.TryGetValue(viewModelProperty.Key, out oldBinding))
             {
-                _bindings = _bindings.Remove(localProperty.Key);
+                _bindings = _bindings.Remove(viewModelProperty.Key);
                 if (!IsObserving(oldBinding.Source, oldBinding.SourceProperty))
                     oldBinding.Source.RemovePropertyChangedHandler(oldBinding.SourceProperty, OnSourcePropertyChanged);
             }
@@ -36,21 +36,21 @@ namespace Jamiras.ViewModels
                 if (!IsObserving(binding.Source, binding.SourceProperty))
                     binding.Source.AddPropertyChangedHandler(binding.SourceProperty, OnSourcePropertyChanged);
 
-                _bindings = _bindings.Add(localProperty.Key, binding);
+                _bindings = _bindings.Add(viewModelProperty.Key, binding);
 
-                RefreshBinding(localProperty.Key, binding);
+                RefreshBinding(viewModelProperty.Key, binding);
             }
         }
 
         /// <summary>
         /// Gets the binding associated to a property.
         /// </summary>
-        /// <param name="localProperty">Property to get binding for.</param>
+        /// <param name="viewModelProperty">Property to get binding for.</param>
         /// <returns>Requested binding, <c>null</c> if not bound.</returns>
-        public ModelBinding GetBinding(ModelProperty localProperty)
+        public ModelBinding GetBinding(ModelProperty viewModelProperty)
         {
             ModelBinding binding;
-            _bindings.TryGetValue(localProperty.Key, out binding);
+            _bindings.TryGetValue(viewModelProperty.Key, out binding);
             return binding;
         }
 
@@ -162,9 +162,9 @@ namespace Jamiras.ViewModels
             {
                 if (kvp.Value.Mode == ModelBindingMode.Committed)
                 {
-                    var localProperty = ModelProperty.GetPropertyForKey(kvp.Key);
-                    var value = GetValue(localProperty);
-                    PushValue(kvp.Value, localProperty, value);
+                    var viewModelProperty = ModelProperty.GetPropertyForKey(kvp.Key);
+                    var value = GetValue(viewModelProperty);
+                    PushValue(kvp.Value, viewModelProperty, value);
                 }
             }
         }

@@ -1,9 +1,10 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using Jamiras.DataModels;
 
 namespace Jamiras.ViewModels.Fields
 {
-    [DebuggerDisplay("{Label} {GetType().Name,nq}")]
+    [DebuggerDisplay("{LabelWithoutAccelerators} {GetType().Name,nq}")]
     public abstract class FieldViewModelBase : ValidatedViewModelBase
     {
         public static readonly ModelProperty IsRequiredProperty =
@@ -22,6 +23,22 @@ namespace Jamiras.ViewModels.Fields
         {
             get { return (string)GetValue(LabelProperty); }
             set { SetValue(LabelProperty, value); }
+        }
+
+        protected string LabelWithoutAccelerators
+        {
+            get
+            {
+                string label = Label ?? String.Empty;
+                int idx = label.IndexOf('_');
+                if (idx == -1)
+                    return label;
+
+                if (idx == 0)
+                    return label.Substring(1);
+
+                return label.Substring(0, idx) + label.Substring(idx + 1);
+            }
         }
     }
 }
