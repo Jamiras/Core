@@ -105,7 +105,7 @@ namespace Jamiras.Components
                 else if (index == 1)
                     index2 = 2;
 
-                return new TwoItemsTinyDictionary<TKey, TValue>(_keys[index1], _values[index2], _keys[index2], _values[index2]);
+                return new TwoItemsTinyDictionary<TKey, TValue>(_keys[index1], _values[index1], _keys[index2], _values[index2]);
             }
 
             _count--;
@@ -144,7 +144,7 @@ namespace Jamiras.Components
             get
             {
                 TKey[] keys = new TKey[_count];
-                Array.Copy(keys, _keys, _count);
+                Array.Copy(_keys, keys, _count);
                 return keys;
             }
         }
@@ -157,7 +157,7 @@ namespace Jamiras.Components
             get
             {
                 TValue[] values = new TValue[_count];
-                Array.Copy(values, _values, _count);
+                Array.Copy(_values, values, _count);
                 return values;
             }
         }
