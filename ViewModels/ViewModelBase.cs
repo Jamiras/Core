@@ -1,58 +1,79 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using Jamiras.Components;
 using Jamiras.DataModels;
-using Jamiras.ViewModels.Converters;
 
 namespace Jamiras.ViewModels
 {
+    /// <summary>
+    /// Base class for a model that can be bound to another model.
+    /// </summary>
     public abstract class ViewModelBase : ModelBase
     {
-        internal IEnumerable<ModelBinding> Bindings
+        protected ViewModelBase()
         {
-            get { return _bindings; }
-        }
-        private List<ModelBinding> _bindings;
-
-        internal class ModelBinding
-        {
-            public ModelBase Source { get; set; }
-            public ModelProperty SourceProperty { get; set; }
-            public ModelProperty TargetProperty { get; set; }
-            public IConverter Converter { get; set; }
+            _bindings = EmptyTinyDictionary<int, ModelBinding>.Instance;
         }
 
-        internal int BindingModelPropertyKey { get; set; }
+        private ITinyDictionary<int, ModelBinding> _bindings;
+        private int _propertyBeingSynchronized;
 
         /// <summary>
         /// Binds a property on a model to the view model.
         /// </summary>
-        /// <param name="source">Source object.</param>
-        /// <param name="sourceProperty">Source object property to bind.</param>
-        /// <param name="targetProperty">View model property to bind.</param>
-        /// <param name="converter">Maps bound data from the source property type to the target property type.</param>
-        protected void Bind(ModelBase source, ModelProperty sourceProperty, ModelProperty targetProperty, IConverter converter = null)
+        /// <param name="localProperty">View model property to bind.</param>
+        /// <param name="binding">Information about how the view model property is bound.</param>
+        public void SetBinding(ModelProperty localProperty, ModelBinding binding)
         {
-            if (!_bindings.Any(b => b.Source == source && b.SourceProperty == sourceProperty))
-                source.AddPropertyChangedHandler(sourceProperty, OnSourcePropertyChanged);
-
-            var binding = new ModelBinding
+            ModelBinding oldBinding;
+            if (_bindings.TryGetValue(localProperty.Key, out oldBinding))
             {
-                Source = source,
-                SourceProperty = sourceProperty,
-                TargetProperty = targetProperty,
-                Converter = converter
-            };
-            _bindings.Add(binding);
+                _bindings = _bindings.Remove(localProperty.Key);
+                if (!IsObserving(oldBinding.Source, oldBinding.SourceProperty))
+                    oldBinding.Source.RemovePropertyChangedHandler(oldBinding.SourceProperty, OnSourcePropertyChanged);
+            }
 
-            RefreshBinding(binding);
+            if (binding != null)
+            {
+                if (!IsObserving(binding.Source, binding.SourceProperty))
+                    binding.Source.AddPropertyChangedHandler(binding.SourceProperty, OnSourcePropertyChanged);
+
+                _bindings = _bindings.Add(localProperty.Key, binding);
+
+                RefreshBinding(localProperty.Key, binding);
+            }
+        }
+
+        /// <summary>
+        /// Gets the binding associated to a property.
+        /// </summary>
+        /// <param name="localProperty">Property to get binding for.</param>
+        /// <returns>Requested binding, <c>null</c> if not bound.</returns>
+        public ModelBinding GetBinding(ModelProperty localProperty)
+        {
+            ModelBinding binding;
+            _bindings.TryGetValue(localProperty.Key, out binding);
+            return binding;
+        }
+
+        private bool IsObserving(ModelBase model, ModelProperty property)
+        {
+            foreach (var binding in _bindings.Values)
+            {
+                if (binding.SourceProperty == property && ReferenceEquals(binding.Source, model))
+                    return true;
+            }
+
+            return false;
         }
 
         private void OnSourcePropertyChanged(object sender, ModelPropertyChangedEventArgs e)
         {
-            if (e.Property.Key != BindingModelPropertyKey)
+            if (e.Property.Key != _propertyBeingSynchronized)
             {
-                foreach (var binding in _bindings.Where(b => b.SourceProperty == e.Property))
-                    RefreshBinding(binding);
+                foreach (var kvp in _bindings)
+                {
+                    if (kvp.Value.SourceProperty == e.Property)
+                        RefreshBinding(kvp.Key, kvp.Value);
+                }
             }
         }
 
@@ -61,27 +82,91 @@ namespace Jamiras.ViewModels
         /// </summary>
         public void Refresh()
         {
-            foreach (var binding in _bindings)
-                RefreshBinding(binding);
+            RefreshBindings();
 
-            foreach (var nestedViewModel in GetNestedViewModels())
-                nestedViewModel.Refresh();
+            var compositeViewModel = this as ICompositeViewModel;
+            if (compositeViewModel != null)
+            {
+                foreach (var child in compositeViewModel.GetChildren())
+                    child.RefreshBindings();
+            }
         }
 
-        private void RefreshBinding(ModelBinding binding)
+        private void RefreshBindings()
         {
-            var value = binding.Source.GetValue(binding.SourceProperty);
+            foreach (var kvp in _bindings)
+                RefreshBinding(kvp.Key, kvp.Value);
+        }
+
+        private void RefreshBinding(int localPropertyKey, ModelBinding binding)
+        {
+            object value;
+            if (binding.TryPullValue(out value))
+                SynchronizeValue(this, ModelProperty.GetPropertyForKey(localPropertyKey), value);
+        }
+
+        protected override void OnModelPropertyChanged(ModelPropertyChangedEventArgs e)
+        {
+            if (e.Property.Key != _propertyBeingSynchronized)
+            {
+                ModelBinding binding;
+                if (_bindings.TryGetValue(e.Property.Key, out binding))
+                    PushValue(binding, e.Property, e.NewValue);
+            }
+
+            base.OnModelPropertyChanged(e);
+        }
+
+        internal virtual void PushValue(ModelBinding binding, ModelProperty localProperty, object value)
+        {
             if (binding.Converter != null)
-                value = binding.Converter.Convert(value);
+            {
+                if (binding.Converter.ConvertBack(ref value) != null)
+                    return;
+            }
 
-            BindingModelPropertyKey = binding.TargetProperty.Key;
-            SetValue(binding.TargetProperty, value);
-            BindingModelPropertyKey = -1;
+            SynchronizeValue(binding.Source, binding.SourceProperty, value);
         }
 
-        protected virtual IEnumerable<ViewModelBase> GetNestedViewModels()
+        internal void SynchronizeValue(ModelBase model, ModelProperty property, object newValue)
         {
-            return new ViewModelBase[0];
+            _propertyBeingSynchronized = property.Key;
+            try
+            {
+                model.SetValue(property, newValue);
+            }
+            finally
+            {
+                _propertyBeingSynchronized = 0;
+            }
+        }
+
+        /// <summary>
+        /// Commits any <see cref="BindingMode.Committed"/> bindings.
+        /// </summary>
+        public void Commit()
+        {
+            var compositeViewModel = this as ICompositeViewModel;
+            if (compositeViewModel != null)
+            {
+                foreach (var child in compositeViewModel.GetChildren())
+                    child.PushCommitBindings();
+            }
+
+            PushCommitBindings();
+        }
+
+        private void PushCommitBindings()
+        {
+            foreach (var kvp in _bindings)
+            {
+                if (kvp.Value.Mode == ModelBindingMode.Committed)
+                {
+                    var localProperty = ModelProperty.GetPropertyForKey(kvp.Key);
+                    var value = GetValue(localProperty);
+                    PushValue(kvp.Value, localProperty, value);
+                }
+            }
         }
     }
 }

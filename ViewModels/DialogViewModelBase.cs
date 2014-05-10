@@ -6,7 +6,7 @@ using Jamiras.Services;
 
 namespace Jamiras.ViewModels
 {
-    public abstract class DialogViewModelBase : EditableViewModelBase
+    public abstract class DialogViewModelBase : ValidatedViewModelBase
     {
         protected DialogViewModelBase()
             : this(ServiceRepository.Instance.FindService<IDialogService>())

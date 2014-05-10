@@ -136,7 +136,11 @@
     <Compile Include="ViewModels\Converters\IConverter.cs" />
     <Compile Include="ViewModels\DialogViewModelBase.cs" />
     <Compile Include="Services\IDialogService.cs" />
-    <Compile Include="ViewModels\EditableViewModelBase.cs" />
+    <Compile Include="ViewModels\Fields\FieldViewModel.cs" />
+    <Compile Include="ViewModels\ICompositeViewModel.cs" />
+    <Compile Include="ViewModels\ModelBinding.cs" />
+    <Compile Include="ViewModels\ValidatedViewModelBase.cs" />
+    <Compile Include="ViewModels\Fields\TextFieldViewModel.cs" />
     <Compile Include="ViewModels\LookupItem.cs" />
     <Compile Include="ViewModels\MessageBoxViewModel.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
