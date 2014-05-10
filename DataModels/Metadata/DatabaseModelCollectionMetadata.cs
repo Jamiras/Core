@@ -73,7 +73,7 @@ namespace Jamiras.DataModels.Metadata
                 var primaryKeyFieldName = _relatedMetadata.GetFieldMetadata(_relatedMetadata.PrimaryKeyProperty).FieldName;
 
                 int index = 0;
-                foreach (var metadata in _relatedMetadata.AllFieldMetadata)
+                foreach (var metadata in _relatedMetadata.AllFieldMetadata.Values)
                 {
                     if (primaryKeyFieldName == metadata.FieldName)
                     {

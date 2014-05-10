@@ -1,12 +1,12 @@
 ﻿using System;
-using System.Diagnostics;
 using Jamiras.Commands;
 using Jamiras.Components;
+using Jamiras.DataModels;
 using Jamiras.Services;
 
 namespace Jamiras.ViewModels
 {
-    public abstract class DialogViewModelBase : ViewModelBase
+    public abstract class DialogViewModelBase : EditableViewModelBase
     {
         protected DialogViewModelBase()
             : this(ServiceRepository.Instance.FindService<IDialogService>())
@@ -16,65 +16,45 @@ namespace Jamiras.ViewModels
         protected DialogViewModelBase(IDialogService dialogService)
         {
             _dialogService = dialogService;
-
-            _okButtonText = "OK";
         }
 
         private readonly IDialogService _dialogService;
+
+        public static readonly ModelProperty DialogTitleProperty =
+            ModelProperty.Register(typeof(DialogViewModelBase), "DialogTitle", typeof(string), null);
 
         /// <summary>
         /// Gets or sets the dialog caption.
         /// </summary>
         public string DialogTitle
         {
-            get { return _dialogTitle; }
-            set
-            {
-                if (_dialogTitle != value)
-                {
-                    _dialogTitle = value;
-                    OnPropertyChanged(() => DialogTitle);
-                }
-            }
+            get { return (string)GetValue(DialogTitleProperty); }
+            set { SetValue(DialogTitleProperty, value); }
         }
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private string _dialogTitle;
+
+        public static readonly ModelProperty DialogResultProperty =
+            ModelProperty.Register(typeof(DialogViewModelBase), "DialogResult", typeof(DialogResult), DialogResult.None);
 
         /// <summary>
         /// Gets an indicator of how the dialog was closed.
         /// </summary>
         public DialogResult DialogResult
         {
-            get { return _dialogResult; }
-            protected set
-            {
-                if (_dialogResult != value)
-                {
-                    _dialogResult = value;
-                    OnPropertyChanged(() => DialogResult);
-                }
-            }
+            get { return (DialogResult)GetValue(DialogResultProperty); }
+            protected set { SetValue(DialogResultProperty, value); }
         }
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private DialogResult _dialogResult;
+
+        public static readonly ModelProperty OkButtonTextProperty =
+            ModelProperty.Register(typeof(DialogViewModelBase), "OkButtonText", typeof(string), "OK");
 
         /// <summary>
         /// Gets or sets the OK button text.
         /// </summary>
         public string OkButtonText
         {
-            get { return _okButtonText; }
-            set
-            {
-                if (_okButtonText != value)
-                {
-                    _okButtonText = value;
-                    OnPropertyChanged(() => OkButtonText);
-                }
-            }
+            get { return (String)GetValue(OkButtonTextProperty); }
+            set { SetValue(OkButtonTextProperty, value); }
         }
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private string _okButtonText;
 
         /// <summary>
         /// Gets the command associated to the OK button.
@@ -98,23 +78,17 @@ namespace Jamiras.ViewModels
             }
         }
 
+        public static readonly ModelProperty CancelButtonTextProperty =
+            ModelProperty.Register(typeof(DialogViewModelBase), "CancelButtonText", typeof(string), "Cancel");
+
         /// <summary>
         /// Gets or sets the Cancel button text.
         /// </summary>
         public string CancelButtonText
         {
-            get { return _cancelButtonText; }
-            set
-            {
-                if (_cancelButtonText != value)
-                {
-                    _cancelButtonText = value;
-                    OnPropertyChanged(() => CancelButtonText);
-                }
-            }
+            get { return (string)GetValue(CancelButtonTextProperty); }
+            set { SetValue(CancelButtonTextProperty, value); }
         }
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private string _cancelButtonText;
 
         /// <summary>
         /// Gets the command associated to the Cancel button.

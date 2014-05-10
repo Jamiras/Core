@@ -1,121 +1,87 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Jamiras.Components;
+using Jamiras.DataModels;
+using Jamiras.ViewModels.Converters;
 
 namespace Jamiras.ViewModels
 {
-    public abstract class ViewModelBase : PropertyChangedObject, IDataErrorInfo
+    public abstract class ViewModelBase : ModelBase
     {
-        protected ViewModelBase()
+        internal IEnumerable<ModelBinding> Bindings
         {
-            _validationFunctions = new Dictionary<string, Func<string>>();
-            _errorState = new Dictionary<string, string>();
-            _isValid = true;
+            get { return _bindings; }
         }
+        private List<ModelBinding> _bindings;
+
+        internal class ModelBinding
+        {
+            public ModelBase Source { get; set; }
+            public ModelProperty SourceProperty { get; set; }
+            public ModelProperty TargetProperty { get; set; }
+            public IConverter Converter { get; set; }
+        }
+
+        internal int BindingModelPropertyKey { get; set; }
 
         /// <summary>
-        /// Gets whether the provided values are valid
+        /// Binds a property on a model to the view model.
         /// </summary>
-        public bool IsValid
+        /// <param name="source">Source object.</param>
+        /// <param name="sourceProperty">Source object property to bind.</param>
+        /// <param name="targetProperty">View model property to bind.</param>
+        /// <param name="converter">Maps bound data from the source property type to the target property type.</param>
+        protected void Bind(ModelBase source, ModelProperty sourceProperty, ModelProperty targetProperty, IConverter converter = null)
         {
-            get { return _isValid; }
-            private set
+            if (!_bindings.Any(b => b.Source == source && b.SourceProperty == sourceProperty))
+                source.AddPropertyChangedHandler(sourceProperty, OnSourcePropertyChanged);
+
+            var binding = new ModelBinding
             {
-                if (_isValid != value)
-                {
-                    _isValid = value;
-                    OnPropertyChanged(() => IsValid);
-                }
-            }
+                Source = source,
+                SourceProperty = sourceProperty,
+                TargetProperty = targetProperty,
+                Converter = converter
+            };
+            _bindings.Add(binding);
+
+            RefreshBinding(binding);
         }
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private bool _isValid;
 
-        /// <summary>
-        /// Raised whenever a property of the ViewModel changes.
-        /// </summary>
-        protected override void OnPropertyChanged(PropertyChangedEventArgs e)
+        private void OnSourcePropertyChanged(object sender, ModelPropertyChangedEventArgs e)
         {
-            bool revalidate = false;
-
-            Func<string> validationFunction;
-            if (_validationFunctions.TryGetValue(e.PropertyName, out validationFunction))
+            if (e.Property.Key != BindingModelPropertyKey)
             {
-                string error = validationFunction();
-
-                string currentError;
-                if (!_errorState.TryGetValue(e.PropertyName, out currentError) || currentError != error)
-                {
-                    _errorState[e.PropertyName] = error;
-                    revalidate = true;
-                }
-            }
-
-            base.OnPropertyChanged(e);
-
-            if (revalidate)
-                IsValid = !_errorState.Any(kvp => !String.IsNullOrEmpty(kvp.Value));
-        }
-
-        #region IDataErrorInfo Members
-
-        private readonly Dictionary<string, Func<string>> _validationFunctions;
-        private readonly Dictionary<string, string> _errorState;
-
-        /// <summary>
-        /// Registers a delegate for validating a property of the ViewModel.
-        /// </summary>
-        /// <param name="property">Property to validate.</param>
-        /// <param name="validationFunction">Function to call to validate the property.</param>
-        /// <remarks>Only one function may be registered per property.</remarks>
-        protected void AddValidation(string property, Func<string> validationFunction)
-        {
-            _validationFunctions[property] = validationFunction;
-
-            string error = validationFunction();
-            _errorState[property] = error;
-
-            if (!String.IsNullOrEmpty(error))
-                IsValid = false;
-        }
-
-        string IDataErrorInfo.Error
-        {
-            get { return Validate(); }
-        }
-
-        string IDataErrorInfo.this[string columnName]
-        {
-            get 
-            {
-                string error;
-                if (_errorState.TryGetValue(columnName, out error))
-                    return error;
-
-                return String.Empty;
+                foreach (var binding in _bindings.Where(b => b.SourceProperty == e.Property))
+                    RefreshBinding(binding);
             }
         }
 
         /// <summary>
-        /// Gets the list of current errors
+        /// Updates all bound view model properties from the backing models.
         /// </summary>
-        /// <returns>String containing all current errors for the ViewModel (separated by newlines).</returns>
-        public virtual string Validate()
+        public void Refresh()
         {
-            StringBuilder builder = new StringBuilder();
-            foreach (var kvp in _errorState)
-            {
-                if (!String.IsNullOrEmpty(kvp.Value))
-                    builder.AppendLine(kvp.Value);
-            }
+            foreach (var binding in _bindings)
+                RefreshBinding(binding);
 
-            return builder.ToString().TrimEnd();
+            foreach (var nestedViewModel in GetNestedViewModels())
+                nestedViewModel.Refresh();
         }
 
-        #endregion
+        private void RefreshBinding(ModelBinding binding)
+        {
+            var value = binding.Source.GetValue(binding.SourceProperty);
+            if (binding.Converter != null)
+                value = binding.Converter.Convert(value);
+
+            BindingModelPropertyKey = binding.TargetProperty.Key;
+            SetValue(binding.TargetProperty, value);
+            BindingModelPropertyKey = -1;
+        }
+
+        protected virtual IEnumerable<ViewModelBase> GetNestedViewModels()
+        {
+            return new ViewModelBase[0];
+        }
     }
 }

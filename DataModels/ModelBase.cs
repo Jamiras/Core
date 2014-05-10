@@ -72,6 +72,9 @@ namespace Jamiras.DataModels
         /// </summary>
         protected virtual void OnModelPropertyChanged(ModelPropertyChangedEventArgs e)
         {
+            if (e.Property.PropertyChangedHandler != null)
+                e.Property.PropertyChangedHandler(this, e);
+
             if (_propertyChangedHandlers.Count > 0)
             {
                 List<EventHandler<ModelPropertyChangedEventArgs>> handlers = null;

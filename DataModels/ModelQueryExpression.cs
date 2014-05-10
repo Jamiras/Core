@@ -12,11 +12,11 @@ namespace Jamiras.DataModels
         public ModelQueryExpression()
         {
             _queryFields = new List<string>();
-            _filters = EmptyTinyDictionary<string, string>.Instance;
+            _filters = new List<KeyValuePair<string, string>>();
         }
 
         private List<string> _queryFields;
-        private ITinyDictionary<string, string> _filters;
+        private List<KeyValuePair<string, string>> _filters;
         private List<JoinData> _joins;
         private string _filterExpression;
 
@@ -41,12 +41,12 @@ namespace Jamiras.DataModels
 
         public void AddFilter(string fieldName, string bindVariable)
         {
-            _filters = _filters.AddOrUpdate(fieldName, bindVariable);
+            _filters.Add(new KeyValuePair<string, string>(fieldName, bindVariable));
         }
 
         public void AddLikeFilter(string fieldName, string bindVariable)
         {
-            _filters = _filters.AddOrUpdate(fieldName, '~' + bindVariable);
+            _filters.Add(new KeyValuePair<string, string>(fieldName, '~' + bindVariable));
         }
 
         public void AddJoin(string localKeyFieldName, string remoteKeyFieldName, bool localKeyIsPrimary)
@@ -96,8 +96,9 @@ namespace Jamiras.DataModels
                 }
             }
 
-            foreach (var field in _filters.Keys)
+            foreach (var filter in _filters)
             {
+                var field = filter.Key;
                 int idx = field.IndexOf('.');
                 if (idx > 0)
                 {
@@ -262,11 +263,8 @@ namespace Jamiras.DataModels
 
                 if (val > 0)
                 {
-                    var fieldName = _filters.Keys.ElementAt(val - 1);
-                    string bindVariable;
-                    _filters.TryGetValue(fieldName, out bindVariable);
-
-                    AppendFilter(builder, fieldName, bindVariable);
+                    var filter = _filters[val - 1];
+                    AppendFilter(builder, filter.Key, filter.Value);
                 }
             }
 

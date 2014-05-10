@@ -39,6 +39,11 @@ namespace Jamiras.DataModels
         /// </summary>
         public object DefaultValue { get; private set; }
 
+        /// <summary>
+        /// Gets the method to call when the value of the property changes.
+        /// </summary>
+        public EventHandler<ModelPropertyChangedEventArgs> PropertyChangedHandler { get; private set; }
+
         private static int _keyCount;
         private static ModelProperty[] _properties;
 
@@ -49,7 +54,8 @@ namespace Jamiras.DataModels
         /// <param name="propertyName">The name of the property on the model.</param>
         /// <param name="propertyType">The type of the property.</param>
         /// <param name="defaultValue">The default value of the property.</param>
-        public static ModelProperty Register(Type ownerType, string propertyName, Type propertyType, object defaultValue)
+        /// <param name="propertyChangedHandler">Callback to call when the property changes.</param>
+        public static ModelProperty Register(Type ownerType, string propertyName, Type propertyType, object defaultValue, EventHandler<ModelPropertyChangedEventArgs> propertyChangedHandler = null)
         {
             var property = new ModelProperty()
             {
@@ -57,6 +63,7 @@ namespace Jamiras.DataModels
                 PropertyName = propertyName,
                 PropertyType = propertyType,
                 DefaultValue = defaultValue,
+                PropertyChangedHandler = propertyChangedHandler,
             };
 
             lock (typeof(ModelProperty))

@@ -15,9 +15,9 @@ namespace Jamiras.DataModels.Metadata
 
         private ITinyDictionary<int, FieldMetadata> _fieldMetadata;
 
-        internal IEnumerable<FieldMetadata> AllFieldMetadata
+        internal ITinyDictionary<int, FieldMetadata> AllFieldMetadata
         {
-            get { return _fieldMetadata.Values; }
+            get { return _fieldMetadata; }
         }
 
         /// <summary>

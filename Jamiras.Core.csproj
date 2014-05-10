@@ -133,8 +133,10 @@
     <Compile Include="Services\LogService.cs" />
     <Compile Include="Services\PersistantDataRepository.cs" />
     <Compile Include="Services\WindowSettingsRepository.cs" />
+    <Compile Include="ViewModels\Converters\IConverter.cs" />
     <Compile Include="ViewModels\DialogViewModelBase.cs" />
     <Compile Include="Services\IDialogService.cs" />
+    <Compile Include="ViewModels\EditableViewModelBase.cs" />
     <Compile Include="ViewModels\LookupItem.cs" />
     <Compile Include="ViewModels\MessageBoxViewModel.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />

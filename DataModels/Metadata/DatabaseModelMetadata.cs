@@ -138,7 +138,7 @@ namespace Jamiras.DataModels.Metadata
         internal ModelQueryExpression BuildQueryExpression()
         {
             var queryExpression = new ModelQueryExpression();
-            foreach (var metadata in AllFieldMetadata)
+            foreach (var metadata in AllFieldMetadata.Values)
                 queryExpression.AddQueryField(metadata.FieldName);
 
             if (_joins != null)
@@ -161,17 +161,13 @@ namespace Jamiras.DataModels.Metadata
         internal void PopulateItem(ModelBase model, IDatabaseQuery query)
         {
             int index = 0;
-            foreach (var kvp in _tableMetadata)
+            foreach (var kvp in AllFieldMetadata)
             {
-                foreach (var propertyKey in kvp.Value)
-                {
-                    var property = ModelProperty.GetPropertyForKey(propertyKey);
-                    var fieldMetadata = GetFieldMetadata(property);
-                    var value = GetQueryValue(query, index, fieldMetadata);
-                    value = CoerceValueFromDatabase(property, fieldMetadata, value);
-                    model.SetValueCore(property, value);
-                    index++;
-                }
+                var property = ModelProperty.GetPropertyForKey(kvp.Key);
+                var value = GetQueryValue(query, index, kvp.Value);
+                value = CoerceValueFromDatabase(property, kvp.Value, value);
+                model.SetValueCore(property, value);
+                index++;
             }
         }
 
