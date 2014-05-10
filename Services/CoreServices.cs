@@ -1,4 +1,5 @@
 ﻿using Jamiras.Components;
+using Jamiras.DataModels.Metadata;
 
 namespace Jamiras.Services
 {
@@ -21,6 +22,7 @@ namespace Jamiras.Services
             repository.RegisterService(typeof(PersistantDataRepository));
             repository.RegisterService(typeof(WindowSettingsRepository));
             repository.RegisterService(typeof(LogService));
+            repository.RegisterService(typeof(DataModelMetadataRepository));
         }
     }
 }
