@@ -30,7 +30,7 @@ namespace Jamiras.DataModels.Metadata
                 _queryString = BuildQueryString();
 
             var databaseDataModelSource = ServiceRepository.Instance.FindService<IDataModelSource>() as DatabaseDataModelSource;
-            var collection = (DataModelCollection<T>)model;
+            var collection = (IDataModelCollection)model;
 
             using (var query = database.PrepareQuery(_queryString))
             {
@@ -45,7 +45,7 @@ namespace Jamiras.DataModels.Metadata
                         item = databaseDataModelSource.TryGet<T>(id);
                         if (item != null)
                         {
-                            collection.AddCore(item);
+                            collection.Add(item);
                             continue;
                         }
                     }
@@ -56,7 +56,7 @@ namespace Jamiras.DataModels.Metadata
                     if (databaseDataModelSource != null)
                         item = databaseDataModelSource.TryCache<T>(item);
 
-                    collection.AddCore(item);
+                    collection.Add(item);
                 }
             }
 

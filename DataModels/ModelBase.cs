@@ -101,7 +101,8 @@ namespace Jamiras.DataModels
                 }
             }
 
-            OnPropertyChanged(new PropertyChangedEventArgs(e.Property.PropertyName));
+            if (!String.IsNullOrEmpty(e.Property.PropertyName))
+                OnPropertyChanged(new PropertyChangedEventArgs(e.Property.PropertyName));
         }
 
         /// <summary>

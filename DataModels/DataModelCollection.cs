@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Collections;
 
 namespace Jamiras.DataModels
 {
     [DebuggerDisplay("Count = {Count}")]
-    public class DataModelCollection<T> : DataModelBase, ICollection<T>
+    public class DataModelCollection<T> : DataModelBase, ICollection<T>, IDataModelCollection
         where T : DataModelBase
     {
         public DataModelCollection()
@@ -20,9 +21,9 @@ namespace Jamiras.DataModels
             throw new NotImplementedException();
         }
 
-        internal void AddCore(T item)
+        void IDataModelCollection.Add(DataModelBase item)
         {
-            _collection.Add(item);
+            _collection.Add((T)item);
         }
 
         public void Clear()

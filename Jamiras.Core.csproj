@@ -102,6 +102,7 @@
     <Compile Include="Database\IDatabaseQuery.cs" />
     <Compile Include="DataModels\DatabaseDataModelSource.cs" />
     <Compile Include="DataModels\DataModelBase.cs" />
+    <Compile Include="DataModels\IDataModelCollection.cs" />
     <Compile Include="DataModels\Metadata\AutoIncrementFieldMetadata.cs" />
     <Compile Include="DataModels\Metadata\DatabaseModelCollectionMetadata.cs" />
     <Compile Include="DataModels\Metadata\DatabaseModelMetadata.cs" />
@@ -137,6 +138,7 @@
     <Compile Include="ViewModels\DialogViewModelBase.cs" />
     <Compile Include="Services\IDialogService.cs" />
     <Compile Include="ViewModels\Fields\FieldViewModel.cs" />
+    <Compile Include="ViewModels\Fields\LookupFieldViewModel.cs" />
     <Compile Include="ViewModels\ICompositeViewModel.cs" />
     <Compile Include="ViewModels\ModelBinding.cs" />
     <Compile Include="ViewModels\ValidatedViewModelBase.cs" />
