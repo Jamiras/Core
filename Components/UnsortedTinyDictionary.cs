@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Jamiras.Components
 {
+    [DebuggerDisplay("Count = {Count}")]
+    [DebuggerTypeProxy(typeof(TinyDictionary<,>.TinyDictionaryDebugView))]
     internal sealed class UnsortedTinyDictionary<TKey, TValue> : ITinyDictionary<TKey, TValue>
     {
         private TKey[] _keys;
