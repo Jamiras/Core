@@ -46,6 +46,31 @@ namespace Jamiras.Components
             }
         }
 
+        internal sealed class TinyDictionaryDebugView
+        {
+            public TinyDictionaryDebugView(ITinyDictionary<TKey, TValue> dictionary)
+            {
+                _dictionary = dictionary;
+            }
+
+            private readonly ITinyDictionary<TKey, TValue> _dictionary;
+
+            [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+            public KeyValuePair<TKey, TValue>[] Items
+            {
+                get
+                {
+                    var array = new KeyValuePair<TKey, TValue>[_dictionary.Count];
+
+                    int index = 0;
+                    foreach (var kvp in _dictionary)
+                        array[index++] = kvp;
+
+                    return array;
+                }
+            }
+        }
+
         #endregion
 
         #region IDictionary<TKey,TValue> Members

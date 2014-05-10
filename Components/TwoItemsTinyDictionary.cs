@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Jamiras.Components
 {
+    [DebuggerDisplay("Count = {Count}")]
+    [DebuggerTypeProxy(typeof(TinyDictionary<,>.TinyDictionaryDebugView))]
     internal sealed class TwoItemsTinyDictionary<TKey, TValue> : ITinyDictionary<TKey, TValue>
     {
         private readonly TKey _key1, _key2;
