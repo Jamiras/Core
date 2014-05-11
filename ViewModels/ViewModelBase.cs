@@ -80,7 +80,7 @@ namespace Jamiras.ViewModels
         /// <summary>
         /// Updates all bound view model properties from the backing models.
         /// </summary>
-        public void Refresh()
+        public virtual void Refresh()
         {
             RefreshBindings();
 
