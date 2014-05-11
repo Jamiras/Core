@@ -101,7 +101,7 @@ namespace Jamiras.Controls
                         if (index + 1 == input.Length || input[index + 1] != '\'')
                             goto default;
 
-                        if (index < input.Length + 2 && input[index + 2] == '\'')
+                        if (index < input.Length - 2 && input[index + 2] == '\'')
                         {
                             FlushInline(formatStack.Peek(), input, start, index);
                             isBold = ToggleState(isBold, formatStack, () => new Bold());
