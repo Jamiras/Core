@@ -63,6 +63,7 @@
     <Compile Include="Components\EmptyTinyDictionary.cs" />
     <Compile Include="Components\ITinyDictionary.cs" />
     <Compile Include="Components\OneItemTinyDictionary.cs" />
+    <Compile Include="Components\Date.cs" />
     <Compile Include="Components\PropertyChangedPropagator.cs" />
     <Compile Include="Components\ImportingConstructorAttribute.cs" />
     <Compile Include="Components\ExportAttribute.cs" />
