@@ -36,27 +36,39 @@ namespace Jamiras.DataModels.Metadata
             {
                 query.Bind("@filterValue", primaryKey);
 
-                while (query.FetchRow())
+                if (_primaryKeyIndex == -1)
                 {
-                    T item;
-                    int id = query.GetInt32(_primaryKeyIndex);
-                    if (databaseDataModelSource != null)
+                    while (query.FetchRow())
                     {
-                        item = databaseDataModelSource.TryGet<T>(id);
-                        if (item != null)
-                        {
-                            collection.Add(item);
-                            continue;
-                        }
+                        T item = new T();
+                        _relatedMetadata.PopulateItem(item, query);
+                        collection.Add(item);
                     }
+                }
+                else
+                {
+                    while (query.FetchRow())
+                    {
+                        T item;
+                        int id = query.GetInt32(_primaryKeyIndex);
+                        if (databaseDataModelSource != null)
+                        {
+                            item = databaseDataModelSource.TryGet<T>(id);
+                            if (item != null)
+                            {
+                                collection.Add(item);
+                                continue;
+                            }
+                        }
 
-                    item = new T();
-                    _relatedMetadata.PopulateItem(item, query);
+                        item = new T();
+                        _relatedMetadata.PopulateItem(item, query);
 
-                    if (databaseDataModelSource != null)
-                        item = databaseDataModelSource.TryCache<T>(item);
+                        if (databaseDataModelSource != null)
+                            item = databaseDataModelSource.TryCache<T>(item);
 
-                    collection.Add(item);
+                        collection.Add(item);
+                    }
                 }
             }
 
@@ -67,7 +79,7 @@ namespace Jamiras.DataModels.Metadata
         {
             var queryExpression = _relatedMetadata.BuildQueryExpression();
 
-            _primaryKeyIndex = 0;
+            _primaryKeyIndex = -1;
             if (_relatedMetadata.PrimaryKeyProperty != null)
             {
                 var primaryKeyFieldName = _relatedMetadata.GetFieldMetadata(_relatedMetadata.PrimaryKeyProperty).FieldName;

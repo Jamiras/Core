@@ -19,6 +19,11 @@ namespace Jamiras.ViewModels
         /// <param name="mode">When to synchronize data.</param>
         public ModelBinding(ModelBase source, ModelProperty sourceProperty, ModelBindingMode mode)
         {
+            if (source == null)
+                throw new ArgumentNullException("source");
+            if (sourceProperty == null)
+                throw new ArgumentNullException("sourceProperty");
+
             Source = source;
             SourceProperty = sourceProperty;
             Mode = mode;
