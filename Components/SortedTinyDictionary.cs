@@ -130,7 +130,7 @@ namespace Jamiras.Components
                 else if (index == 1)
                     index2 = 2;
 
-                return new TwoItemsTinyDictionary<TKey, TValue>(_keys[index1], _values[index2], _keys[index2], _values[index2]);
+                return new TwoItemsTinyDictionary<TKey, TValue>(_keys[index1], _values[index1], _keys[index2], _values[index2]);
             }
 
             if (index + 1 < _count)
