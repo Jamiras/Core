@@ -88,6 +88,7 @@
   <ItemGroup>
     <Compile Include="Commands\CommandBaseTests.cs" />
     <Compile Include="Commands\DelegateCommandTests.cs" />
+    <Compile Include="Components\DateTests.cs" />
     <Compile Include="Components\OpenActionTests.cs" />
     <Compile Include="Components\PropertyChangedObjectTests.cs" />
     <Compile Include="Components\PropertyChangedPropagatorTests.cs" />
