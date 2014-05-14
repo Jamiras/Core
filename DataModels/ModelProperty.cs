@@ -74,6 +74,9 @@ namespace Jamiras.DataModels
                 PropertyChangedHandler = propertyChangedHandler,
             };
 
+            if (!property.IsValueValid(defaultValue))
+                throw new InvalidCastException("Cannot store " + ((defaultValue != null) ? defaultValue.GetType().Name : "null") + " in " + property.FullName + " (" + property.PropertyType.Name + ")");
+
             lock (typeof(ModelProperty))
             {
                 if (_properties == null)
@@ -134,6 +137,33 @@ namespace Jamiras.DataModels
         public override int GetHashCode()
         {
             return Key;
+        }
+
+        /// <summary>
+        /// Determines if a value can be assigned to the property.
+        /// </summary>
+        /// <param name="value">Value to test.</param>
+        /// <returns><c>true</c> if the value is valid for the property type, <c>false</c> if not.</returns>
+        public bool IsValueValid(object value)
+        {
+            // null is not value for value types
+            if (value == null)
+                return !PropertyType.IsValueType;
+
+            // direct type match, or subclass
+            if (PropertyType.IsAssignableFrom(value.GetType()))
+                return true;
+
+            // enums can be cast to ints
+            if (PropertyType.IsEnum && value is int)
+                return true;
+
+            // ints can be cast to enums
+            if (PropertyType == typeof(int) && value.GetType().IsEnum)
+                return true;
+
+            // not a valid cast
+            return false;
         }
     }
 }

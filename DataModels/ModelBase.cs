@@ -61,6 +61,9 @@ namespace Jamiras.DataModels
         /// </summary>
         internal void SetValueCore(ModelProperty property, object value)
         {
+            if (!property.IsValueValid(value))
+                throw new InvalidCastException("Cannot store " + ((value != null) ? value.GetType().Name : "null") + " in " + property.FullName + " (" + property.PropertyType.Name + ")");
+
             if (value != property.DefaultValue)
                 _values = _values.AddOrUpdate(property.Key, value);
             else
