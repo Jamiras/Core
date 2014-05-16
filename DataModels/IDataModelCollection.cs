@@ -8,5 +8,7 @@ namespace Jamiras.DataModels
     internal interface IDataModelCollection
     {
         void Add(DataModelBase item);
+
+        Type ModelType { get; }
     }
 }

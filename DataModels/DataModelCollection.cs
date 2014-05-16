@@ -16,6 +16,11 @@ namespace Jamiras.DataModels
 
         private List<T> _collection;
 
+        Type IDataModelCollection.ModelType
+        {
+            get { return typeof(T); }
+        }
+
         public void Add(T item)
         {
             throw new NotImplementedException();

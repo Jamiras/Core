@@ -20,6 +20,8 @@ namespace Jamiras.DataModels
         private readonly IDatabase _database;
         private readonly Dictionary<Type, List<WeakReference>> _items;
 
+        private readonly ModelProperty IdProperty = ModelProperty.Register(typeof(DatabaseDataModelSource), null, typeof(int), 0);
+
         /// <summary>
         /// Gets the shared instance of a data model.
         /// </summary>
@@ -50,6 +52,10 @@ namespace Jamiras.DataModels
             }
 
             var newItem = GetCopy<T>(id);
+            if (newItem == null)
+                return null;
+
+            newItem.SetValueCore(IdProperty, id);
 
             lock (items)
             {
@@ -98,9 +104,10 @@ namespace Jamiras.DataModels
                 int idx;
                 var existingItem = FindItem<T>(items, id, metadata, out idx);
                 if (existingItem != null)
-                    item = existingItem;
-                else
-                    items.Insert(idx, new WeakReference(item));
+                    return existingItem;
+
+                item.SetValueCore(IdProperty, id);
+                items.Insert(idx, new WeakReference(item));
             }
 
             return item;
@@ -123,7 +130,7 @@ namespace Jamiras.DataModels
                     continue;
                 }
 
-                int itemId = metadata.GetKey(item);
+                int itemId = (int)item.GetValue(IdProperty);
                 if (itemId == id)
                 {
                     idx = mid;
@@ -173,6 +180,24 @@ namespace Jamiras.DataModels
         }
 
         /// <summary>
+        /// Creates a new data model instance.
+        /// </summary>
+        /// <typeparam name="T">Type of data model to create.</typeparam>
+        /// <returns>New instance initialized with default values.</returns>
+        public T Create<T>()
+            where T : DataModelBase, new()
+        {
+            var metadata = _metadataRepository.GetModelMetadata(typeof(T)) as DatabaseModelMetadata;
+            if (metadata == null)
+                throw new ArgumentException("No metadata registered for " + typeof(T).FullName);
+
+            var model = new T();
+            metadata.InitializeNewRecord(model);
+            model = TryCache<T>(model);
+            return model;
+        }
+
+        /// <summary>
         /// Commits changes made to a data model. The shared model and any future copies will contain committed changes.
         /// </summary>
         /// <param name="dataModel">Data model to commit.</param>
@@ -183,7 +208,71 @@ namespace Jamiras.DataModels
             if (metadata == null)
                 return false;
 
-            return metadata.Commit(model, _database);
+            var key = metadata.GetKey(model);
+            if (!metadata.Commit(model, _database))
+                return false;
+
+            var newKey = metadata.GetKey(model);
+            if (key != newKey)
+            {
+                var fieldMetadata = metadata.GetFieldMetadata(metadata.PrimaryKeyProperty);
+
+                List<WeakReference> items;
+                if (_items.TryGetValue(model.GetType(), out items))
+                {
+                    lock (items)
+                    {
+                        for (int i = items.Count - 1; i >= 0; i--)
+                        {
+                            if (ReferenceEquals(model, items[i].Target))
+                            {
+                                items.RemoveAt(i);
+                                break;
+                            }
+                        }
+
+                        int idx;
+                        FindItem<DataModelBase>(items, newKey, metadata, out idx);
+                        model.SetValueCore(IdProperty, newKey);
+                        items.Insert(idx, new WeakReference(model));
+                    }
+                }
+
+                ExpireCollections(model.GetType());
+                UpdateKeys(fieldMetadata, key, newKey);
+            }
+
+            model.AcceptChanges();
+            return true;
+        }
+
+        private void ExpireCollections(Type modelType)
+        {
+            foreach (var kvp in _items)
+            {
+                if (typeof(IDataModelCollection).IsAssignableFrom(kvp.Key))
+                {
+                    bool expire = false;
+
+                    foreach (var item in kvp.Value)
+                    {
+                        var collection = item.Target as IDataModelCollection;
+                        if (collection != null)
+                        {
+                            expire = collection.ModelType.IsAssignableFrom(modelType);
+                            break;
+                        }
+                    }
+
+                    if (expire)
+                        kvp.Value.Clear();
+                }
+            }
+        }
+
+        private void UpdateKeys(FieldMetadata fieldMetadata, int key, int newKey)
+        {
+            // TODO: find all foreign keys pointing at fieldMetadata.FieldName and update the associated property
         }
     }
 }

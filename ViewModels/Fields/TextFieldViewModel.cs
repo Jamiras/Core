@@ -66,6 +66,15 @@ namespace Jamiras.ViewModels.Fields
             base.OnModelPropertyChanged(e);
         }
 
+        public void LostFocus()
+        {
+            WaitForTyping(() =>
+            {
+                if (IsValid)
+                    Refresh();
+            });
+        }
+
         private void WaitForTyping(Action callback)
         {
             lock (typeof(TextFieldViewModel))
@@ -74,7 +83,7 @@ namespace Jamiras.ViewModels.Fields
                 {
                     _typingTimer = new System.Timers.Timer(300);
                     _typingTimer.AutoReset = false;
-                    _typingTimer.Elapsed += (o, e) => _typingTimerCallback();
+                    _typingTimer.Elapsed += TypingTimerElapsed;
                 }
                 else
                 {
@@ -84,6 +93,14 @@ namespace Jamiras.ViewModels.Fields
                 _typingTimerCallback = callback;
                 _typingTimer.Start();
             }
+        }
+
+        private void TypingTimerElapsed(object sender, EventArgs e)
+        {
+            var callback = _typingTimerCallback;
+            _typingTimerCallback = null;
+
+            callback();
         }
 
         private System.Timers.Timer _typingTimer;

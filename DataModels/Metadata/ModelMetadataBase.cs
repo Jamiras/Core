@@ -46,7 +46,7 @@ namespace Jamiras.DataModels.Metadata
         /// Initializes default values for a new record.
         /// </summary>
         /// <param name="dataModel">Model to initialize.</param>
-        protected virtual void InitializeNewRecord(ModelBase dataModel)
+        public virtual void InitializeNewRecord(ModelBase dataModel)
         {
         }
     }

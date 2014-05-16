@@ -32,6 +32,13 @@ namespace Jamiras.DataModels
         T Query<T>(object searchData) where T : DataModelBase, new();
 
         /// <summary>
+        /// Creates a new data model instance.
+        /// </summary>
+        /// <typeparam name="T">Type of data model to create.</typeparam>
+        /// <returns>New instance initialized with default values.</returns>
+        T Create<T>() where T : DataModelBase, new();
+
+        /// <summary>
         /// Commits changes made to a data model. The shared model and any future copies will contain committed changes.
         /// </summary>
         /// <param name="dataModel">Data model to commit.</param>
