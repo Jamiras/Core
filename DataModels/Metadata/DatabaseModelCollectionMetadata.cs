@@ -65,7 +65,7 @@ namespace Jamiras.DataModels.Metadata
                         _relatedMetadata.PopulateItem(item, query);
 
                         if (databaseDataModelSource != null)
-                            item = databaseDataModelSource.TryCache<T>(item);
+                            item = databaseDataModelSource.TryCache<T>(id, item);
 
                         collection.Add(item);
                     }

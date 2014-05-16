@@ -4,6 +4,7 @@ using System.Linq;
 using Jamiras.Database;
 using Jamiras.DataModels.Metadata;
 using System.Collections;
+using System.Diagnostics;
 
 namespace Jamiras.DataModels
 {
@@ -13,14 +14,151 @@ namespace Jamiras.DataModels
         {
             _metadataRepository = metadataRepository;
             _database = database;
-            _items = new Dictionary<Type, List<WeakReference>>();
+            _items = new Dictionary<Type, DataModelCache>();
         }
 
         private readonly IDataModelMetadataRepository _metadataRepository;
         private readonly IDatabase _database;
-        private readonly Dictionary<Type, List<WeakReference>> _items;
+        private readonly Dictionary<Type, DataModelCache> _items;
 
-        private readonly ModelProperty IdProperty = ModelProperty.Register(typeof(DatabaseDataModelSource), null, typeof(int), 0);
+        [DebuggerTypeProxy(typeof(DataModelCacheDebugView))]
+        private class DataModelCache
+        {
+            public DataModelCache()
+            {
+                _cache = new List<KeyValuePair<int, WeakReference>>();
+            }
+
+            public override string ToString()
+            {
+                return "Count = " + _cache.Count;
+            }
+
+            internal sealed class DataModelCacheDebugView
+            {
+                public DataModelCacheDebugView(DataModelCache cache)
+                {
+                    _cache = cache;
+                }
+
+                private readonly DataModelCache _cache;
+
+                [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+                public KeyValuePair<int, DataModelBase>[] Items
+                {
+                    get
+                    {
+                        var list = new List<KeyValuePair<int, DataModelBase>>();
+                        foreach (var item in _cache._cache)
+                        {
+                            if (item.Value.IsAlive)
+                                list.Add(new KeyValuePair<int, DataModelBase>(item.Key, (DataModelBase)item.Value.Target));
+                        }
+
+                        return list.ToArray();
+                    }
+                }
+            }
+
+            private readonly List<KeyValuePair<int, WeakReference>> _cache;
+
+            public DataModelBase TryGet(int id)
+            {
+                lock (_cache)
+                {
+                    int idx;
+                    return Find(id, out idx);
+                }
+            }
+
+            public DataModelBase TryCache(int id, DataModelBase model)
+            {
+                lock (_cache)
+                {
+                    int idx;
+                    DataModelBase cached = Find(id, out idx);
+                    if (cached != null)
+                        return cached;
+
+                    _cache.Insert(idx, new KeyValuePair<int, WeakReference>(id, new WeakReference(model)));
+                    return model;
+                }
+            }
+
+            public void UpdateKey(int id, int newId)
+            {
+                lock (_cache)
+                {
+                    int idx;
+                    var model = Find(id, out idx);
+                    if (model != null)
+                    {
+                        _cache.RemoveAt(idx);
+
+                        if (Find(newId, out idx) != null)
+                            _cache.Insert(idx, new KeyValuePair<int, WeakReference>(newId, new WeakReference(model)));
+                    }
+                }
+            }
+
+            private DataModelBase Find(int id, out int insertIndex)
+            {
+                int low = 0;
+                int high = _cache.Count - 1;
+
+                while (low <= high)
+                {
+                    int mid = (low + high) / 2;
+                    var item = _cache[mid].Value.Target as DataModelBase;
+                    if (item == null)
+                    {
+                        _cache.RemoveAt(mid);
+                        high--;
+                        continue;
+                    }
+
+                    int itemId = _cache[mid].Key;
+                    if (itemId == id)
+                    {
+                        insertIndex = mid;
+                        return item;
+                    }
+
+                    if (itemId > id)
+                        high = mid - 1;
+                    else
+                        low = mid + 1;
+                }
+
+                insertIndex = low;
+                return null;
+            }
+
+            public void ExpireCollections(Type modelType)
+            {
+                bool expire = false;
+
+                lock (_cache)
+                {
+                    foreach (var item in _cache)
+                    {
+                        var collection = item.Value.Target as IDataModelCollection;
+                        if (collection != null)
+                        {
+                            expire = collection.ModelType.IsAssignableFrom(modelType);
+                            break;
+                        }
+                        else if (item.Value.Target != null)
+                        {
+                            break;
+                        }
+                    }
+
+                    if (expire)
+                        _cache.Clear();
+                }
+            }
+        }
 
         /// <summary>
         /// Gets the shared instance of a data model.
@@ -35,116 +173,50 @@ namespace Jamiras.DataModels
             if (metadata == null)
                 throw new ArgumentException("No metadata registered for " + typeof(T).FullName);
 
-            List<WeakReference> items;
-            if (!_items.TryGetValue(typeof(T), out items))
-            {
-                items = new List<WeakReference>();
-                _items[typeof(T)] = items;
-            }
-
             T item;
-            int idx;
-            lock (items)
+
+            DataModelCache cache;
+            if (_items.TryGetValue(typeof(T), out cache))
             {
-                item = FindItem<T>(items, id, metadata, out idx);
+                item = cache.TryGet(id) as T;
                 if (item != null)
                     return item;
             }
-
-            var newItem = GetCopy<T>(id);
-            if (newItem == null)
-                return null;
-
-            newItem.SetValueCore(IdProperty, id);
-
-            lock (items)
+            else
             {
-                item = FindItem<T>(items, id, metadata, out idx);
-                if (item == null)
-                {
-                    item = newItem;
-                    items.Insert(idx, new WeakReference(newItem));
-                }
+                cache = new DataModelCache();
+                _items[typeof(T)] = cache;
             }
 
+            item = GetCopy<T>(id);
+            if (item == null)
+                return null;
+
+            item = (T)cache.TryCache(id, item);
             return item;
         }
 
         internal T TryGet<T>(int id)
             where T : DataModelBase
         {
-            List<WeakReference> items;
-            if (!_items.TryGetValue(typeof(T), out items))
+            DataModelCache cache;
+            if (!_items.TryGetValue(typeof(T), out cache))
                 return null;
 
-            var metadata = (DatabaseModelMetadata)_metadataRepository.GetModelMetadata(typeof(T));
-
-            int idx;
-            return FindItem<T>(items, id, metadata, out idx);
+            return cache.TryGet(id) as T;
         }
 
-        internal T TryCache<T>(T item)
+        internal T TryCache<T>(int id, T item)
             where T : DataModelBase
         {
-            var metadata = _metadataRepository.GetModelMetadata(typeof(T)) as DatabaseModelMetadata;
-            if (metadata == null)
-                throw new ArgumentException("No metadata registered for " + typeof(T).FullName);
-
-            List<WeakReference> items;
-            if (!_items.TryGetValue(typeof(T), out items))
+            DataModelCache cache;
+            if (!_items.TryGetValue(typeof(T), out cache))
             {
-                items = new List<WeakReference>();
-                _items[typeof(T)] = items;
+                cache = new DataModelCache();
+                _items[typeof(T)] = cache;
             }
 
-            int id = metadata.GetKey(item);
-
-            lock (items)
-            {
-                int idx;
-                var existingItem = FindItem<T>(items, id, metadata, out idx);
-                if (existingItem != null)
-                    return existingItem;
-
-                item.SetValueCore(IdProperty, id);
-                items.Insert(idx, new WeakReference(item));
-            }
-
-            return item;
-        }
-
-        private T FindItem<T>(List<WeakReference> items, int id, DatabaseModelMetadata metadata, out int idx)
-            where T : DataModelBase
-        {
-            int low = 0;
-            int high = items.Count - 1;
-
-            while (low <= high)
-            {
-                int mid = (low + high) / 2;
-                var item = items[mid].Target as T;
-                if (item == null)
-                {
-                    items.RemoveAt(mid);
-                    high--;
-                    continue;
-                }
-
-                int itemId = (int)item.GetValue(IdProperty);
-                if (itemId == id)
-                {
-                    idx = mid;
-                    return item;
-                }
-
-                if (itemId > id)
-                    high = mid - 1;
-                else
-                    low = mid + 1;
-            }
-
-            idx = low;
-            return null;
+            return (T)cache.TryCache(id, item);
         }
 
         /// <summary>
@@ -193,7 +265,8 @@ namespace Jamiras.DataModels
 
             var model = new T();
             metadata.InitializeNewRecord(model);
-            model = TryCache<T>(model);
+            int id = metadata.GetKey(model);
+            model = TryCache<T>(id, model);
             return model;
         }
 
@@ -217,26 +290,9 @@ namespace Jamiras.DataModels
             {
                 var fieldMetadata = metadata.GetFieldMetadata(metadata.PrimaryKeyProperty);
 
-                List<WeakReference> items;
-                if (_items.TryGetValue(model.GetType(), out items))
-                {
-                    lock (items)
-                    {
-                        for (int i = items.Count - 1; i >= 0; i--)
-                        {
-                            if (ReferenceEquals(model, items[i].Target))
-                            {
-                                items.RemoveAt(i);
-                                break;
-                            }
-                        }
-
-                        int idx;
-                        FindItem<DataModelBase>(items, newKey, metadata, out idx);
-                        model.SetValueCore(IdProperty, newKey);
-                        items.Insert(idx, new WeakReference(model));
-                    }
-                }
+                DataModelCache cache;
+                if (_items.TryGetValue(model.GetType(), out cache))
+                    cache.UpdateKey(key, newKey);
 
                 ExpireCollections(model.GetType());
                 UpdateKeys(fieldMetadata, key, newKey);
@@ -251,22 +307,7 @@ namespace Jamiras.DataModels
             foreach (var kvp in _items)
             {
                 if (typeof(IDataModelCollection).IsAssignableFrom(kvp.Key))
-                {
-                    bool expire = false;
-
-                    foreach (var item in kvp.Value)
-                    {
-                        var collection = item.Target as IDataModelCollection;
-                        if (collection != null)
-                        {
-                            expire = collection.ModelType.IsAssignableFrom(modelType);
-                            break;
-                        }
-                    }
-
-                    if (expire)
-                        kvp.Value.Clear();
-                }
+                    kvp.Value.ExpireCollections(modelType);
             }
         }
 
