@@ -53,7 +53,7 @@ namespace Jamiras.DataModels.Metadata
         {
             base.RegisterFieldMetadata(property, metadata);
 
-            if (metadata is AutoIncrementFieldMetadata && PrimaryKeyProperty == null)
+            if ((metadata.Attributes & FieldAttributes.PrimaryKey) != 0 && PrimaryKeyProperty == null)
                 PrimaryKeyProperty = property;
 
             if ((metadata.Attributes & FieldAttributes.RefreshAfterCommit) != 0)
@@ -219,13 +219,29 @@ namespace Jamiras.DataModels.Metadata
         private void AppendQueryValue(StringBuilder builder, object value, FieldMetadata fieldMetadata, IDatabase database)
         {
             if (value == null)
+            {
                 builder.Append("NULL");
-            else if (fieldMetadata is IntegerFieldMetadata)
-                builder.Append((int)value);
-            else if (fieldMetadata is StringFieldMetadata)
-                builder.AppendFormat("'{0}'", database.Escape((string)value));
+            }
+            else if (value is int || value.GetType().IsEnum)
+            {
+                int iVal = (int)value;
+                if (iVal == 0 && fieldMetadata is ForeignKeyFieldMetadata)
+                    builder.Append("NULL");
+                else
+                    builder.Append(iVal);
+            }
+            else if (value is string)
+            {
+                string sVal = (string)value;
+                if (sVal.Length == 0)
+                    builder.Append("NULL");
+                else
+                    builder.AppendFormat("'{0}'", database.Escape(sVal));
+            }
             else
+            {
                 throw new NotSupportedException(fieldMetadata.GetType().Name);
+            }
         }
 
         /// <summary>
@@ -270,8 +286,7 @@ namespace Jamiras.DataModels.Metadata
             return true;
         }
 
-        private bool CreateRow(ModelBase model, IDatabase database,
-            string tableName, IEnumerable<int> tablePropertyKeys)
+        private bool CreateRow(ModelBase model, IDatabase database, string tableName, IEnumerable<int> tablePropertyKeys)
         {
             var properties = new List<ModelProperty>();
             foreach (var propertyKey in tablePropertyKeys)
@@ -336,23 +351,63 @@ namespace Jamiras.DataModels.Metadata
             if (dataModel != null && !dataModel.IsModified)
                 return true;
 
+            string primaryTable = null;
+            var foreignKeys = new List<ModelProperty>();
+            if (PrimaryKeyProperty != null)
+            {
+                var fieldMetadata = GetFieldMetadata(PrimaryKeyProperty);
+                var idx = fieldMetadata.FieldName.IndexOf('.');
+                primaryTable = (idx > 0) ? fieldMetadata.FieldName.Substring(0, idx).ToLower() : String.Empty;
+
+                List<int> keys;
+                if (_tableMetadata.TryGetValue(primaryTable, out keys))
+                {
+                    foreach (int propertyKey in keys)
+                    {
+                        var property = ModelProperty.GetPropertyForKey(propertyKey);
+                        var foreignKeyFieldMetadata = GetFieldMetadata(property) as ForeignKeyFieldMetadata;
+                        if (foreignKeyFieldMetadata != null)
+                            foreignKeys.Add(property);
+                    }
+                }
+            }
+
             foreach (var kvp in _tableMetadata)
             {
-                if (!UpdateRow(model, database, kvp.Key, kvp.Value))
+                ModelProperty tableKeyProperty = null;
+                if (kvp.Key == primaryTable)
+                {
+                    tableKeyProperty = PrimaryKeyProperty;
+                }
+                else
+                {
+                    foreach (var property in foreignKeys)
+                    {
+                        var fieldMetadata = (ForeignKeyFieldMetadata)GetFieldMetadata(property);
+                        if (fieldMetadata.RelatedFieldName.StartsWith(kvp.Key) && fieldMetadata.RelatedFieldName[kvp.Key.Length] == '.')
+                        {
+                            tableKeyProperty = property;
+                            break;
+                        }
+                    }
+                }
+
+                if (!UpdateRow(model, database, kvp.Key, kvp.Value, tableKeyProperty))
                     return false;
             }
 
             return true;
         }
 
-        private bool UpdateRow(ModelBase model, IDatabase database, string tableName, IEnumerable<int> tablePropertyKeys)
+        private bool UpdateRow(ModelBase model, IDatabase database, string tableName, IEnumerable<int> tablePropertyKeys, ModelProperty tableKeyProperty)
         {
             var dataModel = model as DataModelBase;
             var properties = new List<ModelProperty>();
             foreach (var propertyKey in tablePropertyKeys)
             {
+                var property = ModelProperty.GetPropertyForKey(propertyKey);
                 if (dataModel == null || dataModel.UpdatedPropertyKeys.Contains(propertyKey))
-                    properties.Add(ModelProperty.GetPropertyForKey(propertyKey));
+                    properties.Add(property);
             }
 
             if (properties.Count == 0)
@@ -366,12 +421,9 @@ namespace Jamiras.DataModels.Metadata
             foreach (var property in properties)
             {
                 var fieldMetadata = GetFieldMetadata(property);
-                var idx = fieldMetadata.FieldName.IndexOf('.');
-                var fieldName = (idx > 0) ? fieldMetadata.FieldName.Substring(idx + 1) : fieldMetadata.FieldName;
 
-                builder.Append('[');
-                builder.Append(fieldName);
-                builder.Append("]=");
+                builder.Append(fieldMetadata.FieldName);
+                builder.Append('=');
 
                 var value = model.GetValue(property);
                 value = CoerceValueToDatabase(property, fieldMetadata, value);
@@ -382,7 +434,27 @@ namespace Jamiras.DataModels.Metadata
 
             builder.Length -= 2;
 
-            return (database.ExecuteCommand(builder.ToString()) == 1);
+            if (tableKeyProperty != null)
+            {
+                var fieldMetadata = GetFieldMetadata(tableKeyProperty);
+
+                builder.Append(" WHERE ");
+                builder.Append(fieldMetadata.FieldName);
+                builder.Append("=");
+
+                var value = model.GetValue(tableKeyProperty);
+                value = CoerceValueToDatabase(tableKeyProperty, fieldMetadata, value);
+                AppendQueryValue(builder, value, fieldMetadata, database);
+            }
+
+            try
+            {
+                return (database.ExecuteCommand(builder.ToString()) == 1);
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
         }
     }
 }
