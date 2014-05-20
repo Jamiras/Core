@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Interop;
 using Jamiras.Components;
 using Jamiras.ViewModels;
+using System.Windows.Input;
 
 namespace Jamiras.Services
 {
@@ -106,6 +107,8 @@ namespace Jamiras.Services
             {
                 var hwnd = new WindowInteropHelper(window).Handle;
                 SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_SYSMENU);
+
+                view.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
             };
 
             viewModel.PropertyChanged += handler;

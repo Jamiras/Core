@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Jamiras.Components;
+using System;
 
 namespace Jamiras.DataModels
 {
@@ -47,10 +48,10 @@ namespace Jamiras.DataModels
                 if (!_updatedValues.TryGetValue(property.Key, out currentValue))
                     currentValue = originalValue;
 
-                if (value == currentValue)
+                if (Object.Equals(value, currentValue))
                     return;
 
-                if (value == originalValue)
+                if (Object.Equals(value, originalValue))
                     _updatedValues = _updatedValues.Remove(property.Key);
                 else
                     _updatedValues = _updatedValues.AddOrUpdate(property.Key, value);
