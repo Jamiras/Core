@@ -81,45 +81,81 @@ namespace Jamiras.Services
             window.Content = view;
             window.DataContext = viewModel;
 
-            window.SizeToContent = SizeToContent.WidthAndHeight;
+            if (!viewModel.CanResize)
+            {
+                window.ResizeMode = ResizeMode.NoResize;
+                window.SizeToContent = SizeToContent.WidthAndHeight;
+            }
+            else if ((bool)viewModel.GetValue(DialogViewModelBase.IsLocationRememberedProperty))
+            {
+                var windowSettingsRepository = ServiceRepository.Instance.FindService<IWindowSettingsRepository>();
+                windowSettingsRepository.RestoreSettings(window);
+
+                window.Closed += (o, e) => windowSettingsRepository.RememberSettings((Window)o);
+            }
+
             window.SnapsToDevicePixels = true;
-            window.ResizeMode = ResizeMode.NoResize;
-            window.ShowInTaskbar = false;
+            window.ShowInTaskbar = viewModel.CanClose;
             window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
             window.SetBinding(Window.TitleProperty, "DialogTitle");
 
+            if (viewModel.CanResize)
+            {
+                window.MaxHeight = System.Windows.SystemParameters.WorkArea.Height;
+                window.MaxWidth = System.Windows.SystemParameters.WorkArea.Width;
+            }
+
+            EventHandler closeHandler = null;
             CancelEventHandler preventCloseHandler = (o, e) =>
             {
                 e.Cancel = true;
             };
 
-            PropertyChangedEventHandler handler = (o, e) =>
+            PropertyChangedEventHandler propertyChangedHandler = (o, e) =>
             {
                 if (e.PropertyName == "DialogResult" && viewModel.DialogResult != DialogResult.None)
                 {
                     window.Closing -= preventCloseHandler;
+                    window.Closed -= closeHandler;
                     window.Dispatcher.BeginInvoke(new Action(window.Close), null);
+                }
+            };
+
+            closeHandler = (o, e) =>
+            {
+                if (viewModel.DialogResult == DialogResult.None)
+                {
+                    viewModel.PropertyChanged -= propertyChangedHandler;
+                    viewModel.SetValue(DialogViewModelBase.DialogResultProperty, DialogResult.Cancel);
                 }
             };
 
             window.Loaded += (o, e) =>
             {
-                var hwnd = new WindowInteropHelper(window).Handle;
-                SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_SYSMENU);
+                if (!viewModel.CanClose && !viewModel.CanResize)
+                {
+                    var hwnd = new WindowInteropHelper(window).Handle;
+                    SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_SYSMENU);
+                }
 
                 view.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
             };
 
-            viewModel.PropertyChanged += handler;
-            window.Closing += preventCloseHandler;
+            viewModel.PropertyChanged += propertyChangedHandler;
+
+            if (!viewModel.CanClose)
+                window.Closing += preventCloseHandler;
+            else
+                window.Closed += closeHandler;
+
             window.Owner = _dialogStack.Peek();
             _dialogStack.Push(window);
 
             window.ShowDialog();
 
             _dialogStack.Pop();
-            viewModel.PropertyChanged -= handler;
+            viewModel.PropertyChanged -= propertyChangedHandler;
 
             return viewModel.DialogResult;
         }

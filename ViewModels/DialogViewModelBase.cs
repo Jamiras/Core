@@ -105,6 +105,43 @@ namespace Jamiras.ViewModels
         }
 
         /// <summary>
+        /// Gets whether the dialog has a close button.
+        /// </summary>
+        public bool CanClose
+        {
+            get { return (bool)GetValue(CanCloseProperty); }
+            protected set { SetValue(CanCloseProperty, value); }
+        }
+
+        public static readonly ModelProperty CanCloseProperty =
+            ModelProperty.Register(typeof(DialogViewModelBase), "CanClose", typeof(bool), false);
+
+        /// <summary>
+        /// Gets whether the dialog can be resized.
+        /// </summary>
+        public bool CanResize
+        {
+            get { return (bool)GetValue(CanResizeProperty); }
+            protected set { SetValue(CanResizeProperty, value); }
+        }
+
+        public static readonly ModelProperty CanResizeProperty =
+            ModelProperty.Register(typeof(DialogViewModelBase), "CanResize", typeof(bool), false);
+
+        /// <summary>
+        /// Gets or sets whether the window remembers it's size/location
+        /// </summary>
+        protected bool IsLocationRemembered
+        {
+            get { return (bool)GetValue(IsLocationRememberedProperty); }
+            set { SetValue(IsLocationRememberedProperty, value); }
+        }
+
+        internal static readonly ModelProperty IsLocationRememberedProperty =
+            ModelProperty.Register(typeof(DialogViewModelBase), null, typeof(bool), false);
+
+
+        /// <summary>
         /// Shows the dialog for the view model.
         /// </summary>
         /// <returns>How the dialog was closed.</returns>
