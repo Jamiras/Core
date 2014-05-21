@@ -69,6 +69,7 @@ namespace Jamiras.ViewModels
             string errors = Validate();
             if (String.IsNullOrEmpty(errors))
             {
+                Commit();
                 DialogResult = DialogResult.Ok;
             }
             else

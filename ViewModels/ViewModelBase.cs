@@ -110,7 +110,7 @@ namespace Jamiras.ViewModels
             if (e.Property.Key != _propertyBeingSynchronized)
             {
                 ModelBinding binding;
-                if (_bindings.TryGetValue(e.Property.Key, out binding))
+                if (_bindings.TryGetValue(e.Property.Key, out binding) && binding.Mode == ModelBindingMode.TwoWay)
                     PushValue(binding, e.Property, e.NewValue);
             }
 

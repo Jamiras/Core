@@ -59,6 +59,7 @@
     <Compile Include="Commands\CommandBase.cs" />
     <Compile Include="Commands\DelegateCommand.cs" />
     <Compile Include="Commands\DependencyCommandBase.cs" />
+    <Compile Include="Commands\DisabledCommand.cs" />
     <Compile Include="Components\BucketTinyDictionary.cs" />
     <Compile Include="Components\EmptyTinyDictionary.cs" />
     <Compile Include="Components\ITinyDictionary.cs" />

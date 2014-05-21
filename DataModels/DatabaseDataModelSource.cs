@@ -95,7 +95,7 @@ namespace Jamiras.DataModels
                     {
                         _cache.RemoveAt(idx);
 
-                        if (Find(newId, out idx) != null)
+                        if (Find(newId, out idx) == null)
                             _cache.Insert(idx, new KeyValuePair<int, WeakReference>(newId, new WeakReference(model)));
                     }
                 }
