@@ -106,6 +106,7 @@
     <Compile Include="DataModels\DataModelBase.cs" />
     <Compile Include="DataModels\IDataModelCollection.cs" />
     <Compile Include="DataModels\Metadata\AutoIncrementFieldMetadata.cs" />
+    <Compile Include="DataModels\Metadata\DoubleFieldMetadata.cs" />
     <Compile Include="DataModels\Metadata\DatabaseModelCollectionMetadata.cs" />
     <Compile Include="DataModels\Metadata\DatabaseModelMetadata.cs" />
     <Compile Include="DataModels\Metadata\DataModelMetadataRepository.cs" />

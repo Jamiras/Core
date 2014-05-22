@@ -221,6 +221,12 @@ namespace Jamiras.DataModels.Metadata
             if (fieldMetadata.Type == typeof(int))
                 return query.GetInt32(index);
 
+            if (fieldMetadata.Type == typeof(double))
+                return Convert.ToDouble(query.GetFloat(index));
+
+            if (fieldMetadata.Type == typeof(float))
+                return query.GetFloat(index);
+
             throw new NotSupportedException(fieldMetadata.GetType().Name);
         }
 

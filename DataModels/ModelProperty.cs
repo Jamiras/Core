@@ -162,6 +162,10 @@ namespace Jamiras.DataModels
             if (PropertyType == typeof(int) && value.GetType().IsEnum)
                 return true;
 
+            // doubles
+            if (value is Single)
+                return (PropertyType == typeof(double) || PropertyType == typeof(float));
+
             // not a valid cast
             return false;
         }
