@@ -24,10 +24,19 @@ namespace Jamiras.Database
         /// <returns>True if the next row was fetched, false if there are no more rows.</returns>
         public bool FetchRow()
         {
-            if (_reader == null)
-                _reader = _command.ExecuteReader();
+            try
+            {
+                if (_reader == null)
+                    _reader = _command.ExecuteReader();
 
-            return _reader.Read();
+                return _reader.Read();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(_command.CommandText);
+                Debug.WriteLine(ex.Message);
+                throw;
+            }
         }
 
         /// <summary>

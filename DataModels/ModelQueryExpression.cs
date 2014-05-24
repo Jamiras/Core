@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Jamiras.Components;
 using Jamiras.Database;
+using System.Diagnostics;
 
 namespace Jamiras.DataModels
 {
@@ -20,18 +21,19 @@ namespace Jamiras.DataModels
         private List<JoinData> _joins;
         private string _filterExpression;
 
+        [DebuggerDisplay("{LocalKeyFieldName} => {RemoteKeyFieldName}")]
         private class JoinData
         {
-            public JoinData(string localKeyFieldName, string remoteKeyFieldName, bool localKeyIsPrimary)
+            public JoinData(string localKeyFieldName, string remoteKeyFieldName, bool useOuterJoin)
             {
                 LocalKeyFieldName = localKeyFieldName;
                 RemoteKeyFieldName = remoteKeyFieldName;
-                LocalKeyIsPrimary = localKeyIsPrimary;
+                UseOuterJoin = useOuterJoin;
             }
 
             public string LocalKeyFieldName { get; private set; }
             public string RemoteKeyFieldName { get; private set; }
-            public bool LocalKeyIsPrimary { get; private set; }
+            public bool UseOuterJoin { get; private set; }
         }
 
         public void AddQueryField(string fieldName)
@@ -49,12 +51,12 @@ namespace Jamiras.DataModels
             _filters.Add(new KeyValuePair<string, string>(fieldName, '~' + bindVariable));
         }
 
-        public void AddJoin(string localKeyFieldName, string remoteKeyFieldName, bool localKeyIsPrimary)
+        public void AddJoin(string localKeyFieldName, string remoteKeyFieldName, bool useOuterJoin)
         {
             if (_joins == null)
                 _joins = new List<JoinData>();
 
-            _joins.Add(new JoinData(localKeyFieldName, remoteKeyFieldName, localKeyIsPrimary));
+            _joins.Add(new JoinData(localKeyFieldName, remoteKeyFieldName, useOuterJoin));
         }
 
         public void SetFilterExpression(string filterExpression)
@@ -70,12 +72,10 @@ namespace Jamiras.DataModels
             builder.Append("SELECT ");
             AppendQueryFields(builder);
             builder.Append(" FROM ");
-            var whereJoins = AppendJoinTree(builder, tables);
+            AppendJoinTree(builder, tables);
             builder.Append(" WHERE ");
 
-            bool wherePresent = AppendFilters(builder, !String.IsNullOrEmpty(whereJoins));
-            wherePresent = AppendWhereJoins(builder, whereJoins, wherePresent);
-
+            bool wherePresent = AppendFilters(builder);
             if (!wherePresent)
                 builder.Length -= 7;
 
@@ -121,97 +121,68 @@ namespace Jamiras.DataModels
             builder.Length -= 2;
         }
 
-        private string AppendJoinTree(StringBuilder builder, List<string> tables)
+        private void AppendJoinTree(StringBuilder builder, List<string> tables)
         {
+            string primaryTable = tables[0];
             if (tables.Count == 1)
             {
-                builder.Append(tables[0]);
-                return String.Empty;
+                builder.Append(primaryTable);
+                return;
             }
 
-            if (_joins == null)
-                throw new InvalidOperationException("No join defined between " + tables[0] + " and " + tables[1]);
+            tables.RemoveAt(0);
+            for (int i = 1; i < tables.Count; i++)
+                builder.Append('(');
 
-            int tableCount = tables.Count;
-            foreach (var join in _joins.Where(j => j.LocalKeyIsPrimary))
+            builder.Append(primaryTable);
+
+            if (_joins != null)
             {
-                int idx = join.LocalKeyFieldName.IndexOf('.');
-                if (idx > 0)
+                foreach (var join in _joins)
                 {
-                    string table = join.LocalKeyFieldName.Substring(0, idx);
-                    idx = tables.IndexOf(table);
-                    if (idx >= 0)
+                    var fieldName = join.RemoteKeyFieldName;
+                    int idx = fieldName.IndexOf('.');
+                    if (idx > 0)
                     {
-                        tables.RemoveAt(idx);
-                        builder.Append(table);
-                    }
-                }
+                        string joinFieldName = join.LocalKeyFieldName;
+                        string table = fieldName.Substring(0, idx);
+                        if (table == primaryTable)
+                        {
+                            joinFieldName = fieldName;
+                            fieldName = join.LocalKeyFieldName;
+                            idx = fieldName.IndexOf('.');
+                            if (idx > 0)
+                                table = fieldName.Substring(0, idx);
+                        }
 
-                idx = join.RemoteKeyFieldName.IndexOf('.');
-                if (idx > 0)
-                {
-                    string table = join.RemoteKeyFieldName.Substring(0, idx);
-                    idx = tables.IndexOf(table);
-                    if (idx >= 0)
-                    {
-                        tables.RemoveAt(idx);
-                        builder.Append(" LEFT OUTER JOIN ");
-                        builder.Append(table);
-                        builder.Append(" ON ");
-                        builder.Append(join.LocalKeyFieldName);
-                        builder.Append('=');
-                        builder.Append(join.RemoteKeyFieldName);
+                        idx = tables.IndexOf(table);
+                        if (idx >= 0)
+                        {
+                            tables.RemoveAt(idx);
+
+                            if (join.UseOuterJoin)
+                                builder.Append(" LEFT OUTER JOIN ");
+                            else
+                                builder.Append(" INNER JOIN ");
+
+                            builder.Append(table);
+                            builder.Append(" ON ");
+                            builder.Append(fieldName);
+                            builder.Append('=');
+                            builder.Append(joinFieldName);
+
+                            if (tables.Count > 0)
+                                builder.Append(')');
+                        }
                     }
                 }
             }
 
-            if (tables.Count == 0)
-                return String.Empty;
-
-            if (tables.Count < tableCount)
-                builder.Append(", ");
-
-            var whereJoins = new StringBuilder();
-            foreach (var join in _joins.Where(j => !j.LocalKeyIsPrimary))
-            {
-                int idx = join.LocalKeyFieldName.IndexOf('.');
-                if (idx > 0)
-                {
-                    string table = join.LocalKeyFieldName.Substring(0, idx);
-                    idx = tables.IndexOf(table);
-                    if (idx >= 0)
-                    {
-                        tables.RemoveAt(idx);
-                        builder.Append(table);
-                        builder.Append(", ");
-                    }
-                }
-
-                idx = join.RemoteKeyFieldName.IndexOf('.');
-                if (idx > 0)
-                {
-                    string table = join.RemoteKeyFieldName.Substring(0, idx);
-                    idx = tables.IndexOf(table);
-                    if (idx >= 0)
-                    {
-                        tables.RemoveAt(idx);
-                        builder.Append(table);
-                        builder.Append(", ");
-                    }
-                }
-
-                whereJoins.Append(join.LocalKeyFieldName);
-                whereJoins.Append('=');
-                whereJoins.Append(join.RemoteKeyFieldName);
-                whereJoins.Append(" AND ");
-            }
-
-            builder.Length -= 2;
-            whereJoins.Length -= 5;
-            return whereJoins.ToString();
+            if (tables.Count > 0)
+                throw new InvalidOperationException("No join defined between " + primaryTable + " and " + tables[0]);
         }
 
-        private bool AppendFilters(StringBuilder builder, bool hasWhereJoins)
+        private bool AppendFilters(StringBuilder builder)
         {
             if (_filters.Count == 0)
                 return false;
@@ -225,9 +196,6 @@ namespace Jamiras.DataModels
             }
 
             var filterExpression = _filterExpression ?? BuildFilterExpression();
-
-            if (hasWhereJoins)
-                builder.Append('(');
 
             int idx = 0;
             while (idx < filterExpression.Length)
@@ -267,9 +235,6 @@ namespace Jamiras.DataModels
                     AppendFilter(builder, filter.Key, filter.Value);
                 }
             }
-
-            if (hasWhereJoins)
-                builder.Append(')');
 
             return true;
         }
