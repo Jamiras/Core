@@ -1,12 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Collections;
 
 namespace Jamiras.DataModels
 {
-    internal interface IDataModelCollection
+    internal interface IDataModelCollection : IEnumerable
     {
+        bool IsCollectionChanged { get; }
+
         void Add(DataModelBase item);
 
         Type ModelType { get; }

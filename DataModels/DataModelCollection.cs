@@ -16,6 +16,15 @@ namespace Jamiras.DataModels
 
         private List<T> _collection;
 
+        private static readonly ModelProperty IsCollectionChangedProperty =
+            ModelProperty.Register(typeof(DataModelCollection<T>), null, typeof(bool), false);
+
+        public bool IsCollectionChanged
+        {
+            get { return (bool)GetValue(IsCollectionChangedProperty); }
+            private set { SetValue(IsCollectionChangedProperty, value); }
+        }
+
         Type IDataModelCollection.ModelType
         {
             get { return typeof(T); }
@@ -23,7 +32,8 @@ namespace Jamiras.DataModels
 
         public void Add(T item)
         {
-            throw new NotImplementedException();
+            _collection.Add(item);
+            IsCollectionChanged = true;
         }
 
         void IDataModelCollection.Add(DataModelBase item)
@@ -33,7 +43,11 @@ namespace Jamiras.DataModels
 
         public void Clear()
         {
-            throw new NotImplementedException();
+            if (_collection.Count > 0)
+            {
+                _collection.Clear();
+                IsCollectionChanged = true;
+            }
         }
 
         public bool Contains(T item)
@@ -58,7 +72,11 @@ namespace Jamiras.DataModels
 
         public bool Remove(T item)
         {
-            return _collection.Remove(item);
+            if (!_collection.Remove(item))
+                return false;
+
+            IsCollectionChanged = true;
+            return true;
         }
 
         public IEnumerator<T> GetEnumerator()

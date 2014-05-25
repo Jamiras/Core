@@ -15,6 +15,7 @@ namespace Jamiras.ViewModels
             : base(dialogService)
         {
             _message = message;
+            CancelButtonText = null;
         }
 
         public string Message

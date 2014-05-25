@@ -158,6 +158,8 @@ namespace Jamiras.ViewModels
 
         private void PushCommitBindings()
         {
+            OnBeforeCommit();
+
             foreach (var kvp in _bindings)
             {
                 if (kvp.Value.Mode == ModelBindingMode.Committed)
@@ -167,6 +169,13 @@ namespace Jamiras.ViewModels
                     PushValue(kvp.Value, viewModelProperty, value);
                 }
             }
+        }
+
+        /// <summary>
+        /// Performs any data processing that needs to occur prior to committing.
+        /// </summary>
+        protected virtual void OnBeforeCommit()
+        {
         }
     }
 }

@@ -11,17 +11,26 @@ namespace Jamiras.DataModels.Metadata
         public DatabaseModelCollectionMetadata()
         {
             var metadataRepository = ServiceRepository.Instance.FindService<IDataModelMetadataRepository>();
-            _relatedMetadata = (DatabaseModelMetadata)metadataRepository.GetModelMetadata(typeof(T));
+            RelatedMetadata = (DatabaseModelMetadata)metadataRepository.GetModelMetadata(typeof(T));
         }
 
-        private DatabaseModelMetadata _relatedMetadata;
+        protected DatabaseModelMetadata RelatedMetadata { get; private set; }
+
         private string _queryString;
         private int _primaryKeyIndex;
+
+        private static readonly ModelProperty CollectionFilterKeyProperty = 
+            ModelProperty.Register(typeof(DataModelBase), null, typeof(int), 0);
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         protected override sealed void RegisterFieldMetadata(ModelProperty property, FieldMetadata metadata)
         {
             throw new NotSupportedException();
+        }
+
+        public override int GetKey(ModelBase model)
+        {
+            return (int)model.GetValue(CollectionFilterKeyProperty);
         }
 
         public override bool Query(ModelBase model, object primaryKey, IDatabase database)
@@ -32,6 +41,9 @@ namespace Jamiras.DataModels.Metadata
             var databaseDataModelSource = ServiceRepository.Instance.FindService<IDataModelSource>() as DatabaseDataModelSource;
             var collection = (IDataModelCollection)model;
 
+            if (primaryKey is int)
+                model.SetValue(CollectionFilterKeyProperty, (int)primaryKey);
+
             using (var query = database.PrepareQuery(_queryString))
             {
                 query.Bind("@filterValue", primaryKey);
@@ -41,7 +53,7 @@ namespace Jamiras.DataModels.Metadata
                     while (query.FetchRow())
                     {
                         T item = new T();
-                        _relatedMetadata.PopulateItem(item, query);
+                        RelatedMetadata.PopulateItem(item, query);
                         collection.Add(item);
                     }
                 }
@@ -62,7 +74,7 @@ namespace Jamiras.DataModels.Metadata
                         }
 
                         item = new T();
-                        _relatedMetadata.PopulateItem(item, query);
+                        RelatedMetadata.PopulateItem(item, query);
 
                         if (databaseDataModelSource != null)
                             item = databaseDataModelSource.TryCache<T>(id, item);
@@ -77,15 +89,15 @@ namespace Jamiras.DataModels.Metadata
 
         private string BuildQueryString()
         {
-            var queryExpression = _relatedMetadata.BuildQueryExpression();
+            var queryExpression = RelatedMetadata.BuildQueryExpression();
 
             _primaryKeyIndex = -1;
-            if (_relatedMetadata.PrimaryKeyProperty != null)
+            if (RelatedMetadata.PrimaryKeyProperty != null)
             {
-                var primaryKeyFieldName = _relatedMetadata.GetFieldMetadata(_relatedMetadata.PrimaryKeyProperty).FieldName;
+                var primaryKeyFieldName = RelatedMetadata.GetFieldMetadata(RelatedMetadata.PrimaryKeyProperty).FieldName;
 
                 int index = 0;
-                foreach (var metadata in _relatedMetadata.AllFieldMetadata.Values)
+                foreach (var metadata in RelatedMetadata.AllFieldMetadata.Values)
                 {
                     if (primaryKeyFieldName == metadata.FieldName)
                     {
@@ -104,6 +116,19 @@ namespace Jamiras.DataModels.Metadata
 
         protected virtual void CustomizeQuery(ModelQueryExpression queryExpression)
         {
+        }
+
+        protected override bool UpdateRows(ModelBase model, IDatabase database)
+        {
+            var collection = (IDataModelCollection)model;
+            var enumerator = collection.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                if (!RelatedMetadata.Commit((ModelBase)enumerator.Current, database))
+                    return false;
+            }
+
+            return true;
         }
     }
 }

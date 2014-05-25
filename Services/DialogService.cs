@@ -4,16 +4,30 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Interop;
 using Jamiras.Components;
 using Jamiras.ViewModels;
-using System.Windows.Input;
 
 namespace Jamiras.Services
 {
     [Export(typeof(IDialogService))]
     internal class DialogService : IDialogService
     {
+        public DialogService()
+        {
+            RegisterDialogHandler(typeof(MessageBoxViewModel), CreateMessageBoxView);
+        }
+
+        private FrameworkElement CreateMessageBoxView(DialogViewModelBase viewModel)
+        {
+            var textBlock = new System.Windows.Controls.TextBlock();
+            textBlock.Margin = new Thickness(4);
+            textBlock.SetBinding(System.Windows.Controls.TextBlock.TextProperty, "Message");
+            textBlock.TextWrapping = TextWrapping.Wrap;
+            return new Jamiras.Controls.OkCancelView(textBlock);
+        }
+
         /// <summary>
         /// Gets or sets the main window of the application.
         /// </summary>
@@ -80,6 +94,9 @@ namespace Jamiras.Services
             Window window = new Window();
             window.Content = view;
             window.DataContext = viewModel;
+
+            if (String.IsNullOrEmpty(viewModel.DialogTitle))
+                viewModel.DialogTitle = _mainWindow.Title;
 
             if (!viewModel.CanResize)
             {

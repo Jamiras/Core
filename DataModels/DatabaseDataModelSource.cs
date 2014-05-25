@@ -266,7 +266,8 @@ namespace Jamiras.DataModels
             var model = new T();
             metadata.InitializeNewRecord(model);
             int id = metadata.GetKey(model);
-            model = TryCache<T>(id, model);
+            if (id != 0)
+                model = TryCache<T>(id, model);
             return model;
         }
 

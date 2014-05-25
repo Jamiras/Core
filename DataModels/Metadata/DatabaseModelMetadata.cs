@@ -36,7 +36,7 @@ namespace Jamiras.DataModels.Metadata
         /// </summary>
         /// <param name="model">The model to get the primary key for.</param>
         /// <returns>The primary key of the model.</returns>
-        public int GetKey(ModelBase model)
+        public virtual int GetKey(ModelBase model)
         {
             if (PrimaryKeyProperty == null)
                 throw new InvalidOperationException("Could not determine primary key for " + this.GetType().Name);
@@ -279,6 +279,11 @@ namespace Jamiras.DataModels.Metadata
                     AppendQueryNull(builder);
                 else
                     builder.AppendFormat("'{0}'", database.Escape(sVal));
+            }
+            else if (value is double || value is float)
+            {
+                double dVal = (double)value;
+                builder.Append(dVal);
             }
             else
             {
