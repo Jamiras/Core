@@ -62,6 +62,19 @@ namespace Jamiras.DataModels
 
             private readonly List<KeyValuePair<int, WeakReference>> _cache;
 
+            public IEnumerable<DataModelBase> Models
+            {
+                get
+                {
+                    foreach (var item in _cache)
+                    {
+                        var model = item.Value.Target as DataModelBase;
+                        if (model != null && item.Value.IsAlive)
+                            yield return model;
+                    }
+                }
+            }
+    
             public DataModelBase TryGet(int id)
             {
                 lock (_cache)
@@ -289,13 +302,9 @@ namespace Jamiras.DataModels
             var newKey = metadata.GetKey(model);
             if (key != newKey)
             {
-                var fieldMetadata = metadata.GetFieldMetadata(metadata.PrimaryKeyProperty);
-
-                DataModelCache cache;
-                if (_items.TryGetValue(model.GetType(), out cache))
-                    cache.UpdateKey(key, newKey);
-
                 ExpireCollections(model.GetType());
+
+                var fieldMetadata = metadata.GetFieldMetadata(metadata.PrimaryKeyProperty);
                 UpdateKeys(fieldMetadata, key, newKey);
             }
 
@@ -314,7 +323,64 @@ namespace Jamiras.DataModels
 
         private void UpdateKeys(FieldMetadata fieldMetadata, int key, int newKey)
         {
-            // TODO: find all foreign keys pointing at fieldMetadata.FieldName and update the associated property
+            foreach (var kvp in _items)
+            {
+                kvp.Value.UpdateKey(key, newKey);
+
+                var modelMetadata = _metadataRepository.GetModelMetadata(kvp.Key) as DatabaseModelMetadata;
+                var collectionMetadata = modelMetadata as IDataModelCollectionMetadata;
+                if (collectionMetadata != null)
+                {
+                    modelMetadata = collectionMetadata.ModelMetadata as DatabaseModelMetadata;
+                    UpdateKeys(kvp.Value.Models, collectionMetadata.CollectionFilterKeyProperty, key, newKey);
+                }
+
+                if (modelMetadata == null)
+                    continue;
+
+                var dependantProperty = GetDependantProperty(modelMetadata, fieldMetadata.FieldName);
+                if (dependantProperty != null && dependantProperty.PropertyType == typeof(int))
+                {
+                    if (collectionMetadata != null)
+                    {
+                        foreach (IDataModelCollection collection in kvp.Value.Models)
+                            UpdateKeys(collection, dependantProperty, key, newKey);
+                    }
+                    else
+                    {
+                        UpdateKeys(kvp.Value.Models, dependantProperty, key, newKey);
+                    }
+                }
+            }
+        }
+
+        private ModelProperty GetDependantProperty(ModelMetadata modelMetadata, string fieldName)
+        {
+            foreach (var kvp in modelMetadata.AllFieldMetadata)
+            {
+                if (kvp.Value.FieldName == fieldName)
+                    return ModelProperty.GetPropertyForKey(kvp.Key);
+
+                var fkMetadata = kvp.Value as ForeignKeyFieldMetadata ;
+                if (fkMetadata != null && fkMetadata.RelatedFieldName == fieldName)
+                    return ModelProperty.GetPropertyForKey(kvp.Key);
+            }
+
+            return null;
+        }
+
+        private void UpdateKeys(IEnumerable collection, ModelProperty property, int key, int newKey)
+        {
+            foreach (ModelBase model in collection)
+            {
+                var currentValue = (int)model.GetValue(property);
+                if (currentValue == key)
+                {
+                    // ASSERT: if a temporary key exists in the record, it must already be modified, so changing 
+                    // the temporary key to a permanent one will also mark the record as modified, which is ok.
+                    model.SetValue(property, newKey);
+                }
+            }
         }
     }
 }

@@ -241,6 +241,15 @@ namespace Jamiras.DataModels.Metadata
             if (fieldMetadata is ForeignKeyFieldMetadata && databaseValue == null && property.PropertyType == typeof(int))
                 return 0;
 
+            if (property.PropertyType == typeof(Date))
+            {
+                Date date;
+                if (databaseValue != null && Date.TryParse((string)databaseValue, out date))
+                    return date;
+                
+                return Date.Empty;
+            }
+
             return databaseValue;
         }
 
@@ -254,6 +263,14 @@ namespace Jamiras.DataModels.Metadata
         {
             if (fieldMetadata is ForeignKeyFieldMetadata && (int)modelValue == 0 && property.PropertyType == typeof(int))
                 return null;
+
+            if (property.PropertyType == typeof(Date))
+            {
+                Date date = (Date)modelValue;
+                if (date.IsEmpty)
+                    return null;
+                return date.ToDataString();
+            }
 
             return modelValue;
         }

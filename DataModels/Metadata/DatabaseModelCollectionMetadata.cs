@@ -5,7 +5,7 @@ using Jamiras.Database;
 
 namespace Jamiras.DataModels.Metadata
 {
-    public class DatabaseModelCollectionMetadata<T> : DatabaseModelMetadata
+    public class DatabaseModelCollectionMetadata<T> : DatabaseModelMetadata, IDataModelCollectionMetadata
         where T : DataModelBase, new()
     {
         public DatabaseModelCollectionMetadata()
@@ -16,8 +16,18 @@ namespace Jamiras.DataModels.Metadata
 
         protected DatabaseModelMetadata RelatedMetadata { get; private set; }
 
+        ModelMetadata IDataModelCollectionMetadata.ModelMetadata
+        {
+            get { return RelatedMetadata; }
+        }
+
         private string _queryString;
         private int _primaryKeyIndex;
+
+        ModelProperty IDataModelCollectionMetadata.CollectionFilterKeyProperty
+        {
+            get { return CollectionFilterKeyProperty; }
+        }
 
         private static readonly ModelProperty CollectionFilterKeyProperty = 
             ModelProperty.Register(typeof(DataModelBase), null, typeof(int), 0);

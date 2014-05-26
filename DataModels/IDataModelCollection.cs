@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using Jamiras.DataModels.Metadata;
 
 namespace Jamiras.DataModels
 {
@@ -10,5 +11,12 @@ namespace Jamiras.DataModels
         void Add(DataModelBase item);
 
         Type ModelType { get; }
+    }
+
+    internal interface IDataModelCollectionMetadata
+    {
+        ModelMetadata ModelMetadata { get; }
+
+        ModelProperty CollectionFilterKeyProperty { get; }
     }
 }
