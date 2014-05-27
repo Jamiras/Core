@@ -120,11 +120,18 @@ namespace Jamiras.DataModels
         {
             for (int i = 0; i < _keyCount; i++)
             {
-                if (type.IsAssignableFrom(_properties[i].OwnerType))
+                if (_properties[i].OwnerType.IsAssignableFrom(type))
                     yield return _properties[i];
             }
         }
 
+        /// <summary>
+        /// Determines whether the specified <see cref="T:System.Object"/> is equal to the current <see cref="T:System.Object"/>.
+        /// </summary>
+        /// <returns>
+        /// true if the specified <see cref="T:System.Object"/> is equal to the current <see cref="T:System.Object"/>; otherwise, false.
+        /// </returns>
+        /// <param name="obj">The <see cref="T:System.Object"/> to compare with the current <see cref="T:System.Object"/>. </param><filterpriority>2</filterpriority>
         public override bool Equals(object obj)
         {
             var that = obj as ModelProperty;
@@ -134,6 +141,10 @@ namespace Jamiras.DataModels
             return (Key == that.Key);
         }
 
+        /// <summary>
+        /// Serves as a hash function for a particular type. 
+        /// </summary>
+        /// <filterpriority>2</filterpriority>
         public override int GetHashCode()
         {
             return Key;

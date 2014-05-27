@@ -33,7 +33,7 @@ namespace Jamiras.Core.Tests.ViewModels
             Assert.That(_viewModel.DialogTitle, Is.Null);
             Assert.That(_viewModel.DialogResult, Is.EqualTo(DialogResult.None));
             Assert.That(_viewModel.OkButtonText, Is.EqualTo("OK"));
-            Assert.That(_viewModel.CancelButtonText, Is.Null);
+            Assert.That(_viewModel.CancelButtonText, Is.EqualTo("Cancel"));
         }
 
         [Test]
@@ -74,10 +74,9 @@ namespace Jamiras.Core.Tests.ViewModels
             public TestViewModelWithErrors(IDialogService dialogService)
                 : base(dialogService)
             {
-                //AddValidation("Foo", ValidateFoo);
             }
 
-            private string ValidateFoo()
+            public override string Validate()
             {
                 return "Foo is invalid.";
             }
@@ -121,9 +120,14 @@ namespace Jamiras.Core.Tests.ViewModels
             List<string> propertiesChanged = new List<string>();
             _viewModel.PropertyChanged += (o, e) => propertiesChanged.Add(e.PropertyName);
 
-            _viewModel.CancelButtonText = "Cancel";
-            Assert.That(_viewModel.CancelButtonText, Is.EqualTo("Cancel"));
-            Assert.That(propertiesChanged, Contains.Item("CancelButtonText"));
+            _viewModel.CancelButtonText = "Abort";
+            Assert.That(_viewModel.CancelButtonText, Is.EqualTo("Abort"));
+            Assert.That(propertiesChanged, Has.Member("CancelButtonText"));
+
+            propertiesChanged.Clear();
+            _viewModel.CancelButtonText = null;
+            Assert.That(_viewModel.CancelButtonText, Is.Null);
+            Assert.That(propertiesChanged, Has.Member("CancelButtonText"));
         }
 
         [Test]

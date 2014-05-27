@@ -99,6 +99,8 @@
     <Compile Include="Components\WeakActionTests.cs" />
     <Compile Include="Components\WeakEventHandlerTests.cs" />
     <Compile Include="Controls\CalendarControlTests.cs" />
+    <Compile Include="DataModels\ModelBaseTests.cs" />
+    <Compile Include="DataModels\ModelPropertyTests.cs" />
     <Compile Include="IO\BitReaderTests.cs" />
     <Compile Include="IO\BitWriterTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -106,6 +108,7 @@
     <Compile Include="ViewModels\DialogViewModelBaseTests.cs" />
     <Compile Include="ViewModels\LookupItemTests.cs" />
     <Compile Include="ViewModels\MessageBoxViewModelTests.cs" />
+    <Compile Include="ViewModels\ValidatedViewModelBaseTests.cs" />
     <Compile Include="ViewModels\ViewModelBaseTests.cs" />
     <Compile Include="WeakReferenceTester.cs" />
   </ItemGroup>

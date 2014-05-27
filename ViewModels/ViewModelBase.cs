@@ -98,7 +98,7 @@ namespace Jamiras.ViewModels
                 RefreshBinding(kvp.Key, kvp.Value);
         }
 
-        private void RefreshBinding(int localPropertyKey, ModelBinding binding)
+        internal virtual void RefreshBinding(int localPropertyKey, ModelBinding binding)
         {
             object value;
             if (binding.TryPullValue(out value))
@@ -112,13 +112,20 @@ namespace Jamiras.ViewModels
                 ModelBinding binding;
                 if (_bindings.TryGetValue(e.Property.Key, out binding) && binding.Mode == ModelBindingMode.TwoWay)
                     PushValue(binding, e.Property, e.NewValue);
+                else
+                    OnUnboundModelPropertyChanged(e);
             }
 
             base.OnModelPropertyChanged(e);
         }
 
+        internal virtual void OnUnboundModelPropertyChanged(ModelPropertyChangedEventArgs e)
+        {
+        }
+
         internal virtual void PushValue(ModelBinding binding, ModelProperty localProperty, object value)
         {
+            // can't use binding.TryPushValue here because we want special handling of the call to model.SetValue
             if (binding.Converter != null)
             {
                 if (binding.Converter.ConvertBack(ref value) != null)
@@ -142,7 +149,7 @@ namespace Jamiras.ViewModels
         }
 
         /// <summary>
-        /// Commits any <see cref="BindingMode.Committed"/> bindings.
+        /// Commits any <see cref="ModelBindingMode.Committed"/> bindings.
         /// </summary>
         public void Commit()
         {

@@ -13,6 +13,19 @@ namespace Jamiras.ViewModels
         protected ValidatedViewModelBase()
         {
             _errors = EmptyTinyDictionary<string, string>.Instance;
+
+            ValidateDefaults();
+        }
+
+        private void ValidateDefaults()
+        {
+            foreach (var property in ModelProperty.GetPropertiesForType(GetType()))
+            {
+                var value = property.DefaultValue;
+                var error = Validate(property, value);
+                if (!String.IsNullOrEmpty(error))
+                    SetError(property, error);
+            }
         }
 
         private ITinyDictionary<string, string> _errors;
@@ -30,41 +43,67 @@ namespace Jamiras.ViewModels
             private set { SetValue(IsValidProperty, value); }
         }
 
+        internal override void RefreshBinding(int localPropertyKey, ModelBinding binding)
+        {
+            var property = ModelProperty.GetPropertyForKey(localPropertyKey);
+
+            string error;
+            object value = binding.PullValue(out error);
+            if (!String.IsNullOrEmpty(error))
+            {
+                SetError(property, error);
+            }
+            else
+            {
+                error = Validate(property, value);
+                SetError(property, error);
+
+                SynchronizeValue(this, property, value);
+            }
+        }
+
+        internal override void OnUnboundModelPropertyChanged(ModelPropertyChangedEventArgs e)
+        {
+            var error = Validate(e.Property, e.NewValue);
+            SetError(e.Property, error);
+
+            base.OnUnboundModelPropertyChanged(e);
+        }
+
         internal override void PushValue(ModelBinding binding, ModelProperty localProperty, object value)
         {
+            // first, validate against the view model
             string errorMessage = Validate(localProperty, value);
-
-            if (binding.Converter != null)
-                errorMessage = binding.Converter.ConvertBack(ref value);
-
-            if (errorMessage == null)
+            if (String.IsNullOrEmpty(errorMessage))
             {
-                if (_metadataRepository == null)
-                    _metadataRepository = ServiceRepository.Instance.FindService<IDataModelMetadataRepository>();
+                // then validate the value can be coerced into the source model
+                if (binding.Converter != null)
+                    errorMessage = binding.Converter.ConvertBack(ref value);
 
-                var metadata = _metadataRepository.GetModelMetadata(binding.Source.GetType());
-                if (metadata != null)
+                if (String.IsNullOrEmpty(errorMessage))
                 {
-                    var fieldMetadata = metadata.GetFieldMetadata(binding.SourceProperty);
-                    errorMessage = fieldMetadata.Validate(binding.Source, value);
+                    // finally, validate against the field metadata
+                    if (_metadataRepository == null)
+                        _metadataRepository = ServiceRepository.Instance.FindService<IDataModelMetadataRepository>();
+
+                    var metadata = _metadataRepository.GetModelMetadata(binding.Source.GetType());
+                    if (metadata != null)
+                    {
+                        var fieldMetadata = metadata.GetFieldMetadata(binding.SourceProperty);
+                        errorMessage = fieldMetadata.Validate(binding.Source, value);
+                    }
                 }
             }
 
             if (!String.IsNullOrEmpty(errorMessage))
             {
-                errorMessage = FormatErrorMessage(errorMessage);
-                _errors = _errors.AddOrUpdate(localProperty.PropertyName, errorMessage);
-                IsValid = false;
+                SetError(localProperty, FormatErrorMessage(errorMessage));
             }
             else
             {
-                if (_errors.Count > 0)
-                {
-                    _errors = _errors.Remove(localProperty.PropertyName);
-                    if (_errors.Count == 0)
-                        IsValid = true;
-                }
+                SetError(localProperty, null);
 
+                // base.PushValue minus the conversion
                 SynchronizeValue(binding.Source, binding.SourceProperty, value);
             }
         }
@@ -87,6 +126,11 @@ namespace Jamiras.ViewModels
 
         #region IDataErrorInfo Members
 
+        /// <summary>
+        /// Sets the error message for a property.
+        /// </summary>
+        /// <param name="property">Property to set error message for.</param>
+        /// <param name="errorMessage">Message to set, <c>null</c> to clear message.</param>
         protected void SetError(ModelProperty property, string errorMessage)
         {
             SetError(property.PropertyName, errorMessage);

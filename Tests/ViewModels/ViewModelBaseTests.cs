@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
+using Jamiras.DataModels;
 using Jamiras.ViewModels;
+using Jamiras.ViewModels.Converters;
 using NUnit.Framework;
 
 namespace Jamiras.Core.Tests.ViewModels
@@ -9,111 +10,228 @@ namespace Jamiras.Core.Tests.ViewModels
     [TestFixture]
     class ViewModelBaseTests
     {
-        private class TestViewModel : ValidatedViewModelBase
+        private class TestModel : ModelBase
         {
-            public TestViewModel()
+            public static readonly ModelProperty StrProperty = ModelProperty.Register(typeof(TestModel), "Str", typeof(string), "Happy");
+
+            public string Str
             {
-                //AddValidation("Text", ValidateText);
+                get { return (string)GetValue(StrProperty); }
+                set { SetValue(StrProperty, value); }
             }
 
-            public string Text
-            {
-                get { return _text; }
-                set
-                {
-                    if (_text != value)
-                    {
-                        _text = value;
-                        OnPropertyChanged(new PropertyChangedEventArgs("Text"));
-                    }
-                }
-            }
-            private string _text;
+            public static readonly ModelProperty IntegerProperty = ModelProperty.Register(typeof(TestModel), "Integer", typeof(int), 0);
 
             public int Integer
             {
-                get { return _integer; }
-                set
-                {
-                    if (_integer != value)
-                    {
-                        _integer = value;
-                        OnPropertyChanged(() => Integer);
-                    }
-                }
-            }
-            private int _integer;
-
-            private string ValidateText()
-            {
-                if (String.IsNullOrEmpty(_text))
-                    return "Text is required.";
-
-                if (_text.Length > 20)
-                    return "Text is too long.";
-
-                return String.Empty;
+                get { return (int)GetValue(IntegerProperty); }
+                set { SetValue(IntegerProperty, value); }
             }
         }
 
-        [Test]
-        public void TestInterfaces()
+        private class TestViewModel : ViewModelBase
         {
-            TestViewModel viewModel = new TestViewModel();
-            Assert.That(viewModel, Is.InstanceOf<INotifyPropertyChanged>());
-            Assert.That(viewModel, Is.InstanceOf<IDataErrorInfo>());
+            public static readonly ModelProperty TextProperty = ModelProperty.Register(typeof(TestViewModel), "Text", typeof(string), null);
+
+            public string Text
+            {
+                get { return (string)GetValue(TextProperty); }
+                set { SetValue(TextProperty, value); }
+            }
+
+            public static readonly ModelProperty IntegerProperty = ModelProperty.Register(typeof(TestViewModel), "Integer", typeof(int), 1);
+
+            public int Integer
+            {
+                get { return (int)GetValue(IntegerProperty); }
+                set { SetValue(IntegerProperty, value); }
+            }
         }
+
+        [SetUp]
+        public void Setup()
+        {
+            _model = new TestModel();
+            _viewModel = new TestViewModel();
+        }
+
+        private TestModel _model;
+        private TestViewModel _viewModel;
 
         [Test]
         public void TestInitialization()
         {
-            TestViewModel viewModel = new TestViewModel();
-            Assert.That(viewModel.Text, Is.Null);
-            Assert.That(viewModel.IsValid, Is.False);
-            Assert.That(viewModel.Validate(), Is.EqualTo("Text is required."));
+            Assert.That(_viewModel.Text, Is.Null);
+            Assert.That(_viewModel.Integer, Is.EqualTo(1));
         }
 
         [Test]
-        public void TestPropertyChanged()
+        public void TestSetBinding()
         {
-            TestViewModel viewModel = new TestViewModel();
-            Assert.That(viewModel.Text, Is.Null);
+            _model.Str = "Banana";
+            Assert.That(_viewModel.Text, Is.Null);
 
-            List<string> propertiesChanged = new List<string>();
-            viewModel.PropertyChanged += (o, e) => propertiesChanged.Add(e.PropertyName);
+            _viewModel.SetBinding(TestViewModel.TextProperty, new ModelBinding(_model, TestModel.StrProperty));
+            Assert.That(_viewModel.Text, Is.EqualTo("Banana"));
 
-            viewModel.Text = "Valid";
-            Assert.That(propertiesChanged, Contains.Item("Text"));
+            _model.Str = "Strawberry";
+            Assert.That(_viewModel.Text, Is.EqualTo("Strawberry"));
         }
 
         [Test]
-        public void TestValidation()
+        public void TestChangeBinding()
         {
-            TestViewModel viewModel = new TestViewModel();
-            IDataErrorInfo error = (IDataErrorInfo)viewModel;
+            _model.Str = "Banana";
+            Assert.That(_viewModel.Text, Is.Null);
 
-            Assert.That(viewModel.Text, Is.Null);
-            Assert.That(viewModel.IsValid, Is.False);
-            Assert.That(error["Text"], Is.EqualTo("Text is required."));
+            _viewModel.SetBinding(TestViewModel.TextProperty, new ModelBinding(_model, TestModel.StrProperty));
+            Assert.That(_viewModel.Text, Is.EqualTo("Banana"));
 
-            List<string> propertiesChanged = new List<string>();
-            viewModel.PropertyChanged += (o, e) => propertiesChanged.Add(e.PropertyName);
+            var model2 = new TestModel { Str = "Apple" };
+            _viewModel.SetBinding(TestViewModel.TextProperty, new ModelBinding(model2, TestModel.StrProperty));
+            Assert.That(_viewModel.Text, Is.EqualTo("Apple"));
 
-            viewModel.Text = "This string is way to long to fit into 20 characters.";
-            Assert.That(viewModel.IsValid, Is.False);
-            Assert.That(error["Text"], Is.EqualTo("Text is too long."));
-            Assert.That(propertiesChanged, Has.No.Member("IsValid"));
+            _model.Str = "Strawberry";
+            Assert.That(_viewModel.Text, Is.EqualTo("Apple"));
 
-            viewModel.Text = "Valid";
-            Assert.That(viewModel.IsValid, Is.True);
-            Assert.That(error["Text"], Is.EqualTo(""));
-            Assert.That(propertiesChanged, Contains.Item("IsValid"));
+            model2.Str = "Kiwi";
+            Assert.That(_viewModel.Text, Is.EqualTo("Kiwi"));
+        }
 
-            propertiesChanged.Clear();
-            viewModel.Text = String.Empty;
-            Assert.That(viewModel.IsValid, Is.False);
-            Assert.That(error["Text"], Is.EqualTo("Text is required."));
-            Assert.That(propertiesChanged, Contains.Item("IsValid"));
+        [Test]
+        public void TestClearBinding()
+        {
+            _model.Str = "Banana";
+            Assert.That(_viewModel.Text, Is.Null);
+
+            _viewModel.SetBinding(TestViewModel.TextProperty, new ModelBinding(_model, TestModel.StrProperty));
+            Assert.That(_viewModel.Text, Is.EqualTo("Banana"));
+
+            _viewModel.SetBinding(TestViewModel.TextProperty, null);
+            Assert.That(_viewModel.Text, Is.EqualTo("Banana"));
+
+            _model.Str = "Strawberry";
+            Assert.That(_viewModel.Text, Is.EqualTo("Banana"));
+        }
+
+        [Test]
+        public void TestGetBinding()
+        {
+            var binding = new ModelBinding(_model, TestModel.StrProperty);
+            _viewModel.SetBinding(TestViewModel.TextProperty, binding);
+
+            Assert.That(_viewModel.GetBinding(TestViewModel.TextProperty), Is.SameAs(binding));
+            Assert.That(_viewModel.GetBinding(TestViewModel.IntegerProperty), Is.Null);
+        }
+
+        [Test]
+        public void TestBindingModeOneWay()
+        {
+            _model.Str = "Banana";
+            Assert.That(_viewModel.Text, Is.Null);
+
+            _viewModel.SetBinding(TestViewModel.TextProperty, new ModelBinding(_model, TestModel.StrProperty, ModelBindingMode.OneWay));
+            Assert.That(_viewModel.Text, Is.EqualTo("Banana"));
+
+            _model.Str = "Strawberry";
+            Assert.That(_viewModel.Text, Is.EqualTo("Strawberry"));
+
+            var propertiesChanged = new List<string>();
+            _model.PropertyChanged += (o, e) => propertiesChanged.Add(e.PropertyName);
+
+            _viewModel.Text = "Apple";
+            Assert.That(_model.Str, Is.EqualTo("Strawberry"), "model should not have been updated");
+            Assert.That(propertiesChanged, Has.No.Member("Str"), "model should not have been updated");
+
+            _viewModel.Commit();
+            Assert.That(_model.Str, Is.EqualTo("Strawberry"), "model should not have been committed");
+            Assert.That(propertiesChanged, Has.No.Member("Str"), "model should not have been committed");
+        }
+
+        [Test]
+        public void TestBindingModeTwoWay()
+        {
+            _model.Str = "Banana";
+            Assert.That(_viewModel.Text, Is.Null);
+
+            _viewModel.SetBinding(TestViewModel.TextProperty, new ModelBinding(_model, TestModel.StrProperty, ModelBindingMode.TwoWay));
+            Assert.That(_viewModel.Text, Is.EqualTo("Banana"));
+
+            _model.Str = "Strawberry";
+            Assert.That(_viewModel.Text, Is.EqualTo("Strawberry"));
+
+            var propertiesChanged = new List<string>();
+            _model.PropertyChanged += (o, e) => propertiesChanged.Add(e.PropertyName);
+
+            _viewModel.Text = "Apple";
+            Assert.That(_model.Str, Is.EqualTo("Apple"), "model should have been updated");
+            Assert.That(propertiesChanged, Has.Member("Str"), "model should have been updated");
+        }
+
+        [Test]
+        public void TestBindingModeCommitted()
+        {
+            _model.Str = "Banana";
+            Assert.That(_viewModel.Text, Is.Null);
+
+            _viewModel.SetBinding(TestViewModel.TextProperty, new ModelBinding(_model, TestModel.StrProperty, ModelBindingMode.Committed));
+            Assert.That(_viewModel.Text, Is.EqualTo("Banana"));
+
+            _model.Str = "Strawberry";
+            Assert.That(_viewModel.Text, Is.EqualTo("Strawberry"));
+
+            var propertiesChanged = new List<string>();
+            _model.PropertyChanged += (o, e) => propertiesChanged.Add(e.PropertyName);
+
+            _viewModel.Text = "Apple";
+            Assert.That(_model.Str, Is.EqualTo("Strawberry"), "model should not have been updated");
+            Assert.That(propertiesChanged, Has.No.Member("Str"), "model should not have been updated");
+
+            _viewModel.Commit();
+            Assert.That(_model.Str, Is.EqualTo("Apple"), "model should have been updated");
+            Assert.That(propertiesChanged, Has.Member("Str"), "model should have been updated");
+        }
+
+        internal class NumberToStringConverter : IConverter
+        {
+            public string Convert(ref object value)
+            {
+                if (value is int)
+                {
+                    value = value.ToString();
+                    return null;
+                }
+
+                return "only int supported";
+            }
+
+            public string ConvertBack(ref object value)
+            {
+                int iVal;
+                if (Int32.TryParse(value.ToString(), out iVal))
+                {
+                    value = iVal;
+                    return null;
+                }
+
+                return "parse error";
+            }
+        }
+
+        [Test]
+        public void TestBindingConverter()
+        {
+            _viewModel.SetBinding(TestViewModel.TextProperty, new ModelBinding(_model, TestModel.IntegerProperty, new NumberToStringConverter()));
+            Assert.That(_viewModel.Text, Is.EqualTo("0"));
+
+            _model.Integer = 99;
+            Assert.That(_viewModel.Text, Is.EqualTo("99"));
+
+            _viewModel.Text = "123";
+            Assert.That(_model.Integer, Is.EqualTo(123));
+
+            _viewModel.Text = "abc";
+            Assert.That(_model.Integer, Is.EqualTo(123));
         }
     }
 }
