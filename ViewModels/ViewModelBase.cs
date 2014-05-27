@@ -17,6 +17,26 @@ namespace Jamiras.ViewModels
         private int _propertyBeingSynchronized;
 
         /// <summary>
+        /// Gets the value of a <see cref="ModelProperty"/> for this instance.
+        /// </summary>
+        /// <param name="property">The <see cref="ModelProperty"/> to query.</param>
+        /// <returns>The current value of the <see cref="ModelProperty"/> for this instance.</returns>
+        public override sealed object GetValue(ModelProperty property)
+        {
+            return base.GetValue(property);
+        }
+
+        /// <summary>
+        /// Sets the value of a <see cref="ModelProperty"/> for this instance.
+        /// </summary>
+        /// <param name="property">The <see cref="ModelProperty"/> to update.</param>
+        /// <param name="value">The new value for the <see cref="ModelProperty"/>.</param>
+        public override sealed void SetValue(ModelProperty property, object value)
+        {
+            base.SetValue(property, value);
+        }
+
+        /// <summary>
         /// Binds a property on a model to the view model.
         /// </summary>
         /// <param name="viewModelProperty">View model property to bind.</param>

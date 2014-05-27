@@ -24,7 +24,7 @@ namespace Jamiras.DataModels
         /// </summary>
         /// <param name="property">The <see cref="ModelProperty"/> to query.</param>
         /// <returns>The current value of the <see cref="ModelProperty"/> for this instance.</returns>
-        public override object GetValue(ModelProperty property)
+        public override sealed object GetValue(ModelProperty property)
         {
             object value;
             if (!_updatedValues.TryGetValue(property.Key, out value))
@@ -38,7 +38,7 @@ namespace Jamiras.DataModels
         /// </summary>
         /// <param name="property">The <see cref="ModelProperty"/> to update.</param>
         /// <param name="value">The new value for the <see cref="ModelProperty"/>.</param>
-        public override void SetValue(ModelProperty property, object value)
+        public override sealed void SetValue(ModelProperty property, object value)
         {
             object currentValue;
 
