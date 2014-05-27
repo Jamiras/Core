@@ -74,7 +74,7 @@ namespace Jamiras.Core.Tests.ViewModels
             public TestViewModelWithErrors(IDialogService dialogService)
                 : base(dialogService)
             {
-                AddValidation("Foo", ValidateFoo);
+                //AddValidation("Foo", ValidateFoo);
             }
 
             private string ValidateFoo()

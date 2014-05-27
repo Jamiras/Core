@@ -89,14 +89,20 @@ namespace Jamiras.ViewModels
 
         protected void SetError(ModelProperty property, string errorMessage)
         {
+            SetError(property.PropertyName, errorMessage);
+        }
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        protected void SetError(string propertyName, string errorMessage)
+        {
             if (!String.IsNullOrEmpty(errorMessage))
             {
-                _errors = _errors.AddOrUpdate(property.PropertyName, errorMessage);
+                _errors = _errors.AddOrUpdate(propertyName, errorMessage);
                 IsValid = false;
             }
             else if (_errors.Count > 0)
             {
-                _errors = _errors.Remove(property.PropertyName);
+                _errors = _errors.Remove(propertyName);
                 if (_errors.Count == 0)
                     IsValid = true;
             }
@@ -107,12 +113,12 @@ namespace Jamiras.ViewModels
             get { return Validate(); }
         }
 
-        string IDataErrorInfo.this[string columnName]
+        string IDataErrorInfo.this[string propertyName]
         {
             get
             {
                 string error;
-                if (_errors.TryGetValue(columnName, out error))
+                if (_errors.TryGetValue(propertyName, out error))
                     return error;
 
                 return String.Empty;
@@ -123,7 +129,7 @@ namespace Jamiras.ViewModels
         /// Gets the list of current errors associated to this view model.
         /// </summary>
         /// <returns>String containing all current errors for the view model (separated by newlines).</returns>
-        public string Validate()
+        public virtual string Validate()
         {
             StringBuilder builder = new StringBuilder();
             AppendErrorMessages(builder);

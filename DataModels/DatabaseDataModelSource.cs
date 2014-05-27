@@ -327,6 +327,9 @@ namespace Jamiras.DataModels
             {
                 kvp.Value.UpdateKey(key, newKey);
 
+                if (!kvp.Value.Models.Any())
+                    continue;
+
                 var modelMetadata = _metadataRepository.GetModelMetadata(kvp.Key) as DatabaseModelMetadata;
                 var collectionMetadata = modelMetadata as IDataModelCollectionMetadata;
                 if (collectionMetadata != null)
@@ -343,8 +346,16 @@ namespace Jamiras.DataModels
                 {
                     if (collectionMetadata != null)
                     {
-                        foreach (IDataModelCollection collection in kvp.Value.Models)
-                            UpdateKeys(collection, dependantProperty, key, newKey);
+                        var firstModel = kvp.Value.Models.First();
+                        if (firstModel is IDataModelCollection)
+                        {
+                            foreach (IDataModelCollection collection in kvp.Value.Models)
+                                UpdateKeys(collection, dependantProperty, key, newKey);
+                        }
+                        else
+                        {
+                            UpdateKeys(kvp.Value.Models, dependantProperty, key, newKey);
+                        }
                     }
                     else
                     {

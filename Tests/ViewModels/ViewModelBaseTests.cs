@@ -9,11 +9,11 @@ namespace Jamiras.Core.Tests.ViewModels
     [TestFixture]
     class ViewModelBaseTests
     {
-        private class TestViewModel : ViewModelBase
+        private class TestViewModel : ValidatedViewModelBase
         {
             public TestViewModel()
             {
-                AddValidation("Text", ValidateText);
+                //AddValidation("Text", ValidateText);
             }
 
             public string Text
