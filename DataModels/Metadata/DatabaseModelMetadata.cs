@@ -205,6 +205,16 @@ namespace Jamiras.DataModels.Metadata
                 model.SetValueCore(property, value);
                 index++;
             }
+
+            InitializeExistingRecord(model);
+        }
+
+        /// <summary>
+        /// Initializes default values for a record populated from the database.
+        /// </summary>
+        /// <param name="model">Model to initialize.</param>
+        protected virtual void InitializeExistingRecord(ModelBase model)
+        {
         }
 
         private object GetQueryValue(IDatabaseQuery query, int index, FieldMetadata fieldMetadata)

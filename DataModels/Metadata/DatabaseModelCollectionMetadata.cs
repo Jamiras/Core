@@ -64,6 +64,7 @@ namespace Jamiras.DataModels.Metadata
                     {
                         T item = new T();
                         RelatedMetadata.PopulateItem(item, query);
+                        InitializeExistingRecord(item);
                         collection.Add(item);
                     }
                 }
@@ -85,6 +86,7 @@ namespace Jamiras.DataModels.Metadata
 
                         item = new T();
                         RelatedMetadata.PopulateItem(item, query);
+                        InitializeExistingRecord(item);
 
                         if (databaseDataModelSource != null)
                             item = databaseDataModelSource.TryCache<T>(id, item);
