@@ -39,7 +39,7 @@ namespace Jamiras.DataModels.Metadata
         public virtual int GetKey(ModelBase model)
         {
             if (PrimaryKeyProperty == null)
-                throw new InvalidOperationException("Could not determine primary key for " + this.GetType().Name);
+                throw new InvalidOperationException("Could not determine primary key for " + GetType().Name);
 
             return (int)model.GetValue(PrimaryKeyProperty);
         }
@@ -136,9 +136,8 @@ namespace Jamiras.DataModels.Metadata
         /// Populates a model from a database.
         /// </summary>
         /// <param name="model">The uninitialized model to populate.</param>
-        /// <param name="primaryKeyValue">The primary key of the model to populate.</param>
+        /// <param name="primaryKey">The primary key of the model to populate.</param>
         /// <param name="database">The database to populate from.</param>
-        /// <param name="checkCache">Function to call to use already available models. May be <c>null</c>.</param>
         /// <returns><c>true</c> if the model was populated, <c>false</c> if not.</returns>
         public virtual bool Query(ModelBase model, object primaryKey, IDatabase database)
         {
@@ -191,7 +190,16 @@ namespace Jamiras.DataModels.Metadata
                     queryExpression.AddJoin(join.Key, join.Value, join.Key == primaryKeyFieldName);
             }
 
+            CustomizeQuery(queryExpression);
+
             return queryExpression;
+        }
+
+        /// <summary>
+        /// Allows a subclass to modify the generated query before it is executed.
+        /// </summary>
+        protected virtual void CustomizeQuery(ModelQueryExpression queryExpression)
+        {
         }
 
         internal void PopulateItem(ModelBase model, IDatabaseQuery query)
@@ -217,7 +225,7 @@ namespace Jamiras.DataModels.Metadata
         {
         }
 
-        private object GetQueryValue(IDatabaseQuery query, int index, FieldMetadata fieldMetadata)
+        private static object GetQueryValue(IDatabaseQuery query, int index, FieldMetadata fieldMetadata)
         {
             if (query.IsColumnNull(index))
                 return null;
@@ -237,6 +245,12 @@ namespace Jamiras.DataModels.Metadata
             if (fieldMetadata.Type == typeof(float))
                 return query.GetFloat(index);
 
+            if (fieldMetadata.Type == typeof(DateTime))
+                return query.GetDateTime(index);
+
+            if (fieldMetadata.Type == typeof(bool))
+                return query.GetBool(index);
+
             throw new NotSupportedException(fieldMetadata.GetType().Name);
         }
 
@@ -244,6 +258,7 @@ namespace Jamiras.DataModels.Metadata
         /// Converts a database value to a model value.
         /// </summary>
         /// <param name="property">Property to populate from the database.</param>
+        /// <param name="fieldMetadata">Additional information about the field.</param>
         /// <param name="databaseValue">Value read from the database.</param>
         /// <returns>Value to store in the model.</returns>
         protected virtual object CoerceValueFromDatabase(ModelProperty property, FieldMetadata fieldMetadata, object databaseValue)
@@ -253,6 +268,12 @@ namespace Jamiras.DataModels.Metadata
 
             if (property.PropertyType == typeof(Date))
             {
+                if (databaseValue is DateTime)
+                {
+                    var dateTime = (DateTime)databaseValue;
+                    return new Date(dateTime.Month, dateTime.Day, dateTime.Year);
+                }
+
                 Date date;
                 if (databaseValue != null && Date.TryParse((string)databaseValue, out date))
                     return date;
@@ -267,6 +288,7 @@ namespace Jamiras.DataModels.Metadata
         /// Converts a database value to a model value.
         /// </summary>
         /// <param name="property">Property to populate from the database.</param>
+        /// <param name="fieldMetadata">Additional information about the field.</param>
         /// <param name="modelValue">Value from the model.</param>
         /// <returns>Value to store in the database.</returns>
         protected virtual object CoerceValueToDatabase(ModelProperty property, FieldMetadata fieldMetadata, object modelValue)
@@ -279,13 +301,17 @@ namespace Jamiras.DataModels.Metadata
                 Date date = (Date)modelValue;
                 if (date.IsEmpty)
                     return null;
+
+                if (fieldMetadata.Type == typeof(DateTime))
+                    return new DateTime(date.Year, date.Month, date.Day);
+
                 return date.ToDataString();
             }
 
             return modelValue;
         }
 
-        private void AppendQueryValue(StringBuilder builder, object value, FieldMetadata fieldMetadata, IDatabase database)
+        private static void AppendQueryValue(StringBuilder builder, object value, FieldMetadata fieldMetadata, IDatabase database)
         {
             if (value == null)
             {
@@ -311,6 +337,18 @@ namespace Jamiras.DataModels.Metadata
             {
                 double dVal = (double)value;
                 builder.Append(dVal);
+            }
+            else if (value is DateTime)
+            {
+                DateTime dttm = (DateTime)value;
+                builder.AppendFormat("'{0}'", dttm.ToShortDateString());
+            }
+            else if (value is bool)
+            {
+                if ((bool)value)
+                    builder.Append("YES");
+                else
+                    builder.Append("NO");
             }
             else
             {
@@ -343,6 +381,17 @@ namespace Jamiras.DataModels.Metadata
             }
 
             builder.Append("NULL");
+        }
+
+        /// <summary>
+        /// Determines if the specified property is modified on a model.
+        /// </summary>
+        /// <param name="model">The model to examine.</param>
+        /// <param name="property">The property to examine.</param>
+        /// <returns><c>true</c> if the property has been modified on the model, <c>false</c> if not.</returns>
+        protected static bool IsPropertyModified(DataModelBase model, ModelProperty property)
+        {
+            return (model.IsModified && model.UpdatedPropertyKeys.Contains(property.Key));
         }
 
         /// <summary>
@@ -491,7 +540,7 @@ namespace Jamiras.DataModels.Metadata
             }
         }
 
-        private void RefreshAfterCommit(ModelBase model, IDatabase database, IEnumerable<int> tablePropertyKeys, List<ModelProperty> properties)
+        private void RefreshAfterCommit(ModelBase model, IDatabase database, IEnumerable<int> tablePropertyKeys, IEnumerable<ModelProperty> properties)
         {
             StringBuilder builder = new StringBuilder();
             builder.Append("SELECT ");
@@ -553,11 +602,6 @@ namespace Jamiras.DataModels.Metadata
             }
         }
 
-        private void RefreshAfterCommit(ModelBase model, IDatabase database)
-        {
-
-        }
-
         /// <summary>
         /// Updates rows in the database for an existing model instance.
         /// </summary>
@@ -581,8 +625,6 @@ namespace Jamiras.DataModels.Metadata
 
             foreach (var kvp in _tableMetadata)
             {
-                ModelProperty joinProperty;
-                string joinFieldName;
                 if (kvp.Key == primaryTable)
                 {
                     if (!UpdateRow(model, database, kvp.Key, kvp.Value, PrimaryKeyProperty, primaryKeyFieldName))
@@ -597,7 +639,8 @@ namespace Jamiras.DataModels.Metadata
                 }
                 else
                 {
-                    joinFieldName = GetJoin(primaryTable, kvp.Key, out joinProperty);
+                    ModelProperty joinProperty;
+                    string joinFieldName = GetJoin(primaryTable, kvp.Key, out joinProperty);
 
                     if (!UpdateRow(model, database, kvp.Key, kvp.Value, joinProperty, joinFieldName) &&
                         !CreateRow(model, database, kvp.Key, kvp.Value, joinProperty, joinFieldName))

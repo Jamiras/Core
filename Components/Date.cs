@@ -296,6 +296,16 @@ namespace Jamiras.Components
             return left._value < right._value;
         }
 
+        public static bool operator ==(Date left, Date right)
+        {
+            return left._value == right._value;
+        }
+
+        public static bool operator !=(Date left, Date right)
+        {
+            return left._value != right._value;
+        }
+
         /// <summary>
         /// Indicates whether this instance and a specified object are equal.
         /// </summary>
