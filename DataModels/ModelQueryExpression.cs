@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Jamiras.Components;
-using Jamiras.Database;
 using System.Diagnostics;
+using System.Text;
 
 namespace Jamiras.DataModels
 {
@@ -16,8 +13,8 @@ namespace Jamiras.DataModels
             _filters = new List<KeyValuePair<string, string>>();
         }
 
-        private List<string> _queryFields;
-        private List<KeyValuePair<string, string>> _filters;
+        private readonly List<string> _queryFields;
+        private readonly List<KeyValuePair<string, string>> _filters;
         private List<JoinData> _joins;
         private string _filterExpression;
 
@@ -239,7 +236,7 @@ namespace Jamiras.DataModels
             return true;
         }
 
-        private void AppendFilter(StringBuilder builder, string fieldName, string bindVariable)
+        private static void AppendFilter(StringBuilder builder, string fieldName, string bindVariable)
         {
             builder.Append(fieldName);
 
@@ -269,18 +266,6 @@ namespace Jamiras.DataModels
 
             builder.Length -= 1;
             return builder.ToString();
-        }
-
-        private bool AppendWhereJoins(StringBuilder builder, string whereJoins, bool wherePresent)
-        {
-            if (String.IsNullOrEmpty(whereJoins))
-                return wherePresent;
-
-            if (wherePresent)
-                builder.Append(" AND ");
-
-            builder.Append(whereJoins);
-            return true;
         }
     }
 }
