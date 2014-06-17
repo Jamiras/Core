@@ -83,15 +83,9 @@ namespace Jamiras.ViewModels
                 if (String.IsNullOrEmpty(errorMessage))
                 {
                     // finally, validate against the field metadata
-                    if (_metadataRepository == null)
-                        _metadataRepository = ServiceRepository.Instance.FindService<IDataModelMetadataRepository>();
-
-                    var metadata = _metadataRepository.GetModelMetadata(binding.Source.GetType());
-                    if (metadata != null)
-                    {
-                        var fieldMetadata = metadata.GetFieldMetadata(binding.SourceProperty);
+                    var fieldMetadata = GetFieldMetadata(binding);
+                    if (fieldMetadata != null)
                         errorMessage = fieldMetadata.Validate(binding.Source, value);
-                    }
                 }
             }
 
@@ -106,6 +100,27 @@ namespace Jamiras.ViewModels
                 // base.PushValue minus the conversion
                 SynchronizeValue(binding.Source, binding.SourceProperty, value);
             }
+        }
+
+        /// <summary>
+        /// Gets the field metadata for a property of the view model.
+        /// </summary>
+        protected FieldMetadata GetFieldMetadata(ModelProperty viewModelProperty)
+        {
+            var binding = GetBinding(viewModelProperty);
+            return GetFieldMetadata(binding);
+        }
+
+        private FieldMetadata GetFieldMetadata(ModelBinding binding)
+        {
+            if (_metadataRepository == null)
+                _metadataRepository = ServiceRepository.Instance.FindService<IDataModelMetadataRepository>();
+
+            var metadata = _metadataRepository.GetModelMetadata(binding.Source.GetType());
+            if (metadata != null)
+                return metadata.GetFieldMetadata(binding.SourceProperty);
+
+            return null;
         }
 
         protected virtual string FormatErrorMessage(string errorMessage)
