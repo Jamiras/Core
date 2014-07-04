@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Jamiras.Components;
-using Jamiras.Database;
 using System.Diagnostics;
+using System.Text;
 
 namespace Jamiras.DataModels
 {
@@ -16,9 +13,10 @@ namespace Jamiras.DataModels
             _filters = new List<KeyValuePair<string, string>>();
         }
 
-        private List<string> _queryFields;
-        private List<KeyValuePair<string, string>> _filters;
+        private readonly List<string> _queryFields;
+        private readonly List<KeyValuePair<string, string>> _filters;
         private List<JoinData> _joins;
+        private List<string> _orderBy;
         private string _filterExpression;
 
         [DebuggerDisplay("{LocalKeyFieldName} => {RemoteKeyFieldName}")]
@@ -59,6 +57,14 @@ namespace Jamiras.DataModels
             _joins.Add(new JoinData(localKeyFieldName, remoteKeyFieldName, useOuterJoin));
         }
 
+        public void AddOrderBy(string fieldName)
+        {
+            if (_orderBy == null)
+                _orderBy = new List<string>();
+
+            _orderBy.Add(fieldName);
+        }
+
         public void SetFilterExpression(string filterExpression)
         {
             _filterExpression = filterExpression;
@@ -78,6 +84,8 @@ namespace Jamiras.DataModels
             bool wherePresent = AppendFilters(builder);
             if (!wherePresent)
                 builder.Length -= 7;
+
+            AppendOrderBy(builder);
 
             return builder.ToString();
         }
@@ -239,7 +247,7 @@ namespace Jamiras.DataModels
             return true;
         }
 
-        private void AppendFilter(StringBuilder builder, string fieldName, string bindVariable)
+        private static void AppendFilter(StringBuilder builder, string fieldName, string bindVariable)
         {
             builder.Append(fieldName);
 
@@ -254,7 +262,23 @@ namespace Jamiras.DataModels
                 builder.Append(bindVariable);
             }
         }
-        
+
+        private void AppendOrderBy(StringBuilder builder)
+        {
+            if (_orderBy != null)
+            {
+                builder.Append(" ORDER BY ");
+
+                foreach (var orderBy in _orderBy)
+                {
+                    builder.Append(orderBy);
+                    builder.Append(", ");
+                }
+
+                builder.Length -= 2;
+            }
+        }
+
         private string BuildFilterExpression()
         {
             if (_filters.Count == 1)
@@ -269,18 +293,6 @@ namespace Jamiras.DataModels
 
             builder.Length -= 1;
             return builder.ToString();
-        }
-
-        private bool AppendWhereJoins(StringBuilder builder, string whereJoins, bool wherePresent)
-        {
-            if (String.IsNullOrEmpty(whereJoins))
-                return wherePresent;
-
-            if (wherePresent)
-                builder.Append(" AND ");
-
-            builder.Append(whereJoins);
-            return true;
         }
     }
 }

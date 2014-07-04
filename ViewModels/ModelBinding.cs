@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using Jamiras.DataModels;
 using Jamiras.ViewModels.Converters;
 
