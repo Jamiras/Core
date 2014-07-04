@@ -503,7 +503,17 @@ namespace Jamiras.DataModels.Metadata
                 var fieldMetadata = GetFieldMetadata(property);
                 if ((fieldMetadata.Attributes & FieldAttributes.GeneratedByCreate) != 0)
                 {
-                    builder.Append(fieldMetadata.FieldName);
+                    if (fieldMetadata is AutoIncrementFieldMetadata)
+                    {
+                        builder.Append("MAX(");
+                        builder.Append(fieldMetadata.FieldName);
+                        builder.Append(")");
+                    }
+                    else
+                    {
+                        builder.Append(fieldMetadata.FieldName);
+                    }
+
                     builder.Append(", ");
 
                     if (tableName == null)
