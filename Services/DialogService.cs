@@ -156,6 +156,19 @@ namespace Jamiras.Services
                     SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_SYSMENU);
                 }
 
+                window.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (window.Top < 8)
+                        window.Top = 8;
+                    else if (window.Top + window.ActualHeight > SystemParameters.WorkArea.Height)
+                        window.Top = SystemParameters.WorkArea.Height - window.ActualHeight - 8;
+
+                    if (window.Left < 8)
+                        window.Left = 8;
+                    else if (window.Left + window.ActualWidth > SystemParameters.WorkArea.Width)
+                        window.Left = SystemParameters.WorkArea.Width - window.ActualWidth - 8;
+                }));
+
                 view.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
             };
 
