@@ -71,8 +71,8 @@ namespace Jamiras.Database
                 return string.Empty;
 
             int idx = value.IndexOf('\'');
-            if (idx == -1)
-                idx = value.IndexOf('[');
+            //if (idx == -1)
+            //    idx = value.IndexOf('[');
             if (idx == -1)
                 return value;
 
@@ -81,8 +81,8 @@ namespace Jamiras.Database
             {
                 if (c == '\'')
                     builder.Append("''");
-                else if (c == '[')
-                    builder.Append("[[]");
+                //else if (c == '[')
+                //    builder.Append("[[]");
                 else
                     builder.Append(c);
             }
