@@ -57,6 +57,10 @@ namespace Jamiras.Controls
 
         private static void SelectedMonthChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
         {
+            var calendar = (CalendarControl)sender;
+            if (calendar.SelectedDay > GetDaysInMonth(calendar.SelectedMonth, calendar.SelectedYear))
+                calendar.SelectedDay = GetDaysInMonth(calendar.SelectedMonth, calendar.SelectedYear);
+
             ((CalendarControl)sender).UpdateMonth();
         }
 
@@ -110,7 +114,12 @@ namespace Jamiras.Controls
 
         private int GetDaysInMonth()
         {
-            switch (SelectedMonth)
+            return GetDaysInMonth(SelectedMonth, SelectedYear);
+        }
+
+        private static int GetDaysInMonth(int month, int year)
+        {
+            switch (month)
             {
                 case 1: // January
                 case 3: // March
@@ -128,13 +137,12 @@ namespace Jamiras.Controls
                     return 30;
 
                 case 2: // February
-                    int year = SelectedYear;
                     if ((year % 4) == 0 && (year % 100) != 0)
                         return 29;
                     return 28;
 
                 default:
-                    throw new InvalidOperationException(SelectedMonth + " is not a valid month");
+                    throw new InvalidOperationException(month + " is not a valid month");
             }
         }
 

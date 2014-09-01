@@ -78,5 +78,25 @@ namespace Jamiras.Controls
         {
             get { return new DelegateCommand(() => IsCalendarVisible = !IsCalendarVisible); }
         }
+
+        private void TextBoxKeyDown(object sender, KeyEventArgs e)
+        {
+            if (IsCalendarVisible)
+            {
+                if (e.Key == Key.Up || e.Key == Key.Escape)
+                {
+                    IsCalendarVisible = false;
+                    e.Handled = true;
+                }
+            }
+            else
+            {
+                if (e.Key == Key.Down)
+                {
+                    IsCalendarVisible = true;
+                    e.Handled = true;
+                }
+            }
+        }
     }
 }
