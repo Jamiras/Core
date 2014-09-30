@@ -156,18 +156,7 @@ namespace Jamiras.Services
                     SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_SYSMENU);
                 }
 
-                window.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    if (window.Top < 8)
-                        window.Top = 8;
-                    else if (window.Top + window.ActualHeight > SystemParameters.WorkArea.Height)
-                        window.Top = SystemParameters.WorkArea.Height - window.ActualHeight - 8;
-
-                    if (window.Left < 8)
-                        window.Left = 8;
-                    else if (window.Left + window.ActualWidth > SystemParameters.WorkArea.Width)
-                        window.Left = SystemParameters.WorkArea.Width - window.ActualWidth - 8;
-                }));
+                window.Dispatcher.BeginInvoke(new Action(() => EnsureVisible(window)));
 
                 view.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
             };
@@ -188,6 +177,62 @@ namespace Jamiras.Services
             viewModel.PropertyChanged -= propertyChangedHandler;
 
             return viewModel.DialogResult;
+        }
+
+        private static void EnsureVisible(Window window)
+        {
+            RECT winRect = new RECT((int)window.Left, (int)window.Top, (int)(window.Left + window.ActualWidth), (int)(window.Top + window.ActualHeight));
+            IntPtr hMonitor = MonitorFromRect(ref winRect, MONITOR_DEFAULTTONULL);
+            if (hMonitor != IntPtr.Zero)
+            {
+                var monitorInfo = new MONITORINFO();
+                if (GetMonitorInfo(hMonitor, monitorInfo))
+                {
+                    if (winRect.top < monitorInfo.rcWork.top)
+                        winRect.top = monitorInfo.rcWork.top;
+                    else if (winRect.bottom > monitorInfo.rcWork.bottom)
+                        window.Top = monitorInfo.rcWork.bottom - window.ActualHeight - 8;
+
+                    if (winRect.left < monitorInfo.rcWork.left)
+                        winRect.left = monitorInfo.rcWork.left;
+                    else if (winRect.right > monitorInfo.rcWork.right)
+                        window.Left = monitorInfo.rcWork.right - window.ActualWidth - 8;
+                }
+            }
+        }
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr MonitorFromRect([In] ref RECT lprc, uint dwFlags);
+
+        private const uint MONITOR_DEFAULTTONULL = 0;
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT
+        {
+            public RECT(int x, int y, int cx, int cy)
+            {
+                left = x;
+                top = y;
+                right = cx;
+                bottom = cy;
+            }
+
+            public int left;
+            public int top;
+            public int right;
+            public int bottom;
+        }
+
+        [DllImport("user32.dll")]
+        private static extern bool GetMonitorInfo(IntPtr hMonitor, MONITORINFO lpmi);
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        private class MONITORINFO
+        {
+            public int cbSize = Marshal.SizeOf(typeof(MONITORINFO));
+            public RECT rcMonitor = new RECT();
+            public RECT rcWork = new RECT();
+            public int dwFlags = 0;
         }
 
         private FrameworkElement GetView(DialogViewModelBase viewModel, Type type)

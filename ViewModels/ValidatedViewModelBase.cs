@@ -83,7 +83,7 @@ namespace Jamiras.ViewModels
                 if (String.IsNullOrEmpty(errorMessage))
                 {
                     // finally, validate against the field metadata
-                    var fieldMetadata = GetFieldMetadata(binding);
+                    var fieldMetadata = GetFieldMetadata(binding.Source.GetType(), binding.SourceProperty);
                     if (fieldMetadata != null)
                         errorMessage = fieldMetadata.Validate(binding.Source, value);
                 }
@@ -108,17 +108,20 @@ namespace Jamiras.ViewModels
         protected FieldMetadata GetFieldMetadata(ModelProperty viewModelProperty)
         {
             var binding = GetBinding(viewModelProperty);
-            return GetFieldMetadata(binding);
+            return GetFieldMetadata(binding.Source.GetType(), binding.SourceProperty);
         }
 
-        private FieldMetadata GetFieldMetadata(ModelBinding binding)
+        /// <summary>
+        /// Gets the field metadata for a property of a model.
+        /// </summary>
+        protected FieldMetadata GetFieldMetadata(Type modelType, ModelProperty modelProperty)
         {
             if (_metadataRepository == null)
                 _metadataRepository = ServiceRepository.Instance.FindService<IDataModelMetadataRepository>();
 
-            var metadata = _metadataRepository.GetModelMetadata(binding.Source.GetType());
+            var metadata = _metadataRepository.GetModelMetadata(modelType);
             if (metadata != null)
-                return metadata.GetFieldMetadata(binding.SourceProperty);
+                return metadata.GetFieldMetadata(modelProperty);
 
             return null;
         }

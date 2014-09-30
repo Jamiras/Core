@@ -66,7 +66,7 @@ namespace Jamiras.Controls
 
         private void UpdateMonth()
         {
-            if (SelectedYear > 0 && SelectedMonth > 0)
+            if (SelectedYear > 1 && SelectedMonth > 0)
             {
                 var date = new DateTime(SelectedYear, SelectedMonth, 1);
                 var days = new List<CalendarDay>();
