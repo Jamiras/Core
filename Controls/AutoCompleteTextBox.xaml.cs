@@ -39,9 +39,10 @@ namespace Jamiras.Controls
         private static void TextChanged(DependencyObject source, DependencyPropertyChangedEventArgs e)
         {
             AutoCompleteTextBox textBox = ((AutoCompleteTextBox)source);
-            if (!textBox.IsSelecting && textBox.IsLoaded)
+            if (textBox.IsTyping)
             {
                 textBox.SelectedId = 0;
+                textBox.IsTyping = false;
             }
         }
 
@@ -145,6 +146,8 @@ namespace Jamiras.Controls
 
         private void textBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
+            IsTyping = true;
+
             switch (e.Key)
             {
                 case Key.Escape:
@@ -207,10 +210,8 @@ namespace Jamiras.Controls
         {
             if (item.Id > 0)
             {
-                IsSelecting = true;
                 autoCompleteTextBox.Text = item.Label;
                 autoCompleteTextBox.SelectAll();
-                IsSelecting = false;
 
                 SelectedId = item.Id;
                 IsPopupOpen = false;
@@ -221,6 +222,6 @@ namespace Jamiras.Controls
             }
         }
 
-        private bool IsSelecting { get; set; }
+        private bool IsTyping { get; set; }
     }
 }
