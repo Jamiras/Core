@@ -107,6 +107,7 @@
     <Compile Include="DataModels\IDataModelCollection.cs" />
     <Compile Include="DataModels\Metadata\AutoIncrementFieldMetadata.cs" />
     <Compile Include="DataModels\Metadata\BooleanFieldMetadata.cs" />
+    <Compile Include="DataModels\Metadata\DatabaseModelCollectionSearchMetadata.cs" />
     <Compile Include="DataModels\Metadata\DateTimeFieldMetadata.cs" />
     <Compile Include="DataModels\Metadata\DoubleFieldMetadata.cs" />
     <Compile Include="DataModels\Metadata\DatabaseModelCollectionMetadata.cs" />
