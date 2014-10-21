@@ -181,7 +181,7 @@ namespace Jamiras.Services
 
         private static void EnsureVisible(Window window)
         {
-            RECT winRect = new RECT((int)window.Left, (int)window.Top, (int)(window.Left + window.ActualWidth), (int)(window.Top + window.ActualHeight));
+            RECT winRect = new RECT((int)window.Left - 4, (int)window.Top - 4, (int)(window.Left + window.ActualWidth) + 8, (int)(window.Top + window.ActualHeight) + 8);
             IntPtr hMonitor = MonitorFromRect(ref winRect, MONITOR_DEFAULTTONULL);
             if (hMonitor != IntPtr.Zero)
             {
@@ -189,12 +189,12 @@ namespace Jamiras.Services
                 if (GetMonitorInfo(hMonitor, monitorInfo))
                 {
                     if (winRect.top < monitorInfo.rcWork.top)
-                        winRect.top = monitorInfo.rcWork.top;
+                        window.Top = monitorInfo.rcWork.top + 4;
                     else if (winRect.bottom > monitorInfo.rcWork.bottom)
                         window.Top = monitorInfo.rcWork.bottom - window.ActualHeight - 8;
 
                     if (winRect.left < monitorInfo.rcWork.left)
-                        winRect.left = monitorInfo.rcWork.left;
+                        window.Left = monitorInfo.rcWork.left + 4;
                     else if (winRect.right > monitorInfo.rcWork.right)
                         window.Left = monitorInfo.rcWork.right - window.ActualWidth - 8;
                 }
