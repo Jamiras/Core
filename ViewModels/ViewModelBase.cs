@@ -1,4 +1,6 @@
-﻿using Jamiras.Components;
+﻿using System;
+using System.ComponentModel;
+using Jamiras.Components;
 using Jamiras.DataModels;
 
 namespace Jamiras.ViewModels
@@ -130,29 +132,35 @@ namespace Jamiras.ViewModels
             if (e.Property.Key != _propertyBeingSynchronized)
             {
                 ModelBinding binding;
-                if (_bindings.TryGetValue(e.Property.Key, out binding) && binding.Mode == ModelBindingMode.TwoWay)
-                    PushValue(binding, e.Property, e.NewValue);
+                if (_bindings.TryGetValue(e.Property.Key, out binding))
+                    HandleBoundPropertyChanged(binding, e, binding.Mode == ModelBindingMode.TwoWay);
                 else
-                    OnUnboundModelPropertyChanged(e);
+                    HandleUnboundPropertyChanged(e);
             }
 
             base.OnModelPropertyChanged(e);
         }
 
-        internal virtual void OnUnboundModelPropertyChanged(ModelPropertyChangedEventArgs e)
+        internal virtual void HandleUnboundPropertyChanged(ModelPropertyChangedEventArgs e)
         {
         }
 
-        internal virtual void PushValue(ModelBinding binding, ModelProperty localProperty, object value)
+        internal virtual void HandleBoundPropertyChanged(ModelBinding binding, ModelPropertyChangedEventArgs e, bool pushToSource)
         {
-            // can't use binding.TryPushValue here because we want special handling of the call to model.SetValue
-            if (binding.Converter != null)
-            {
-                if (binding.Converter.ConvertBack(ref value) != null)
-                    return;
-            }
+            object convertedValue = e.NewValue;
+            if (binding.Converter != null && binding.Converter.ConvertBack(ref convertedValue) != null)
+                return;
 
-            SynchronizeValue(binding.Source, binding.SourceProperty, value);
+            if (pushToSource)
+                SynchronizeValue(binding.Source, binding.SourceProperty, convertedValue);
+
+            if (binding.Converter != null && binding.Converter.Convert(ref convertedValue) == null && convertedValue != e.NewValue)
+            {
+                SynchronizeValue(this, e.Property, convertedValue);
+    
+                if (!String.IsNullOrEmpty(e.Property.PropertyName))
+                    System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() => OnPropertyChanged(new PropertyChangedEventArgs(e.Property.PropertyName))));
+            }
         }
 
         internal void SynchronizeValue(ModelBase model, ModelProperty property, object newValue)
@@ -189,11 +197,15 @@ namespace Jamiras.ViewModels
 
             foreach (var kvp in _bindings)
             {
-                if (kvp.Value.Mode == ModelBindingMode.Committed)
+                var binding = kvp.Value;
+                if (binding.Mode == ModelBindingMode.Committed)
                 {
+                    object oldValue;
+                    binding.TryPullValue(out oldValue);
+
                     var viewModelProperty = ModelProperty.GetPropertyForKey(kvp.Key);
                     var value = GetValue(viewModelProperty);
-                    PushValue(kvp.Value, viewModelProperty, value);
+                    HandleBoundPropertyChanged(binding, new ModelPropertyChangedEventArgs(viewModelProperty, oldValue, value), true);
                 }
             }
         }

@@ -62,18 +62,20 @@ namespace Jamiras.ViewModels
             }
         }
 
-        internal override void OnUnboundModelPropertyChanged(ModelPropertyChangedEventArgs e)
+        internal override void HandleUnboundPropertyChanged(ModelPropertyChangedEventArgs e)
         {
             var error = Validate(e.Property, e.NewValue);
             SetError(e.Property, error);
 
-            base.OnUnboundModelPropertyChanged(e);
+            base.HandleUnboundPropertyChanged(e);
         }
 
-        internal override void PushValue(ModelBinding binding, ModelProperty localProperty, object value)
+        internal override void HandleBoundPropertyChanged(ModelBinding binding, ModelPropertyChangedEventArgs e, bool pushToSource)
         {
+            var value = e.NewValue;
+
             // first, validate against the view model
-            string errorMessage = Validate(localProperty, value);
+            string errorMessage = Validate(e.Property, value);
             if (String.IsNullOrEmpty(errorMessage))
             {
                 // then validate the value can be coerced into the source model
@@ -91,14 +93,13 @@ namespace Jamiras.ViewModels
 
             if (!String.IsNullOrEmpty(errorMessage))
             {
-                SetError(localProperty, FormatErrorMessage(errorMessage));
+                SetError(e.Property, FormatErrorMessage(errorMessage));
             }
             else
             {
-                SetError(localProperty, null);
+                SetError(e.Property, null);
 
-                // base.PushValue minus the conversion
-                SynchronizeValue(binding.Source, binding.SourceProperty, value);
+                base.HandleBoundPropertyChanged(binding, e, pushToSource);
             }
         }
 

@@ -66,15 +66,6 @@ namespace Jamiras.ViewModels.Fields
             base.OnModelPropertyChanged(e);
         }
 
-        public void LostFocus()
-        {
-            WaitForTyping(() =>
-            {
-                if (IsValid)
-                    Refresh();
-            });
-        }
-
         private void WaitForTyping(Action callback)
         {
             lock (typeof(TextFieldViewModel))
