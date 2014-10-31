@@ -104,6 +104,7 @@
     <Compile Include="Database\IDatabaseQuery.cs" />
     <Compile Include="DataModels\DatabaseDataModelSource.cs" />
     <Compile Include="DataModels\DataModelBase.cs" />
+    <Compile Include="DataModels\DataModelChangeTracker.cs" />
     <Compile Include="DataModels\IDataModelCollection.cs" />
     <Compile Include="DataModels\Metadata\AutoIncrementFieldMetadata.cs" />
     <Compile Include="DataModels\Metadata\BooleanFieldMetadata.cs" />

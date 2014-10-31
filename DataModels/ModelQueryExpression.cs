@@ -49,6 +49,16 @@ namespace Jamiras.DataModels
             _filters.Add(new KeyValuePair<string, string>(fieldName, '~' + bindVariable));
         }
 
+        public void AddGreaterThanFilter(string fieldName, string bindVariable)
+        {
+            _filters.Add(new KeyValuePair<string, string>(fieldName, '>' + bindVariable));
+        }
+
+        public void AddLessThanFilter(string fieldName, string bindVariable)
+        {
+            _filters.Add(new KeyValuePair<string, string>(fieldName, '>' + bindVariable));
+        }
+
         public void AddJoin(string localKeyFieldName, string remoteKeyFieldName, bool useOuterJoin)
         {
             if (_joins == null)
@@ -249,11 +259,20 @@ namespace Jamiras.DataModels
 
         private static void AppendFilter(StringBuilder builder, string fieldName, string bindVariable)
         {
+            builder.Append('[');
             builder.Append(fieldName);
+            builder.Append(']');
 
             if (bindVariable[0] == '~')
             {
                 builder.Append(" LIKE ");
+                builder.Append(bindVariable, 1, bindVariable.Length - 1);
+            }
+            else if (bindVariable[0] == '<' || bindVariable[0] == '>')
+            {
+                builder.Append(' ');
+                builder.Append(bindVariable[0]);
+                builder.Append(' ');
                 builder.Append(bindVariable, 1, bindVariable.Length - 1);
             }
             else

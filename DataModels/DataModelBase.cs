@@ -33,6 +33,11 @@ namespace Jamiras.DataModels
             return value;
         }
 
+        internal object GetOriginalValue(ModelProperty property)
+        {
+            return base.GetValue(property);
+        }
+
         /// <summary>
         /// Sets the value of a <see cref="ModelProperty"/> for this instance.
         /// </summary>

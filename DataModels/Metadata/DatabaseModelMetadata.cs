@@ -384,17 +384,6 @@ namespace Jamiras.DataModels.Metadata
         }
 
         /// <summary>
-        /// Determines if the specified property is modified on a model.
-        /// </summary>
-        /// <param name="model">The model to examine.</param>
-        /// <param name="property">The property to examine.</param>
-        /// <returns><c>true</c> if the property has been modified on the model, <c>false</c> if not.</returns>
-        protected static bool IsPropertyModified(DataModelBase model, ModelProperty property)
-        {
-            return (model.IsModified && model.UpdatedPropertyKeys.Contains(property.Key));
-        }
-
-        /// <summary>
         /// Commits changes made to a model to a database.
         /// </summary>
         /// <param name="model">The model to commit.</param>
