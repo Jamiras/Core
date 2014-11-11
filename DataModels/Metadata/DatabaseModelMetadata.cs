@@ -344,7 +344,7 @@ namespace Jamiras.DataModels.Metadata
             else if (value is DateTime)
             {
                 DateTime dttm = (DateTime)value;
-                builder.AppendFormat("'{0}'", dttm);
+                builder.AppendFormat("#{0}#", dttm);
             }
             else if (value is bool)
             {
