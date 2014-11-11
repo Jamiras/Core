@@ -251,6 +251,9 @@ namespace Jamiras.DataModels.Metadata
             if (fieldMetadata.Type == typeof(bool))
                 return query.GetBool(index);
 
+            if (fieldMetadata.Type == typeof(byte))
+                return query.GetByte(index);
+
             throw new NotSupportedException(fieldMetadata.GetType().Name);
         }
 
@@ -341,7 +344,7 @@ namespace Jamiras.DataModels.Metadata
             else if (value is DateTime)
             {
                 DateTime dttm = (DateTime)value;
-                builder.AppendFormat("'{0}'", dttm.ToShortDateString());
+                builder.AppendFormat("'{0}'", dttm);
             }
             else if (value is bool)
             {
@@ -572,7 +575,9 @@ namespace Jamiras.DataModels.Metadata
                 var fieldMetadata = GetFieldMetadata(property);
                 var value = model.GetValue(property);
                 value = CoerceValueToDatabase(property, fieldMetadata, value);
+                builder.Append('[');
                 builder.Append(fieldMetadata.FieldName);
+                builder.Append(']');
                 builder.Append('=');
                 AppendQueryValue(builder, value, fieldMetadata, database);
                 builder.Append(" AND ");

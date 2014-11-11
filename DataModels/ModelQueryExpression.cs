@@ -133,7 +133,9 @@ namespace Jamiras.DataModels
         {
             foreach (var field in _queryFields)
             {
+                builder.Append('[');
                 builder.Append(field);
+                builder.Append(']');
                 builder.Append(", ");
             }
             builder.Length -= 2;

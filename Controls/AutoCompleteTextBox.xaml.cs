@@ -152,14 +152,18 @@ namespace Jamiras.Controls
             {
                 case Key.Escape:
                 case Key.Tab:
-                    IsPopupOpen = false;
+                    if (IsPopupOpen)
+                    {
+                        IsPopupOpen = false;
+                        e.Handled = true;
+                    }
                     break;
 
                 case Key.Down:
                     if (IsPopupOpen)
                     {
                         suggestionsListBox.SelectedIndex = 0;
-                        suggestionsListBox.Focus();                        
+                        suggestionsListBox.Focus();
                     }
                     break;
             }
