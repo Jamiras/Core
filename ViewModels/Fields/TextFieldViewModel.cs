@@ -66,7 +66,7 @@ namespace Jamiras.ViewModels.Fields
             base.OnModelPropertyChanged(e);
         }
 
-        private void WaitForTyping(Action callback)
+        public static void WaitForTyping(Action callback)
         {
             lock (typeof(TextFieldViewModel))
             {
@@ -86,15 +86,21 @@ namespace Jamiras.ViewModels.Fields
             }
         }
 
-        private void TypingTimerElapsed(object sender, EventArgs e)
+        private static void TypingTimerElapsed(object sender, EventArgs e)
         {
-            var callback = _typingTimerCallback;
-            _typingTimerCallback = null;
+            Action callback = null;
 
-            callback();
+            lock (typeof(TextFieldViewModel))
+            {
+                callback = _typingTimerCallback;
+                _typingTimerCallback = null;
+            }
+
+            if (callback != null)
+                callback();
         }
 
-        private System.Timers.Timer _typingTimer;
-        private Action _typingTimerCallback;
+        private static System.Timers.Timer _typingTimer;
+        private static Action _typingTimerCallback;
     }
 }
