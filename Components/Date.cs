@@ -60,6 +60,18 @@ namespace Jamiras.Components
             get { return (_value == 0); }
         }
 
+        /// <summary>
+        /// Gets a <see cref="Date"/> representing the current date.
+        /// </summary>
+        public static Date Today
+        {
+            get
+            {
+                DateTime today = DateTime.Today;
+                return new Date(today.Month, today.Day, today.Year);
+            }
+        }
+
         private static readonly string[] _months = new string[]
         {
             "",
