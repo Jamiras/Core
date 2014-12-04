@@ -157,9 +157,15 @@ namespace Jamiras.ViewModels
             if (binding.Converter != null && binding.Converter.Convert(ref convertedValue) == null && convertedValue != e.NewValue)
             {
                 SynchronizeValue(this, e.Property, convertedValue);
-    
+
                 if (!String.IsNullOrEmpty(e.Property.PropertyName))
-                    System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() => OnPropertyChanged(new PropertyChangedEventArgs(e.Property.PropertyName))));
+                {
+                    var action = new Action(() => OnPropertyChanged(new PropertyChangedEventArgs(e.Property.PropertyName)));
+                    if (System.Windows.Application.Current != null && System.Windows.Application.Current.Dispatcher != null)
+                        System.Windows.Application.Current.Dispatcher.BeginInvoke(action);
+                    else
+                        action();
+                }
             }
         }
 

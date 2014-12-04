@@ -11,8 +11,7 @@ namespace Jamiras.Core.Tests.Commands
         [Test]
         public void TestInheritance()
         {
-            var executed = false;
-            var command = new DelegateCommand(() => executed = true);
+            var command = new DelegateCommand(() => { });
             Assert.That(command, Is.InstanceOf<ICommand>());
             Assert.That(command, Is.InstanceOf<CommandBase>());
         }

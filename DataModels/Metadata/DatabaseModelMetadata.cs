@@ -526,7 +526,7 @@ namespace Jamiras.DataModels.Metadata
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return false;
             }
@@ -708,7 +708,7 @@ namespace Jamiras.DataModels.Metadata
             {
                 return (database.ExecuteCommand(builder.ToString()) == 1);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return false;
             }
