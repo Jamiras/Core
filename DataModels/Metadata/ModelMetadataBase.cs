@@ -1,5 +1,4 @@
 ﻿using Jamiras.Components;
-using System.Collections.Generic;
 
 namespace Jamiras.DataModels.Metadata
 {

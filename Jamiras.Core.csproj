@@ -91,6 +91,7 @@
     <Compile Include="Controls\AutoCompleteTextBox.xaml.cs">
       <DependentUpon>AutoCompleteTextBox.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Controls\EventBindingPanel.cs" />
     <Compile Include="Controls\FormattedTextBlock.cs" />
     <Compile Include="Controls\OkCancelView.xaml.cs">
       <DependentUpon>OkCancelView.xaml</DependentUpon>

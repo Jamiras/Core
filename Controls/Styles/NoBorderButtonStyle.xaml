@@ -95,8 +95,8 @@
                                         Margin="-3,-4,-4,-3">
                                 </Border>
 
-                                <ContentPresenter HorizontalAlignment="Center"
-                                                  VerticalAlignment="Center"
+                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                                   RecognizesAccessKey="True"
                                                   Grid.RowSpan="2" />
                             </Grid>

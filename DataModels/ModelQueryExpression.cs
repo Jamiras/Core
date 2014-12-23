@@ -5,6 +5,7 @@ using System.Text;
 
 namespace Jamiras.DataModels
 {
+    [DebuggerDisplay("{BuildQueryString()}")]
     public class ModelQueryExpression
     {
         public ModelQueryExpression()
@@ -133,9 +134,7 @@ namespace Jamiras.DataModels
         {
             foreach (var field in _queryFields)
             {
-                builder.Append('[');
-                builder.Append(field);
-                builder.Append(']');
+                AppendFieldName(builder, field);
                 builder.Append(", ");
             }
             builder.Length -= 2;
@@ -187,9 +186,9 @@ namespace Jamiras.DataModels
 
                             builder.Append(table);
                             builder.Append(" ON ");
-                            builder.Append(fieldName);
+                            AppendFieldName(builder, fieldName);
                             builder.Append('=');
-                            builder.Append(joinFieldName);
+                            AppendFieldName(builder, joinFieldName);
 
                             if (tables.Count > 0)
                                 builder.Append(')');
@@ -261,9 +260,7 @@ namespace Jamiras.DataModels
 
         private static void AppendFilter(StringBuilder builder, string fieldName, string bindVariable)
         {
-            builder.Append('[');
-            builder.Append(fieldName);
-            builder.Append(']');
+            AppendFieldName(builder, fieldName);
 
             if (bindVariable[0] == '~')
             {
@@ -282,6 +279,31 @@ namespace Jamiras.DataModels
                 builder.Append('=');
                 builder.Append(bindVariable);
             }
+        }
+
+        private static readonly string[] ReservedWords = { "user", "session" };
+
+        private static void AppendFieldName(StringBuilder builder, string fieldName)
+        {
+            int idx = fieldName.IndexOf('.');
+            if (idx > 0)
+            {
+                builder.Append(fieldName, 0, idx + 1);
+                fieldName = fieldName.Substring(idx + 1);
+            }
+
+            foreach (var reservedWord in ReservedWords)
+            {
+                if (fieldName.Equals(reservedWord, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    builder.Append('[');
+                    builder.Append(fieldName);
+                    builder.Append(']');
+                    return;
+                }
+            }
+
+            builder.Append(fieldName);
         }
 
         private void AppendOrderBy(StringBuilder builder)
