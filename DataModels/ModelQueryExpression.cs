@@ -103,31 +103,34 @@ namespace Jamiras.DataModels
 
         private List<string> GetTables()
         {
-            List<string> tables = new List<string>();
+            var tables = new List<string>();
             foreach (var field in _queryFields)
-            {
-                int idx = field.IndexOf('.');
-                if (idx > 0)
-                {
-                    string table = field.Substring(0, idx);
-                    if (!tables.Contains(table))
-                        tables.Add(table);
-                }
-            }
+                AddTable(tables, field);
 
             foreach (var filter in _filters)
+                AddTable(tables, filter.Key);
+
+            if (_joins != null)
             {
-                var field = filter.Key;
-                int idx = field.IndexOf('.');
-                if (idx > 0)
+                foreach (var join in _joins)
                 {
-                    string table = field.Substring(0, idx);
-                    if (!tables.Contains(table))
-                        tables.Add(table);
-                }
+                    AddTable(tables, join.LocalKeyFieldName);
+                    AddTable(tables, join.RemoteKeyFieldName);
+                }                
             }
 
             return tables;
+        }
+
+        private static void AddTable(List<string> tables, string field)
+        {
+            int idx = field.IndexOf('.');
+            if (idx > 0)
+            {
+                string table = field.Substring(0, idx);
+                if (!tables.Contains(table))
+                    tables.Add(table);
+            }
         }
 
         private void AppendQueryFields(StringBuilder builder)

@@ -10,6 +10,8 @@ namespace Jamiras.DataModels
 
         void Add(DataModelBase item);
 
+        bool Contains(DataModelBase item);
+
         Type ModelType { get; }
     }
 

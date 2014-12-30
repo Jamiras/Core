@@ -84,7 +84,8 @@ namespace Jamiras.DataModels.Metadata
                             item = databaseDataModelSource.TryGet<T>(id);
                             if (item != null)
                             {
-                                collection.Add(item);
+                                if (!collection.Contains(item))
+                                    collection.Add(item);
                                 continue;
                             }
                         }

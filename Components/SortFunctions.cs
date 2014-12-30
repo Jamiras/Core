@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Jamiras.Components
 {
@@ -11,6 +9,11 @@ namespace Jamiras.Components
         {
             if (left == null || right == null)
                 return String.Compare(left, right);
+
+            string shorter = (left.Length < right.Length) ? left : right;
+            bool hasNumbers = shorter.Any(c => c >= '0' && c <= '9');
+            if (!hasNumbers)
+                return String.Compare(left, right, StringComparison.OrdinalIgnoreCase);
 
             int i = 0, j = 0;
             do

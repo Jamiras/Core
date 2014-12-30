@@ -55,6 +55,11 @@ namespace Jamiras.DataModels
             return _collection.Contains(item);
         }
 
+        bool IDataModelCollection.Contains(DataModelBase item)
+        {
+            return _collection.Contains((T)item);
+        }
+
         public void CopyTo(T[] array, int arrayIndex)
         {
             _collection.CopyTo(array, arrayIndex);
