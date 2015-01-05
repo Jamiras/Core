@@ -289,26 +289,26 @@ namespace Jamiras.DataModels
         /// </summary>
         /// <param name="dataModel">Data model to commit.</param>
         /// <returns><c>true</c> if the changes were committed, <c>false</c> if not.</returns>
-        public bool Commit(DataModelBase model)
+        public bool Commit(DataModelBase dataModel)
         {
-            var metadata = _metadataRepository.GetModelMetadata(model.GetType()) as DatabaseModelMetadata;
+            var metadata = _metadataRepository.GetModelMetadata(dataModel.GetType()) as DatabaseModelMetadata;
             if (metadata == null)
                 return false;
 
-            var key = metadata.GetKey(model);
-            if (!metadata.Commit(model, _database))
+            var key = metadata.GetKey(dataModel);
+            if (!metadata.Commit(dataModel, _database))
                 return false;
 
-            var newKey = metadata.GetKey(model);
+            var newKey = metadata.GetKey(dataModel);
             if (key != newKey)
             {
-                ExpireCollections(model.GetType());
+                ExpireCollections(dataModel.GetType());
 
                 var fieldMetadata = metadata.GetFieldMetadata(metadata.PrimaryKeyProperty);
                 UpdateKeys(fieldMetadata, key, newKey);
             }
 
-            model.AcceptChanges();
+            dataModel.AcceptChanges();
             return true;
         }
 

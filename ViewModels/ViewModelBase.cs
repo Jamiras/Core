@@ -191,7 +191,7 @@ namespace Jamiras.ViewModels
             if (compositeViewModel != null)
             {
                 foreach (var child in compositeViewModel.GetChildren())
-                    child.PushCommitBindings();
+                    child.Commit();
             }
 
             PushCommitBindings();
@@ -211,7 +211,9 @@ namespace Jamiras.ViewModels
 
                     var viewModelProperty = ModelProperty.GetPropertyForKey(kvp.Key);
                     var value = GetValue(viewModelProperty);
-                    HandleBoundPropertyChanged(binding, new ModelPropertyChangedEventArgs(viewModelProperty, oldValue, value), true);
+
+                    if (!Equals(oldValue, value))
+                        HandleBoundPropertyChanged(binding, new ModelPropertyChangedEventArgs(viewModelProperty, oldValue, value), true);
                 }
             }
         }

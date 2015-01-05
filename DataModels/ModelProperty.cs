@@ -157,9 +157,9 @@ namespace Jamiras.DataModels
         /// <returns><c>true</c> if the value is valid for the property type, <c>false</c> if not.</returns>
         public bool IsValueValid(object value)
         {
-            // null is not value for value types
+            // null is not valid for value types (except Nullable<ValueType>)
             if (value == null)
-                return !PropertyType.IsValueType;
+                return !PropertyType.IsValueType || PropertyType.Name == "Nullable`1";
 
             // direct type match, or subclass
             if (PropertyType.IsAssignableFrom(value.GetType()))
