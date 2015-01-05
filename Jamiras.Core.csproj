@@ -144,6 +144,7 @@
     <Compile Include="Services\LogService.cs" />
     <Compile Include="Services\PersistantDataRepository.cs" />
     <Compile Include="Services\WindowSettingsRepository.cs" />
+    <Compile Include="ViewModels\Converters\DateToDateTimeConverter.cs" />
     <Compile Include="ViewModels\Converters\IConverter.cs" />
     <Compile Include="ViewModels\DialogViewModelBase.cs" />
     <Compile Include="Services\IDialogService.cs" />
