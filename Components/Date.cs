@@ -351,5 +351,13 @@ namespace Jamiras.Components
         {
             return _value;
         }
+
+        /// <summary>
+        /// Creates a <see cref="Date"/> from a <see cref="DateTime"/>.
+        /// </summary>
+        public static Date FromDateTime(DateTime datetime)
+        {
+            return new Date(datetime.Month, datetime.Day, datetime.Year);
+        }
     }
 }

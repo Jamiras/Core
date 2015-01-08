@@ -14,7 +14,7 @@ namespace Jamiras.DataModels
             _collection = new List<T>();
         }
 
-        private List<T> _collection;
+        private readonly List<T> _collection;
 
         private static readonly ModelProperty IsCollectionChangedProperty =
             ModelProperty.Register(typeof(DataModelCollection<T>), null, typeof(bool), false);
@@ -89,7 +89,7 @@ namespace Jamiras.DataModels
             return _collection.GetEnumerator();
         }
 
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
         }

@@ -45,6 +45,11 @@ namespace Jamiras.DataModels
             _filters.Add(new KeyValuePair<string, string>(fieldName, bindVariable));
         }
 
+        public void RemoveFilter(string fieldName, string bindVariable)
+        {
+            _filters.RemoveAll(f => f.Key == fieldName && f.Value == bindVariable);
+        }
+
         public void AddLikeFilter(string fieldName, string bindVariable)
         {
             _filters.Add(new KeyValuePair<string, string>(fieldName, '~' + bindVariable));

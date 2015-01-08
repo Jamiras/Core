@@ -80,6 +80,7 @@
     <Compile Include="Components\TwoItemsTinyDictionary.cs" />
     <Compile Include="Components\UnsortedTinyDictionary.cs" />
     <Compile Include="Components\WeakAction.cs" />
+    <Compile Include="Components\WeakDictionary.cs" />
     <Compile Include="Components\WeakEventHandler.cs" />
     <Compile Include="Components\WeakRepository.cs" />
     <Compile Include="Controls\CalendarControl.xaml.cs">
