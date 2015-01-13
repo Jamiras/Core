@@ -97,6 +97,7 @@
     <Compile Include="Controls\OkCancelView.xaml.cs">
       <DependentUpon>OkCancelView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Controls\ScrollPreserver.cs" />
     <Compile Include="Database\AccessDatabase.cs" />
     <Compile Include="Database\AccessDatabaseCommand.cs" />
     <Compile Include="Database\AccessDatabaseQuery.cs" />
