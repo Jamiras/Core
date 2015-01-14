@@ -289,7 +289,7 @@ namespace Jamiras.DataModels
             }
         }
 
-        private static readonly string[] ReservedWords = { "user", "session" };
+        private static readonly string[] ReservedWords = { "user", "session", "when" };
 
         private static void AppendFieldName(StringBuilder builder, string fieldName)
         {
