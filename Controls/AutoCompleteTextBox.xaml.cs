@@ -17,6 +17,7 @@ namespace Jamiras.Controls
         public AutoCompleteTextBox()
         {
             InitializeComponent();
+            Background = SystemColors.ControlLightLightBrush;
 
             grid.DataContext = this;
 
