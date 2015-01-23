@@ -6,8 +6,6 @@ namespace Jamiras.DataModels
 {
     internal interface IDataModelCollection : IEnumerable
     {
-        bool IsCollectionChanged { get; }
-
         void Add(DataModelBase item);
 
         bool Contains(DataModelBase item);

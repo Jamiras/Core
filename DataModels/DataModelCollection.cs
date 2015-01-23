@@ -22,13 +22,12 @@ namespace Jamiras.DataModels
         private static readonly ModelProperty AddedItemsProperty =
             ModelProperty.Register(typeof(DataModelCollection<T>), null, typeof(List<T>), null);
 
-        private static readonly ModelProperty IsCollectionChangedProperty =
-            ModelProperty.Register(typeof(DataModelCollection<T>), null, typeof(bool), false);
-
-        public bool IsCollectionChanged
+        /// <summary>
+        /// Gets whether or not items have been added to or removed from the collection.
+        /// </summary>
+        public new bool IsModified
         {
-            get { return (bool)GetValue(IsCollectionChangedProperty); }
-            private set { SetValue(IsCollectionChangedProperty, value); }
+            get { return base.IsModified; }
         }
 
         public static readonly ModelProperty CountProperty =
@@ -49,7 +48,7 @@ namespace Jamiras.DataModels
         {
             _collection.Add(item);
 
-            IsCollectionChanged = UpdateModifications(AddedItemsProperty, RemovedItemsProperty, item);
+            UpdateModifications(AddedItemsProperty, RemovedItemsProperty, item);
             Count = _collection.Count;
         }
 
@@ -58,24 +57,19 @@ namespace Jamiras.DataModels
             if (!_collection.Remove(item))
                 return false;
 
-            IsCollectionChanged = UpdateModifications(RemovedItemsProperty, AddedItemsProperty, item);
+            UpdateModifications(RemovedItemsProperty, AddedItemsProperty, item);
             Count = _collection.Count;
             return true;
         }
 
-        private bool UpdateModifications(ModelProperty collectionToAddToProperty, ModelProperty collectionToRemoveFromProperty, T item)
+        private void UpdateModifications(ModelProperty collectionToAddToProperty, ModelProperty collectionToRemoveFromProperty, T item)
         {
-            bool isCollectionChanged = true;
-
             var collectionToAddTo = (List<T>)GetValue(collectionToAddToProperty);
             var collectionToRemoveFrom = (List<T>)GetValue(collectionToRemoveFromProperty);
             if (collectionToRemoveFrom != null && collectionToRemoveFrom.Remove(item))
             {
                 if (collectionToRemoveFrom.Count == 0)
-                {
                     SetValue(collectionToRemoveFromProperty, null);
-                    isCollectionChanged = (collectionToAddTo != null);
-                }
             }
             else
             {
@@ -87,8 +81,6 @@ namespace Jamiras.DataModels
 
                 collectionToAddTo.Add(item);
             }
-
-            return isCollectionChanged;
         }
 
         Type IDataModelCollection.ModelType
@@ -118,7 +110,6 @@ namespace Jamiras.DataModels
         {
             if (_collection.Count > 0)
             {
-                bool isCollectionChanged = true;
                 var removedItems = (List<T>)GetValue(RemovedItemsProperty);
                 var addedItems = (List<T>)GetValue(AddedItemsProperty);
                 foreach (var item in _collection)
@@ -136,14 +127,10 @@ namespace Jamiras.DataModels
                 }
 
                 if (addedItems != null && addedItems.Count == 0)
-                {
                     SetValue(AddedItemsProperty, null);
-                    isCollectionChanged = (removedItems != null);
-                }
 
                 _collection.Clear();
 
-                IsCollectionChanged = isCollectionChanged;
                 Count = 0;
             }
         }
@@ -157,8 +144,6 @@ namespace Jamiras.DataModels
             SetValue(RemovedItemsProperty, null);
 
             base.AcceptChanges();
-
-            IsCollectionChanged = false;
         }
 
         /// <summary>
