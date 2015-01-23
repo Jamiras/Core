@@ -99,6 +99,8 @@
     <Compile Include="Components\WeakActionTests.cs" />
     <Compile Include="Components\WeakEventHandlerTests.cs" />
     <Compile Include="Controls\CalendarControlTests.cs" />
+    <Compile Include="DataModels\DataModelBaseTests.cs" />
+    <Compile Include="DataModels\DataModelCollectionTests.cs" />
     <Compile Include="DataModels\ModelBaseTests.cs" />
     <Compile Include="DataModels\ModelPropertyTests.cs" />
     <Compile Include="IO\BitReaderTests.cs" />

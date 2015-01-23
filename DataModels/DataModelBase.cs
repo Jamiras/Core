@@ -84,7 +84,7 @@ namespace Jamiras.DataModels
         /// <summary>
         /// Accepts pending changes to the model.
         /// </summary>
-        public void AcceptChanges()
+        public virtual void AcceptChanges()
         {
             foreach (var kvp in _updatedValues)
             {
@@ -99,7 +99,7 @@ namespace Jamiras.DataModels
         /// <summary>
         /// Discards pending changes to the model.
         /// </summary>
-        public void DiscardChanges()
+        public virtual void DiscardChanges()
         {
             var revertedProperties = new List<ModelPropertyChangedEventArgs>();
             foreach (var kvp in _updatedValues)

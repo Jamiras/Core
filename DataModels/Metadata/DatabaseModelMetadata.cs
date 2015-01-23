@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Jamiras.Components;
@@ -24,7 +25,6 @@ namespace Jamiras.DataModels.Metadata
         private List<KeyValuePair<string, string>> _joins;
         private string _queryString;
         private static int _nextKey = -100;
-        private bool _refreshAfterCommit;
 
         /// <summary>
         /// Gets the property for the primary key of the record.
@@ -55,9 +55,6 @@ namespace Jamiras.DataModels.Metadata
 
             if ((metadata.Attributes & FieldAttributes.PrimaryKey) != 0 && PrimaryKeyProperty == null)
                 PrimaryKeyProperty = property;
-
-            if ((metadata.Attributes & FieldAttributes.RefreshAfterCommit) != 0)
-                _refreshAfterCommit = true;
 
             var tableName = GetTableName(metadata.FieldName);
 
@@ -437,10 +434,20 @@ namespace Jamiras.DataModels.Metadata
             {
                 var fieldMetadata = GetFieldMetadata(PrimaryKeyProperty);
                 primaryTable = GetTableName(fieldMetadata.FieldName);
+
+                List<int> tablePropertyKeys;
+                if (_tableMetadata.TryGetValue(primaryTable, out tablePropertyKeys))
+                {
+                    if (!CreateRow(model, database, primaryTable, tablePropertyKeys, null, null))
+                        return false;
+                }
             }
 
             foreach (var kvp in _tableMetadata)
             {
+                if (kvp.Key == primaryTable)
+                    continue;
+
                 ModelProperty joinProperty;
                 string joinFieldName = GetJoin(primaryTable, kvp.Key, out joinProperty);
 
@@ -454,6 +461,7 @@ namespace Jamiras.DataModels.Metadata
         private bool CreateRow(ModelBase model, IDatabase database, string tableName, IEnumerable<int> tablePropertyKeys, ModelProperty joinProperty, string joinFieldName)
         {
             bool onlyDefaults = (joinFieldName != null);
+            bool refreshAfterCommit = false;
             var properties = new List<ModelProperty>();
             foreach (var propertyKey in tablePropertyKeys)
             {
@@ -466,6 +474,9 @@ namespace Jamiras.DataModels.Metadata
 
                     properties.Add(property);
                 }
+
+                if ((fieldMetadata.Attributes & FieldAttributes.RefreshAfterCommit) != 0)
+                    refreshAfterCommit = true;
             }
 
             if (properties.Count == 0 || onlyDefaults)
@@ -521,7 +532,7 @@ namespace Jamiras.DataModels.Metadata
                 if (database.ExecuteCommand(builder.ToString()) == 0)
                     return false;
 
-                if (_refreshAfterCommit)
+                if (refreshAfterCommit)
                     RefreshAfterCommit(model, database, tablePropertyKeys, properties);
 
                 return true;
@@ -614,18 +625,16 @@ namespace Jamiras.DataModels.Metadata
         /// <returns><c>true</c> if the model was committed, <c>false</c> if not.</returns>
         protected virtual bool UpdateRows(ModelBase model, IDatabase database)
         {
+            if (PrimaryKeyProperty == null)
+                throw new InvalidOperationException("Cannot update a record without a primary key. If the record is a member of a collection, commit the collection instead of the record.");
+
             var dataModel = model as DataModelBase;
             if (dataModel != null && !dataModel.IsModified)
                 return true;
 
-            string primaryTable = null;
-            string primaryKeyFieldName = null;
-            if (PrimaryKeyProperty != null)
-            {
-                var metadata = GetFieldMetadata(PrimaryKeyProperty);
-                primaryKeyFieldName = metadata.FieldName;
-                primaryTable = GetTableName(primaryKeyFieldName);
-            }
+            var primaryKeyMetadata = GetFieldMetadata(PrimaryKeyProperty);
+            var primaryKeyFieldName = primaryKeyMetadata.FieldName;
+            var primaryTable = GetTableName(primaryKeyFieldName);
 
             foreach (var kvp in _tableMetadata)
             {
@@ -645,6 +654,8 @@ namespace Jamiras.DataModels.Metadata
                 {
                     ModelProperty joinProperty;
                     string joinFieldName = GetJoin(primaryTable, kvp.Key, out joinProperty);
+                    if (joinFieldName == null)
+                        throw new InvalidOperationException("Cannot determine relationship between " + primaryTable + " and " + kvp.Key);
 
                     if (!UpdateRow(model, database, kvp.Key, kvp.Value, joinProperty, joinFieldName) &&
                         !CreateRow(model, database, kvp.Key, kvp.Value, joinProperty, joinFieldName))
@@ -659,6 +670,8 @@ namespace Jamiras.DataModels.Metadata
 
         private bool UpdateRow(ModelBase model, IDatabase database, string tableName, IEnumerable<int> tablePropertyKeys, ModelProperty whereProperty, string whereFieldName)
         {
+            Debug.Assert(whereFieldName != null);
+
             var dataModel = model as DataModelBase;
             var properties = new List<ModelProperty>();
             foreach (var propertyKey in tablePropertyKeys)
@@ -692,17 +705,14 @@ namespace Jamiras.DataModels.Metadata
 
             builder.Length -= 2;
 
-            if (whereFieldName != null)
-            {
-                builder.Append(" WHERE ");
-                builder.Append(whereFieldName);
-                builder.Append("=");
+            builder.Append(" WHERE ");
+            builder.Append(whereFieldName);
+            builder.Append("=");
 
-                var fieldMetadata = GetFieldMetadata(whereProperty);
-                var value = model.GetValue(whereProperty);
-                value = CoerceValueToDatabase(whereProperty, fieldMetadata, value);
-                AppendQueryValue(builder, value, fieldMetadata, database);
-            }
+            var whereFieldMetadata = GetFieldMetadata(whereProperty);
+            var whereValue = model.GetValue(whereProperty);
+            whereValue = CoerceValueToDatabase(whereProperty, whereFieldMetadata, whereValue);
+            AppendQueryValue(builder, whereValue, whereFieldMetadata, database);
 
             try
             {
