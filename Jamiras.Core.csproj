@@ -101,10 +101,15 @@
     <Compile Include="Database\AccessDatabase.cs" />
     <Compile Include="Database\AccessDatabaseCommand.cs" />
     <Compile Include="Database\AccessDatabaseQuery.cs" />
+    <Compile Include="Database\DataType.cs" />
+    <Compile Include="Database\FilterDefinition.cs" />
     <Compile Include="Database\IDatabase.cs" />
     <Compile Include="Database\IDatabaseCommand.cs" />
     <Compile Include="Database\IDatabaseExtensions.cs" />
     <Compile Include="Database\IDatabaseQuery.cs" />
+    <Compile Include="Database\JoinDefinition.cs" />
+    <Compile Include="Database\OrderByDefinition.cs" />
+    <Compile Include="Database\QueryBuilder.cs" />
     <Compile Include="DataModels\DatabaseDataModelSource.cs" />
     <Compile Include="DataModels\DataModelBase.cs" />
     <Compile Include="DataModels\DataModelChangeTracker.cs" />
@@ -130,7 +135,6 @@
     <Compile Include="DataModels\DataModelCollection.cs" />
     <Compile Include="DataModels\ModelProperty.cs" />
     <Compile Include="DataModels\ModelPropertyChangedEventArgs.cs" />
-    <Compile Include="DataModels\ModelQueryExpression.cs" />
     <Compile Include="IO\BitReader.cs" />
     <Compile Include="IO\BitWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

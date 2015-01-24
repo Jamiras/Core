@@ -8,11 +8,6 @@ namespace Jamiras.DataModels.Metadata
     public class DatabaseModelCollectionMetadata<T> : DatabaseModelMetadata, IDataModelCollectionMetadata
         where T : DataModelBase, new()
     {
-        /// <summary>
-        /// Gets the token to use when setting a filter value to the query key.
-        /// </summary>
-        protected const string FilterValueToken = "@filterValue";
-
         public DatabaseModelCollectionMetadata()
         {
             var metadataRepository = ServiceRepository.Instance.FindService<IDataModelMetadataRepository>();
@@ -51,7 +46,7 @@ namespace Jamiras.DataModels.Metadata
         public override bool Query(ModelBase model, object primaryKey, IDatabase database)
         {
             if (_queryString == null)
-                _queryString = BuildQueryString();
+                _queryString = BuildQueryString(database);
 
             var databaseDataModelSource = ServiceRepository.Instance.FindService<IDataModelSource>() as DatabaseDataModelSource;
             var collection = (IDataModelCollection)model;
@@ -105,7 +100,7 @@ namespace Jamiras.DataModels.Metadata
             return true;
         }
 
-        private string BuildQueryString()
+        private string BuildQueryString(IDatabase database)
         {
             var queryExpression = RelatedMetadata.BuildQueryExpression();
 
@@ -129,7 +124,7 @@ namespace Jamiras.DataModels.Metadata
 
             CustomizeQuery(queryExpression);
 
-            return queryExpression.BuildQueryString();
+            return database.BuildQueryString(queryExpression);
         }
 
         protected override bool UpdateRows(ModelBase model, IDatabase database)

@@ -27,6 +27,11 @@ namespace Jamiras.DataModels.Metadata
         private static int _nextKey = -100;
 
         /// <summary>
+        /// Gets the token to use when setting a filter value to the query key.
+        /// </summary>
+        protected const string FilterValueToken = "@filterValue";
+
+        /// <summary>
         /// Gets the property for the primary key of the record.
         /// </summary>
         public ModelProperty PrimaryKeyProperty { get; protected set; }
@@ -139,7 +144,7 @@ namespace Jamiras.DataModels.Metadata
         public virtual bool Query(ModelBase model, object primaryKey, IDatabase database)
         {
             if (_queryString == null)
-                _queryString = BuildQueryString();
+                _queryString = BuildQueryString(database);
 
             using (var query = database.PrepareQuery(_queryString))
             {
@@ -154,24 +159,24 @@ namespace Jamiras.DataModels.Metadata
             return true;
         }
 
-        private string BuildQueryString()
+        private string BuildQueryString(IDatabase database)
         {
-            var queryExpression = BuildQueryExpression();
+            var query = BuildQueryExpression();
 
             if (PrimaryKeyProperty != null)
             {
                 var fieldMetadata = GetFieldMetadata(PrimaryKeyProperty);
-                queryExpression.AddFilter(fieldMetadata.FieldName, "@filterValue");
+                query.Filters.Add(new FilterDefinition(fieldMetadata.FieldName, FilterOperation.Equals, FilterValueToken));
             }
 
-            return queryExpression.BuildQueryString();
+            return database.BuildQueryString(query);
         }
 
-        internal ModelQueryExpression BuildQueryExpression()
+        internal QueryBuilder BuildQueryExpression()
         {
-            var queryExpression = new ModelQueryExpression();
+            var query = new QueryBuilder();
             foreach (var metadata in AllFieldMetadata.Values)
-                queryExpression.AddQueryField(metadata.FieldName);
+                query.Fields.Add(metadata.FieldName);
 
             if (_joins != null)
             {
@@ -184,18 +189,18 @@ namespace Jamiras.DataModels.Metadata
                 }
 
                 foreach (var join in _joins)
-                    queryExpression.AddJoin(join.Key, join.Value, join.Key == primaryKeyFieldName);
+                    query.Joins.Add(new JoinDefinition(join.Key, join.Value, (join.Key == primaryKeyFieldName) ? JoinType.Outer : JoinType.Inner));
             }
 
-            CustomizeQuery(queryExpression);
+            CustomizeQuery(query);
 
-            return queryExpression;
+            return query;
         }
 
         /// <summary>
         /// Allows a subclass to modify the generated query before it is executed.
         /// </summary>
-        protected virtual void CustomizeQuery(ModelQueryExpression queryExpression)
+        protected virtual void CustomizeQuery(QueryBuilder query)
         {
         }
 

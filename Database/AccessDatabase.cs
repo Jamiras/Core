@@ -11,8 +11,6 @@ namespace Jamiras.Database
     {
         private System.Data.OleDb.OleDbConnection _connection;
 
-        #region IDatabase Members
-
         /// <summary>
         /// Disconnects from the database.
         /// </summary>
@@ -34,6 +32,16 @@ namespace Jamiras.Database
         public IDatabaseQuery PrepareQuery(string query)
         {
             return new AccessDatabaseQuery(_connection, query);
+        }
+
+        /// <summary>
+        /// Executes a query.
+        /// </summary>
+        /// <param name="query">The query to execute.</param>
+        /// <returns>A query result row enumerator.</returns>
+        public IDatabaseQuery PrepareQuery(QueryBuilder query)
+        {
+            return PrepareQuery(BuildQueryString(query));
         }
 
         /// <summary>
@@ -70,6 +78,11 @@ namespace Jamiras.Database
             if (value == null)
                 return string.Empty;
 
+            return EscapeString(value);
+        }
+
+        internal static string EscapeString(string value)
+        {
             int idx = value.IndexOf('\'');
             //if (idx == -1)
             //    idx = value.IndexOf('[');
@@ -100,8 +113,6 @@ namespace Jamiras.Database
             return String.Format("#{0}#", date.ToShortDateString());
         }
 
-        #endregion
-
         /// <summary>
         /// Attempts to open an Access database.
         /// </summary>
@@ -124,6 +135,16 @@ namespace Jamiras.Database
                 _connection = connection;
 
             return (connection.State == System.Data.ConnectionState.Open);
+        }
+
+        /// <summary>
+        /// Constructs a database-specific query string from a <see cref="QueryBuilder"/>.
+        /// </summary>
+        /// <param name="query">The <see cref="QueryBuilder"/> to build the query string from.</param>
+        /// <returns>The query string.</returns>
+        public string BuildQueryString(QueryBuilder query)
+        {
+            return AccessDatabaseQuery.BuildQueryString(query);
         }
     }
 }

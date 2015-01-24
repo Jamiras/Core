@@ -50,14 +50,10 @@ namespace Jamiras.DataModels.Metadata
             return base.Query(model, searchText, database);
         }
 
-        protected override void CustomizeQuery(ModelQueryExpression queryExpression)
+        protected override void CustomizeQuery(QueryBuilder query)
         {
-            if (_searchType == SearchType.Exact)
-                queryExpression.AddFilter(_searchField, FilterValueToken);
-            else
-                queryExpression.AddLikeFilter(_searchField, FilterValueToken);
-
-            base.CustomizeQuery(queryExpression);
+            query.Filters.Add(new FilterDefinition(_searchField, (_searchType == SearchType.Exact) ? FilterOperation.Equals : FilterOperation.Like, FilterValueToken));
+            base.CustomizeQuery(query);
         }
     }
 }
