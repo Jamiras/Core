@@ -36,11 +36,6 @@ namespace Jamiras.Database
         {
         }
 
-        public FilterDefinition(string columnName, FilterOperation operation, DateTime value, bool isDateOnly)
-            : this(columnName, operation, value, isDateOnly ? DataType.Date : DataType.DateTime)
-        {
-        }
-
         public FilterDefinition(string columnName, FilterOperation operation, Enum value)
             : this(columnName, operation, value, DataType.Integer)
         {
