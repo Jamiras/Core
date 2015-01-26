@@ -470,7 +470,11 @@ namespace Jamiras.Database
 
                 foreach (var orderBy in query.OrderBy)
                 {
-                    builder.Append(orderBy);
+                    builder.Append(orderBy.ColumnName);
+
+                    if (orderBy.Order == SortOrder.Descending)
+                        builder.Append(" DESC");
+
                     builder.Append(", ");
                 }
 

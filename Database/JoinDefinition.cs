@@ -5,6 +5,11 @@ namespace Jamiras.Database
     [DebuggerDisplay("{LocalKeyFieldName} => {RemoteKeyFieldName}")]
     public struct JoinDefinition
     {
+        public JoinDefinition(string localKeyFieldName, string remoteKeyFieldName)
+            : this(localKeyFieldName, remoteKeyFieldName, JoinType.Inner)
+        {
+        }
+
         public JoinDefinition(string localKeyFieldName, string remoteKeyFieldName, JoinType joinType)
         {
             _localKeyFieldName = localKeyFieldName;
