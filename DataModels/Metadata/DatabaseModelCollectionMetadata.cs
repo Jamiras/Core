@@ -43,7 +43,12 @@ namespace Jamiras.DataModels.Metadata
             return (int)model.GetValue(CollectionFilterKeyProperty);
         }
 
-        public override bool Query(ModelBase model, object primaryKey, IDatabase database)
+        public override sealed bool Query(ModelBase model, object primaryKey, IDatabase database)
+        {
+            return Query(model, Int32.MaxValue, primaryKey, database);
+        }
+
+        public virtual bool Query(ModelBase model, int maxResults, object primaryKey, IDatabase database)
         {
             if (_queryString == null)
                 _queryString = BuildQueryString(database);
@@ -66,6 +71,9 @@ namespace Jamiras.DataModels.Metadata
                         RelatedMetadata.PopulateItem(item, query);
                         InitializeExistingRecord(item);
                         collection.Add(item);
+
+                        if (--maxResults == 0)
+                            break;
                     }
                 }
                 else
@@ -93,6 +101,9 @@ namespace Jamiras.DataModels.Metadata
                             item = databaseDataModelSource.TryCache<T>(id, item);
 
                         collection.Add(item);
+
+                        if (--maxResults == 0)
+                            break;
                     }
                 }
             }

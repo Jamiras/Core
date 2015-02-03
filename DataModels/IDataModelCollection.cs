@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using Jamiras.Database;
 using Jamiras.DataModels.Metadata;
 
 namespace Jamiras.DataModels
@@ -10,6 +11,8 @@ namespace Jamiras.DataModels
 
         bool Contains(DataModelBase item);
 
+        int Count { get; }
+
         Type ModelType { get; }
     }
 
@@ -18,5 +21,7 @@ namespace Jamiras.DataModels
         ModelMetadata ModelMetadata { get; }
 
         ModelProperty CollectionFilterKeyProperty { get; }
+
+        bool Query(ModelBase model, int maxResults, object primaryKey, IDatabase database);
     }
 }

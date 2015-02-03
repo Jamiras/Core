@@ -265,6 +265,31 @@ namespace Jamiras.DataModels
         }
 
         /// <summary>
+        /// Gets a non-shared instance of a data model.
+        /// </summary>
+        /// <typeparam name="T">Type of data model to retrieve.</typeparam>
+        /// <param name="searchData">Filter data used to populate the data model.</param>
+        /// <param name="maxResults">The maximum number of results to return.</param>
+        /// <returns>Populated data model, <c>null</c> if not found.</returns>
+        public T Query<T>(object searchData, int maxResults)
+            where T : DataModelBase, new()
+        {
+            var metadata = _metadataRepository.GetModelMetadata(typeof(T)) as DatabaseModelMetadata;
+            if (metadata == null)
+                throw new ArgumentException("No metadata registered for " + typeof(T).FullName);
+
+            var collectionMetadata = metadata as IDataModelCollectionMetadata;
+            if (collectionMetadata == null)
+                throw new ArgumentException(typeof(T).FullName + " is not registered to a collection metadata");
+
+            var model = new T();
+            if (!collectionMetadata.Query(model, maxResults, searchData, _database))
+                return null;
+
+            return model;
+        }
+
+        /// <summary>
         /// Creates a new data model instance.
         /// </summary>
         /// <typeparam name="T">Type of data model to create.</typeparam>

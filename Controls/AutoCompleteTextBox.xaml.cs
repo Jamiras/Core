@@ -125,7 +125,7 @@ namespace Jamiras.Controls
 
         private static void OnSuggestionsChanged(DependencyObject source, DependencyPropertyChangedEventArgs e)
         {
-            AutoCompleteTextBox textBox = ((AutoCompleteTextBox)source);
+            var textBox = ((AutoCompleteTextBox)source);
             if (textBox.IsLoaded)
             {
                 if (e.NewValue != null && ((IEnumerable<LookupItem>)e.NewValue).Any())
@@ -136,6 +136,7 @@ namespace Jamiras.Controls
                 else
                 {
                     textBox.HasSuggestions = false;
+                    textBox.IsPopupOpen = !String.IsNullOrEmpty(textBox.Text);
                 }
             }
         }

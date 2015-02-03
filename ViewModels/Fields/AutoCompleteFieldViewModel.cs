@@ -51,7 +51,7 @@ namespace Jamiras.ViewModels.Fields
                 _searchText = Text;
             }
 
-            var suggestions = _searchFunction(_searchText);
+            var suggestions = String.IsNullOrEmpty(_searchText) ? null : _searchFunction(_searchText);
 
             lock (_searchFunction)
             {
@@ -100,8 +100,11 @@ namespace Jamiras.ViewModels.Fields
                 }
             }
 
-            var label = vm._lookupLabelFunction(id);
-            vm.SetTextInternal(label);
+            if (id != 0)
+            {
+                var label = vm._lookupLabelFunction(id);
+                vm.SetTextInternal(label);
+            }
         }
 
         private void SetTextInternal(string value)

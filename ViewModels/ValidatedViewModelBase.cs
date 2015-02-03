@@ -106,17 +106,39 @@ namespace Jamiras.ViewModels
         /// <summary>
         /// Gets the field metadata for a property of the view model.
         /// </summary>
+        /// <param name="viewModelProperty">The property to get the metadata for.</param>
+        /// <returns>Requested metadata, <c>null</c> if not found.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="viewModelProperty"/> is null</exception>
+        /// <exception cref="ArgumentException"><paramref name="viewModelProperty"/> is not a property on the view model.</exception>
+        /// <exception cref="InvalidOperationException">No binding exists for <param name="viewModelProperty"/>, so the metadata source cannot be determined.</exception>
         protected FieldMetadata GetFieldMetadata(ModelProperty viewModelProperty)
         {
+            if (viewModelProperty == null)
+                throw new ArgumentNullException("viewModelProperty");
+            if (!viewModelProperty.OwnerType.IsAssignableFrom(GetType()))
+                throw new ArgumentException(viewModelProperty.FullName + " is not a property on " + GetType().FullName, "viewModelProperty");
+
             var binding = GetBinding(viewModelProperty);
+            if (binding == null)
+                throw new InvalidOperationException("Cannot determine metadata source without a binding: " + viewModelProperty.FullName);
+
             return GetFieldMetadata(binding.Source.GetType(), binding.SourceProperty);
         }
 
         /// <summary>
         /// Gets the field metadata for a property of a model.
         /// </summary>
+        /// <param name="modelType">The model type where the metadata is registered.</param>
+        /// <param name="modelProperty">The property to get the metadata for.</param>
+        /// <returns>Requested metadata, <c>null</c> if not found.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="modelType"/> or <paramref name="modelProperty"/> is null</exception>
         protected FieldMetadata GetFieldMetadata(Type modelType, ModelProperty modelProperty)
         {
+            if (modelType == null)
+                throw new ArgumentNullException("modelType");
+            if (modelProperty == null)
+                throw new ArgumentNullException("modelProperty");
+
             if (_metadataRepository == null)
                 _metadataRepository = ServiceRepository.Instance.FindService<IDataModelMetadataRepository>();
 

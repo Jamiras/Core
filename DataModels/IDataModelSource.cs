@@ -32,6 +32,15 @@ namespace Jamiras.DataModels
         T Query<T>(object searchData) where T : DataModelBase, new();
 
         /// <summary>
+        /// Gets a non-shared instance of a data model.
+        /// </summary>
+        /// <typeparam name="T">Type of data model to retrieve.</typeparam>
+        /// <param name="searchData">Filter data used to populate the data model.</param>
+        /// <param name="maxResults">The maximum number of results to return.</param>
+        /// <returns>Populated data model, <c>null</c> if not found.</returns>
+        T Query<T>(object searchData, int maxResults) where T : DataModelBase, new();
+
+        /// <summary>
         /// Creates a new data model instance.
         /// </summary>
         /// <typeparam name="T">Type of data model to create.</typeparam>

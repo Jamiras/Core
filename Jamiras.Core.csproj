@@ -158,6 +158,7 @@
     <Compile Include="ViewModels\Fields\AutoCompleteFieldViewModel.cs" />
     <Compile Include="ViewModels\Fields\FieldViewModel.cs" />
     <Compile Include="ViewModels\Fields\LookupFieldViewModel.cs" />
+    <Compile Include="ViewModels\Fields\IntegerFieldViewModel.cs" />
     <Compile Include="ViewModels\ICompositeViewModel.cs" />
     <Compile Include="ViewModels\ModelBinding.cs" />
     <Compile Include="ViewModels\ValidatedViewModelBase.cs" />
