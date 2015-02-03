@@ -26,6 +26,23 @@ namespace Jamiras.ViewModels.Fields
             set { SetValue(TextProperty, value); }
         }
 
+        /// <summary>
+        /// Sets the <see cref="Text"/> property without using the delayed binding if <see cref="IsTextBindingDelayed"/> is <c>true</c>.
+        /// </summary>
+        internal virtual void SetText(string value)
+        {
+            if (!IsTextBindingDelayed)
+            {
+                Text = value;
+            }
+            else
+            {
+                SetValueCore(IsTextBindingDelayedProperty, false); // use SetValueCore to avoid raising the PropertyChanged event
+                Text = value;
+                SetValueCore(IsTextBindingDelayedProperty, true);
+            }
+        }
+
         public static readonly ModelProperty MaxLengthProperty =
             ModelProperty.Register(typeof(TextFieldViewModel), "MaxLength", typeof(int), 80);
 

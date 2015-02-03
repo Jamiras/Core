@@ -94,7 +94,7 @@ namespace Jamiras.ViewModels.Fields
                 {
                     if (lookupItem.Id == id)
                     {
-                        vm.SetTextInternal(lookupItem.Label);
+                        vm.SetText(lookupItem.Label);
                         return;
                     }
                 }
@@ -103,17 +103,17 @@ namespace Jamiras.ViewModels.Fields
             if (id != 0)
             {
                 var label = vm._lookupLabelFunction(id);
-                vm.SetTextInternal(label);
+                vm.SetText(label);
             }
         }
 
-        private void SetTextInternal(string value)
+        internal override void SetText(string value)
         {
             _searchDisabled = true;
             try
             {
                 _searchPending = false;
-                SetValue(TextProperty, value);
+                base.SetText(value);
             }
             finally
             {

@@ -80,20 +80,22 @@ namespace Jamiras.DataModels
 
             if (_propertyChangedHandlers.Count > 0)
             {
-                List<WeakAction<object, ModelPropertyChangedEventArgs>> handlers;
-
+                WeakAction<object, ModelPropertyChangedEventArgs>[] handlers = null;
                 lock (_lockObject)
                 {
-                    if (_propertyChangedHandlers.TryGetValue(e.Property.Key, out handlers))
+                    List<WeakAction<object, ModelPropertyChangedEventArgs>> propertyChangedHandlers;
+                    if (_propertyChangedHandlers.TryGetValue(e.Property.Key, out propertyChangedHandlers))
                     {
-                        for (int i = handlers.Count - 1; i >= 0; i--)
+                        for (int i = propertyChangedHandlers.Count - 1; i >= 0; i--)
                         {
-                            if (!handlers[i].IsAlive)
-                                handlers.RemoveAt(i);
+                            if (!propertyChangedHandlers[i].IsAlive)
+                                propertyChangedHandlers.RemoveAt(i);
                         }
 
-                        if (handlers.Count == 0)
+                        if (propertyChangedHandlers.Count == 0)
                             _propertyChangedHandlers = _propertyChangedHandlers.Remove(e.Property.Key);
+                        else
+                            handlers = propertyChangedHandlers.ToArray();
                     }
                 }
 

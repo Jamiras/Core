@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using Jamiras.Components;
 using Jamiras.Database;
@@ -9,9 +10,14 @@ namespace Jamiras.DataModels.Metadata
         where T : DataModelBase, new()
     {
         public DatabaseModelCollectionMetadata()
+            : this(typeof(T))
+        {
+        }
+
+        public DatabaseModelCollectionMetadata(Type modelType)
         {
             var metadataRepository = ServiceRepository.Instance.FindService<IDataModelMetadataRepository>();
-            RelatedMetadata = (DatabaseModelMetadata)metadataRepository.GetModelMetadata(typeof(T));
+            RelatedMetadata = (DatabaseModelMetadata)metadataRepository.GetModelMetadata(modelType);
         }
 
         protected DatabaseModelMetadata RelatedMetadata { get; private set; }
@@ -23,6 +29,8 @@ namespace Jamiras.DataModels.Metadata
 
         private string _queryString;
         private int _primaryKeyIndex;
+
+        public bool AreResultsReadOnly { get; protected set; }
 
         ModelProperty IDataModelCollectionMetadata.CollectionFilterKeyProperty
         {
@@ -38,26 +46,68 @@ namespace Jamiras.DataModels.Metadata
             throw new NotSupportedException();
         }
 
-        public override int GetKey(ModelBase model)
+        /// <summary>
+        /// Gets the primary key value of a model.
+        /// </summary>
+        /// <param name="model">The model to get the primary key for.</param>
+        /// <returns>The primary key of the model.</returns>
+        public override sealed int GetKey(ModelBase model)
         {
             return (int)model.GetValue(CollectionFilterKeyProperty);
         }
 
+        /// <summary>
+        /// Populates a model from a database.
+        /// </summary>
+        /// <param name="model">The uninitialized model to populate.</param>
+        /// <param name="primaryKey">The primary key of the model to populate.</param>
+        /// <param name="database">The database to populate from.</param>
+        /// <returns><c>true</c> if the model was populated, <c>false</c> if not.</returns>
         public override sealed bool Query(ModelBase model, object primaryKey, IDatabase database)
         {
             return Query(model, Int32.MaxValue, primaryKey, database);
         }
 
-        public virtual bool Query(ModelBase model, int maxResults, object primaryKey, IDatabase database)
+        /// <summary>
+        /// Populates a collection with items from a database.
+        /// </summary>
+        /// <param name="model">The uninitialized model to populate.</param>
+        /// <param name="maxResults">The maximum number of results to return</param>
+        /// <param name="primaryKey">The primary key of the model to populate.</param>
+        /// <param name="database">The database to populate from.</param>
+        /// <returns><c>true</c> if the model was populated, <c>false</c> if not.</returns>
+        public bool Query(ModelBase model, int maxResults, object primaryKey, IDatabase database)
+        {
+            if (primaryKey is int)
+                model.SetValueCore(CollectionFilterKeyProperty, (int)primaryKey);
+
+            if (!Query((ICollection<T>)model, Int32.MaxValue, primaryKey, database))
+                return false;
+
+            if (AreResultsReadOnly)
+            {
+                var collection = model as DataModelCollection<T>;
+                if (collection != null)
+                    collection.IsReadOnly = true;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Populates a collection with items from a database.
+        /// </summary>
+        /// <param name="models">The uninitialized collection to populate.</param>
+        /// <param name="maxResults">The maximum number of results to return</param>
+        /// <param name="primaryKey">The primary key of the model to populate.</param>
+        /// <param name="database">The database to populate from.</param>
+        /// <returns><c>true</c> if the model was populated, <c>false</c> if not.</returns>
+        protected virtual bool Query(ICollection<T> models, int maxResults, object primaryKey, IDatabase database)
         {
             if (_queryString == null)
                 _queryString = BuildQueryString(database);
 
             var databaseDataModelSource = ServiceRepository.Instance.FindService<IDataModelSource>() as DatabaseDataModelSource;
-            var collection = (IDataModelCollection)model;
-
-            if (primaryKey is int)
-                model.SetValue(CollectionFilterKeyProperty, (int)primaryKey);
 
             using (var query = database.PrepareQuery(_queryString))
             {
@@ -70,7 +120,7 @@ namespace Jamiras.DataModels.Metadata
                         T item = new T();
                         RelatedMetadata.PopulateItem(item, query);
                         InitializeExistingRecord(item);
-                        collection.Add(item);
+                        models.Add(item);
 
                         if (--maxResults == 0)
                             break;
@@ -87,8 +137,8 @@ namespace Jamiras.DataModels.Metadata
                             item = databaseDataModelSource.TryGet<T>(id);
                             if (item != null)
                             {
-                                if (!collection.Contains(item))
-                                    collection.Add(item);
+                                if (!models.Contains(item))
+                                    models.Add(item);
                                 continue;
                             }
                         }
@@ -100,7 +150,7 @@ namespace Jamiras.DataModels.Metadata
                         if (databaseDataModelSource != null)
                             item = databaseDataModelSource.TryCache<T>(id, item);
 
-                        collection.Add(item);
+                        models.Add(item);
 
                         if (--maxResults == 0)
                             break;
@@ -138,15 +188,47 @@ namespace Jamiras.DataModels.Metadata
             return database.BuildQueryString(queryExpression);
         }
 
-        protected override bool UpdateRows(ModelBase model, IDatabase database)
+        /// <summary>
+        /// Creates rows in the database for a new model instance.
+        /// </summary>
+        /// <param name="model">The model to commit.</param>
+        /// <param name="database">The database to commit to.</param>
+        /// <returns><c>true</c> if the model was committed, <c>false</c> if not.</returns>
+        protected override sealed bool CreateRows(ModelBase model, IDatabase database)
         {
-            var collection = (IDataModelCollection)model;
-            var enumerator = collection.GetEnumerator();
-            while (enumerator.MoveNext())
+            return UpdateRows(model, database);
+        }
+
+        /// <summary>
+        /// Updates rows in the database for an existing model instance.
+        /// </summary>
+        /// <param name="model">The model to commit.</param>
+        /// <param name="database">The database to commit to.</param>
+        /// <returns><c>true</c> if the model was committed, <c>false</c> if not.</returns>
+        protected override sealed bool UpdateRows(ModelBase model, IDatabase database)
+        {
+            if (AreResultsReadOnly)
+                return false;
+
+            object value = model.GetValue(CollectionFilterKeyProperty);
+            int parentRecordKey = (value != null) ? (int)value : 0;
+            return UpdateRows((ICollection<T>)model, parentRecordKey, database);
+        }
+
+        /// <summary>
+        /// Updates rows in the database for a collection of model instances.
+        /// </summary>
+        /// <param name="models">The models to commit.</param>
+        /// <param name="parentRecordKey">The primary key of the associated parent record.</param>
+        /// <param name="database">The database to commit to.</param>
+        /// <returns><c>true</c> if the models were committed, <c>false</c> if not.</returns>
+        protected virtual bool UpdateRows(ICollection<T> models, int parentRecordKey, IDatabase database)
+        {
+            foreach (var model in models)
             {
-                if (!RelatedMetadata.Commit((ModelBase)enumerator.Current, database))
+                if (!RelatedMetadata.Commit(model, database))
                     return false;
-            }
+            }                
 
             return true;
         }

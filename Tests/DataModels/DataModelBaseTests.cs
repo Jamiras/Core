@@ -168,5 +168,67 @@ namespace Jamiras.Core.Tests.DataModels
             Assert.That(args.OldValue, Is.EqualTo("Test2"));
             Assert.That(args.NewValue, Is.EqualTo("Default"));
         }
+
+        [Test]
+        public void TestSetOriginalValue()
+        {
+            Assert.That(_model.IsModified, Is.False);
+            Assert.That(_model.UpdatedPropertyKeys, Is.EquivalentTo(new int[0]));
+
+            var changedProperties = new List<string>();
+            _model.PropertyChanged += (o, e) => changedProperties.Add(e.PropertyName);
+
+            _model.SetOriginalValue(TestClass.StrProperty, "Test");
+
+            Assert.That(_model.Str, Is.EqualTo("Test"));
+            Assert.That(changedProperties, Has.Member("Str"));
+            Assert.That(_model.IsModified, Is.False);
+            Assert.That(_model.UpdatedPropertyKeys, Is.EquivalentTo(new int[0]));
+        }
+
+        [Test]
+        public void TestSetOriginalWithModifiedValue()
+        {
+            Assert.That(_model.IsModified, Is.False);
+            Assert.That(_model.UpdatedPropertyKeys, Is.EquivalentTo(new int[0]));
+            _model.Str = "Test";
+            Assert.That(_model.IsModified, Is.True);
+
+            var changedProperties = new List<string>();
+            _model.PropertyChanged += (o, e) => changedProperties.Add(e.PropertyName);
+
+            _model.SetOriginalValue(TestClass.StrProperty, "Blah");
+
+            Assert.That(_model.Str, Is.EqualTo("Test"));
+            Assert.That(changedProperties, Has.No.Member("Str"));
+            Assert.That(_model.IsModified, Is.True);
+            Assert.That(_model.UpdatedPropertyKeys, Is.EquivalentTo(new int[] { TestClass.StrProperty.Key }));
+
+            changedProperties.Clear();
+            _model.Str = "Blah";
+            Assert.That(_model.Str, Is.EqualTo("Blah"));
+            Assert.That(changedProperties, Has.Member("Str"));
+            Assert.That(_model.IsModified, Is.False);
+            Assert.That(_model.UpdatedPropertyKeys, Is.EquivalentTo(new int[0]));
+        }
+
+        [Test]
+        public void TestSetOriginalToModifiedValue()
+        {
+            Assert.That(_model.IsModified, Is.False);
+            Assert.That(_model.UpdatedPropertyKeys, Is.EquivalentTo(new int[0]));
+            _model.Str = "Test";
+            Assert.That(_model.IsModified, Is.True);
+
+            var changedProperties = new List<string>();
+            _model.PropertyChanged += (o, e) => changedProperties.Add(e.PropertyName);
+
+            _model.SetOriginalValue(TestClass.StrProperty, "Test");
+
+            Assert.That(_model.Str, Is.EqualTo("Test"));
+            Assert.That(changedProperties, Has.No.Member("Str"));
+            Assert.That(_model.IsModified, Is.False);
+            Assert.That(_model.UpdatedPropertyKeys, Is.EquivalentTo(new int[0]));
+        }
     }
 }

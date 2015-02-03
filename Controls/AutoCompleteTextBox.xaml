@@ -21,7 +21,7 @@
                 StaysOpen="False" AllowsTransparency="True"
                 Width="{Binding ActualWidth, ElementName=autoCompleteTextBox}"
                 IsOpen="{Binding IsPopupOpen}">
-            <ListBox Grid.Row="1" Name="suggestionsListBox" PreviewKeyDown="listBox_PreviewKeyDown">
+            <ListBox Name="suggestionsListBox" PreviewKeyDown="listBox_PreviewKeyDown">
                 <ListBox.Style>
                     <Style TargetType="{x:Type ListBox}">
                         <Setter Property="ItemsSource"

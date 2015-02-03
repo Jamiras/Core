@@ -49,7 +49,7 @@ namespace Jamiras.DataModels
 
             lock (_lockObject)
             {
-                object originalValue = base.GetValue(property);
+                object originalValue = GetOriginalValue(property);
                 if (!_updatedValues.TryGetValue(property.Key, out currentValue))
                     currentValue = originalValue;
 
@@ -60,6 +60,39 @@ namespace Jamiras.DataModels
                     _updatedValues = _updatedValues.Remove(property.Key);
                 else
                     _updatedValues = _updatedValues.AddOrUpdate(property.Key, value);
+            }
+
+            OnModelPropertyChanged(new ModelPropertyChangedEventArgs(property, currentValue, value));
+        }
+
+        /// <summary>
+        /// Sets the value of a <see cref="ModelProperty"/> for this instance without marking the model as modified.
+        /// </summary>
+        /// <param name="property">The <see cref="ModelProperty"/> to update.</param>
+        /// <param name="value">The new value for the <see cref="ModelProperty"/>.</param>
+        internal void SetOriginalValue(ModelProperty property, object value)
+        {
+            object currentValue;
+            lock (_lockObject)
+            {
+                object originalValue = GetOriginalValue(property);
+                if (Object.Equals(value, originalValue))
+                    return;
+
+                SetValueCore(property, value);
+
+                if (!_updatedValues.TryGetValue(property.Key, out currentValue))
+                {
+                    currentValue = originalValue;
+                    // this is the only case where we want to raise a property changed event
+                }
+                else
+                {
+                    if (Object.Equals(value, currentValue))
+                        _updatedValues = _updatedValues.Remove(property.Key);
+
+                    return;
+                }
             }
 
             OnModelPropertyChanged(new ModelPropertyChangedEventArgs(property, currentValue, value));

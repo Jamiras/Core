@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Data;
 using Jamiras.DataModels;
 using NUnit.Framework;
 
@@ -219,6 +220,25 @@ namespace Jamiras.Core.Tests.DataModels
             Assert.That(_model.Count, Is.EqualTo(1));
             Assert.That(_model[0], Is.SameAs(c));
             Assert.That(_model.IsModified, Is.False);
+        }
+
+        [Test]
+        public void TestIsReadOnly()
+        {
+            var c = new TestClass();
+
+            Assert.That(_model.IsReadOnly, Is.False);
+            _model.IsReadOnly = true;
+            Assert.That(_model.IsReadOnly, Is.True);
+            Assert.That(() => _model.IsReadOnly = true, Throws.InvalidOperationException);
+            Assert.That(() => _model.IsReadOnly = false, Throws.InvalidOperationException);
+
+            Assert.That(_model.IsModified, Is.False);
+            Assert.That(_model.Count, Is.EqualTo(0));
+            Assert.That(_model.Contains(c), Is.False);
+            Assert.That(() => _model.Add(c), Throws.InstanceOf<ReadOnlyException>());
+            Assert.That(() => _model.Remove(c), Throws.InstanceOf<ReadOnlyException>());
+            Assert.That(() => _model.Clear(), Throws.InstanceOf<ReadOnlyException>());
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using Jamiras.Database;
 
@@ -18,6 +19,8 @@ namespace Jamiras.DataModels.Metadata
 
             _searchField = metadata.FieldName;
             _searchType = searchType;
+
+            AreResultsReadOnly = true;
         }
 
         protected enum SearchType
@@ -33,36 +36,43 @@ namespace Jamiras.DataModels.Metadata
         private readonly string _searchField;
         private readonly SearchType _searchType;
 
-        public override sealed bool Query(ModelBase model, int maxResults, object primaryKey, IDatabase database)
+        /// <summary>
+        /// Populates a collection with items from a database.
+        /// </summary>
+        /// <param name="models">The uninitialized collection to populate.</param>
+        /// <param name="maxResults">The maximum number of results to return</param>
+        /// <param name="primaryKey">The primary key of the model to populate.</param>
+        /// <param name="database">The database to populate from.</param>
+        /// <returns><c>true</c> if the model was populated, <c>false</c> if not.</returns>
+        protected override sealed bool Query(ICollection<T> models, int maxResults, object primaryKey, IDatabase database)
         {
             string primaryKeyString = primaryKey.ToString();
             if (String.IsNullOrEmpty(primaryKeyString))
                 return true;
 
             // first pass: exact match
-            if (!Query(model, maxResults, primaryKeyString, database)) 
+            if (!Query(models, maxResults, primaryKeyString, database)) 
                 return false;
 
-            var collection = (IDataModelCollection)model;
-            if (collection.Count < maxResults && primaryKeyString.IndexOf(' ') != -1)
+            if (models.Count < maxResults && primaryKeyString.IndexOf(' ') != -1)
             {
                 // second pass: replace whitespace with wildcards
                 var wildcardPrimaryKeyString = ConvertWhitespaceToWildcards(primaryKeyString);
-                if (!Query(model, maxResults, wildcardPrimaryKeyString, database))
+                if (!Query(models, maxResults, wildcardPrimaryKeyString, database))
                     return false;
 
-                if (collection.Count < maxResults)
+                if (models.Count < maxResults)
                 {
                     // third pass: search on individual terms in search text
                     var words = wildcardPrimaryKeyString.Split('%');
-                    if (!Query(model, maxResults, words[0], database))
+                    if (!Query(models, maxResults, words[0], database))
                         return false;
 
                     // always do Contains search for secondary words
-                    for (int i = 1; i < words.Length && collection.Count < maxResults; i++)
+                    for (int i = 1; i < words.Length && models.Count < maxResults; i++)
                     {
                         var searchText = '%' + words[i] + '%';
-                        if (!base.Query(model, maxResults - collection.Count, searchText, database))
+                        if (!base.Query(models, maxResults - models.Count, searchText, database))
                             return false;
                     }
                 }
@@ -71,18 +81,17 @@ namespace Jamiras.DataModels.Metadata
             return true;
         }
 
-        private bool Query(ModelBase model, int maxResults, string searchText, IDatabase database)
+        private bool Query(ICollection<T> models, int maxResults, string searchText, IDatabase database)
         {
-            var collection = (IDataModelCollection)model;
             searchText = AddWildcards(searchText);
 
-            if (!base.Query(model, maxResults - collection.Count, searchText, database))
+            if (!base.Query(models, maxResults - models.Count, searchText, database))
                 return false;
 
-            if (_searchType == SearchType.StartsWithOrContains && collection.Count < maxResults)
+            if (_searchType == SearchType.StartsWithOrContains && models.Count < maxResults)
             {
                 searchText = '%' + searchText;
-                if (!base.Query(model, maxResults - collection.Count, searchText, database))
+                if (!base.Query(models, maxResults - models.Count, searchText, database))
                     return false;
             }
 
@@ -136,6 +145,9 @@ namespace Jamiras.DataModels.Metadata
             }
         }
 
+        /// <summary>
+        /// Allows a subclass to modify the generated query before it is executed.
+        /// </summary>
         protected override void CustomizeQuery(QueryBuilder query)
         {
             query.Filters.Add(new FilterDefinition(_searchField, (_searchType == SearchType.Exact) ? FilterOperation.Equals : FilterOperation.Like, FilterValueToken));
