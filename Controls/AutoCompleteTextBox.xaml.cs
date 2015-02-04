@@ -131,12 +131,12 @@ namespace Jamiras.Controls
                 if (e.NewValue != null && ((IEnumerable<LookupItem>)e.NewValue).Any())
                 {
                     textBox.HasSuggestions = true;
-                    textBox.IsPopupOpen = true;
+                    textBox.IsPopupOpen = textBox.IsKeyboardFocusWithin;
                 }
                 else
                 {
                     textBox.HasSuggestions = false;
-                    textBox.IsPopupOpen = !String.IsNullOrEmpty(textBox.Text);
+                    textBox.IsPopupOpen = !String.IsNullOrEmpty(textBox.Text) && textBox.IsKeyboardFocusWithin;
                 }
             }
         }

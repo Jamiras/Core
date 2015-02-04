@@ -316,8 +316,20 @@ namespace Jamiras.DataModels
         /// <returns><c>true</c> if the changes were committed, <c>false</c> if not.</returns>
         public bool Commit(DataModelBase dataModel)
         {
+            if (!dataModel.IsModified)
+                return true;
+
             var metadata = _metadataRepository.GetModelMetadata(dataModel.GetType()) as DatabaseModelMetadata;
             if (metadata == null)
+                return false;
+
+            return Commit(dataModel, metadata);
+        }
+
+        private bool Commit(DataModelBase dataModel, DatabaseModelMetadata metadata)
+        {
+            var collection = dataModel as IDataModelCollection;
+            if (collection != null && !Commit(collection, metadata as IDataModelCollectionMetadata)) 
                 return false;
 
             var key = metadata.GetKey(dataModel);
@@ -334,6 +346,29 @@ namespace Jamiras.DataModels
             }
 
             dataModel.AcceptChanges();
+            return true;
+        }
+
+        private bool Commit(IDataModelCollection collection, IDataModelCollectionMetadata collectionMetadata)
+        {
+            var modelMetadata = (collectionMetadata != null) ? collectionMetadata.ModelMetadata as DatabaseModelMetadata : null;
+            if (modelMetadata != null)
+            {
+                foreach (DataModelBase model in collection)
+                {
+                    if (model.IsModified && !Commit(model, modelMetadata))
+                        return false;
+                }
+            }
+            else
+            {
+                foreach (DataModelBase model in collection)
+                {
+                    if (!Commit(model))
+                        return false;
+                }
+            }
+
             return true;
         }
 

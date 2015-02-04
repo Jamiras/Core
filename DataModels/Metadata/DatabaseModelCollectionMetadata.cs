@@ -224,12 +224,6 @@ namespace Jamiras.DataModels.Metadata
         /// <returns><c>true</c> if the models were committed, <c>false</c> if not.</returns>
         protected virtual bool UpdateRows(ICollection<T> models, int parentRecordKey, IDatabase database)
         {
-            foreach (var model in models)
-            {
-                if (!RelatedMetadata.Commit(model, database))
-                    return false;
-            }                
-
             return true;
         }
     }
