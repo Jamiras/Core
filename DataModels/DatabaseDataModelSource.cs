@@ -316,7 +316,7 @@ namespace Jamiras.DataModels
         /// <returns><c>true</c> if the changes were committed, <c>false</c> if not.</returns>
         public bool Commit(DataModelBase dataModel)
         {
-            if (!dataModel.IsModified)
+            if (!dataModel.IsModified && !(dataModel is IDataModelCollection))
                 return true;
 
             var metadata = _metadataRepository.GetModelMetadata(dataModel.GetType()) as DatabaseModelMetadata;
@@ -354,6 +354,9 @@ namespace Jamiras.DataModels
             var modelMetadata = (collectionMetadata != null) ? collectionMetadata.ModelMetadata as DatabaseModelMetadata : null;
             if (modelMetadata != null)
             {
+                if (modelMetadata.PrimaryKeyProperty == null)
+                    return true;
+
                 foreach (DataModelBase model in collection)
                 {
                     if (model.IsModified && !Commit(model, modelMetadata))

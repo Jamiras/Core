@@ -6,18 +6,19 @@ using Jamiras.Database;
 
 namespace Jamiras.DataModels.Metadata
 {
-    public class DatabaseModelCollectionMetadata<T> : DatabaseModelMetadata, IDataModelCollectionMetadata
-        where T : DataModelBase, new()
+    /// <summary>
+    /// Metadata for a collection of models.
+    /// </summary>
+    /// <typeparam name="TCollection">The type of models in the collection.</typeparam>
+    /// <typeparam name="TModel">The type of models populated by the query.</typeparam>
+    public class DatabaseModelCollectionMetadata<TCollection, TModel> : DatabaseModelMetadata, IDataModelCollectionMetadata
+        where TCollection : DataModelBase
+        where TModel : TCollection, new()
     {
         public DatabaseModelCollectionMetadata()
-            : this(typeof(T))
-        {
-        }
-
-        public DatabaseModelCollectionMetadata(Type modelType)
         {
             var metadataRepository = ServiceRepository.Instance.FindService<IDataModelMetadataRepository>();
-            RelatedMetadata = (DatabaseModelMetadata)metadataRepository.GetModelMetadata(modelType);
+            RelatedMetadata = (DatabaseModelMetadata)metadataRepository.GetModelMetadata(typeof(TModel));
         }
 
         protected DatabaseModelMetadata RelatedMetadata { get; private set; }
@@ -81,12 +82,12 @@ namespace Jamiras.DataModels.Metadata
             if (primaryKey is int)
                 model.SetValueCore(CollectionFilterKeyProperty, (int)primaryKey);
 
-            if (!Query((ICollection<T>)model, Int32.MaxValue, primaryKey, database))
+            if (!Query((ICollection<TCollection>)model, Int32.MaxValue, primaryKey, database))
                 return false;
 
             if (AreResultsReadOnly)
             {
-                var collection = model as DataModelCollection<T>;
+                var collection = model as DataModelCollection<TCollection>;
                 if (collection != null)
                     collection.IsReadOnly = true;
             }
@@ -102,7 +103,7 @@ namespace Jamiras.DataModels.Metadata
         /// <param name="primaryKey">The primary key of the model to populate.</param>
         /// <param name="database">The database to populate from.</param>
         /// <returns><c>true</c> if the model was populated, <c>false</c> if not.</returns>
-        protected virtual bool Query(ICollection<T> models, int maxResults, object primaryKey, IDatabase database)
+        protected virtual bool Query(ICollection<TCollection> models, int maxResults, object primaryKey, IDatabase database)
         {
             if (_queryString == null)
                 _queryString = BuildQueryString(database);
@@ -117,7 +118,7 @@ namespace Jamiras.DataModels.Metadata
                 {
                     while (query.FetchRow())
                     {
-                        T item = new T();
+                        TModel item = new TModel();
                         RelatedMetadata.PopulateItem(item, query);
                         InitializeExistingRecord(item);
                         models.Add(item);
@@ -130,11 +131,11 @@ namespace Jamiras.DataModels.Metadata
                 {
                     while (query.FetchRow())
                     {
-                        T item;
+                        TModel item;
                         int id = query.GetInt32(_primaryKeyIndex);
                         if (databaseDataModelSource != null)
                         {
-                            item = databaseDataModelSource.TryGet<T>(id);
+                            item = databaseDataModelSource.TryGet<TModel>(id);
                             if (item != null)
                             {
                                 if (!models.Contains(item))
@@ -143,12 +144,12 @@ namespace Jamiras.DataModels.Metadata
                             }
                         }
 
-                        item = new T();
+                        item = new TModel();
                         RelatedMetadata.PopulateItem(item, query);
                         InitializeExistingRecord(item);
 
                         if (databaseDataModelSource != null)
-                            item = databaseDataModelSource.TryCache<T>(id, item);
+                            item = databaseDataModelSource.TryCache<TModel>(id, item);
 
                         models.Add(item);
 
@@ -212,7 +213,7 @@ namespace Jamiras.DataModels.Metadata
 
             object value = model.GetValue(CollectionFilterKeyProperty);
             int parentRecordKey = (value != null) ? (int)value : 0;
-            return UpdateRows((ICollection<T>)model, parentRecordKey, database);
+            return UpdateRows((ICollection<TCollection>)model, parentRecordKey, database);
         }
 
         /// <summary>
@@ -222,9 +223,14 @@ namespace Jamiras.DataModels.Metadata
         /// <param name="parentRecordKey">The primary key of the associated parent record.</param>
         /// <param name="database">The database to commit to.</param>
         /// <returns><c>true</c> if the models were committed, <c>false</c> if not.</returns>
-        protected virtual bool UpdateRows(ICollection<T> models, int parentRecordKey, IDatabase database)
+        protected virtual bool UpdateRows(ICollection<TCollection> models, int parentRecordKey, IDatabase database)
         {
             return true;
         }
+    }
+
+    public class DatabaseModelCollectionMetadata<T> : DatabaseModelCollectionMetadata<T, T>
+        where T : DataModelBase, new()
+    {
     }
 }
