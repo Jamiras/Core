@@ -42,7 +42,7 @@ namespace Jamiras.DataModels.Metadata
             ModelProperty.Register(typeof(DataModelBase), null, typeof(int), 0);
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        protected override sealed void RegisterFieldMetadata(ModelProperty property, FieldMetadata metadata)
+        protected new void RegisterFieldMetadata(ModelProperty property, FieldMetadata metadata)
         {
             throw new NotSupportedException();
         }

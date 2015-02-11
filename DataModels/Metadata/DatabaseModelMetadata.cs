@@ -22,7 +22,7 @@ namespace Jamiras.DataModels.Metadata
         }
 
         private ITinyDictionary<string, List<int>> _tableMetadata;
-        private List<KeyValuePair<string, string>> _joins;
+        private List<JoinDefinition> _joins;
         private string _queryString;
         private static int _nextKey = -100;
 
@@ -54,7 +54,7 @@ namespace Jamiras.DataModels.Metadata
         /// </summary>
         /// <param name="property">Property to register metadata for.</param>
         /// <param name="metadata">Metadata for the field.</param>
-        protected override void RegisterFieldMetadata(ModelProperty property, FieldMetadata metadata)
+        protected override sealed void RegisterFieldMetadata(ModelProperty property, FieldMetadata metadata)
         {
             base.RegisterFieldMetadata(property, metadata);
 
@@ -82,9 +82,18 @@ namespace Jamiras.DataModels.Metadata
         protected void RegisterJoin(string localKeyFieldName, string remoteKeyFieldName)
         {
             if (_joins == null)
-                _joins = new List<KeyValuePair<string, string>>();
+                _joins = new List<JoinDefinition>();
 
-            _joins.Add(new KeyValuePair<string, string>(localKeyFieldName, remoteKeyFieldName));
+            var joinType = JoinType.Inner;
+            if (PrimaryKeyProperty != null)
+            {
+                var fieldMetadata = GetFieldMetadata(PrimaryKeyProperty);
+                var primaryKeyFieldName = fieldMetadata.FieldName;
+                if (localKeyFieldName == primaryKeyFieldName)
+                    joinType = JoinType.Outer;
+            }
+
+            _joins.Add(new JoinDefinition(localKeyFieldName, remoteKeyFieldName, joinType));
         }
 
         private string GetJoin(string primaryTableName, string relatedTableName, out ModelProperty joinProperty)
@@ -95,7 +104,7 @@ namespace Jamiras.DataModels.Metadata
             {
                 foreach (var join in _joins)
                 {
-                    if (GetTableName(join.Value) == relatedTableName)
+                    if (GetTableName(join.RemoteKeyFieldName) == relatedTableName)
                     {
                         List<int> propertyKeys;
                         if (_tableMetadata.TryGetValue(primaryTableName, out propertyKeys))
@@ -104,7 +113,7 @@ namespace Jamiras.DataModels.Metadata
                             {
                                 var property = ModelProperty.GetPropertyForKey(propertyKey);
                                 var fieldMetadata = GetFieldMetadata(property);
-                                if (fieldMetadata.FieldName == join.Key)
+                                if (fieldMetadata.FieldName == join.LocalKeyFieldName)
                                 {
                                     joinProperty = property;
                                     break;
@@ -114,7 +123,7 @@ namespace Jamiras.DataModels.Metadata
 
                         if (joinProperty != null)
                         {
-                            joinFieldName = join.Value;
+                            joinFieldName = join.RemoteKeyFieldName;
                             break;
                         }
                     }
@@ -180,16 +189,8 @@ namespace Jamiras.DataModels.Metadata
 
             if (_joins != null)
             {
-                string primaryKeyFieldName = null;
-
-                if (PrimaryKeyProperty != null)
-                {
-                    var fieldMetadata = GetFieldMetadata(PrimaryKeyProperty);
-                    primaryKeyFieldName = fieldMetadata.FieldName;
-                }
-
                 foreach (var join in _joins)
-                    query.Joins.Add(new JoinDefinition(join.Key, join.Value, (join.Key == primaryKeyFieldName) ? JoinType.Outer : JoinType.Inner));
+                    query.Joins.Add(join);
             }
 
             CustomizeQuery(query);
