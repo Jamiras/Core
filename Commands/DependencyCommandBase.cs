@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Windows.Input;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Diagnostics;
+using System.Windows.Input;
 
 namespace Jamiras.Commands
 {

@@ -57,6 +57,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Commands\CommandBase.cs" />
+    <Compile Include="Commands\DependencyDelegateCommand.cs" />
     <Compile Include="Commands\DelegateCommand.cs" />
     <Compile Include="Commands\DependencyCommandBase.cs" />
     <Compile Include="Commands\DisabledCommand.cs" />
@@ -129,6 +130,7 @@
     <Compile Include="DataModels\Metadata\ForeignKeyFieldMetadata.cs" />
     <Compile Include="DataModels\Metadata\IDataModelMetadataRepository.cs" />
     <Compile Include="DataModels\IDataModelSource.cs" />
+    <Compile Include="DataModels\Metadata\CurrencyFieldMetadata.cs" />
     <Compile Include="DataModels\Metadata\IntegerFieldMetadata.cs" />
     <Compile Include="DataModels\Metadata\ModelMetadataBase.cs" />
     <Compile Include="DataModels\Metadata\StringFieldMetadata.cs" />

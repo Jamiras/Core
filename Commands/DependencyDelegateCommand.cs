@@ -6,23 +6,43 @@ namespace Jamiras.Commands
     /// <summary>
     /// Class for creating an <see cref="ICommand"/> that calls a delegate.
     /// </summary>
-    public sealed class DelegateCommand : CommandBase
+    /// <remarks>
+    /// CanExecute will be re-evaluated any time a dependency property changes.
+    /// </remarks>
+    public sealed class DependencyDelegateCommand : DependencyCommandBase
     {
         /// <summary>
-        /// Constructs a new <see cref="DelegateCommand"/>.
+        /// Constructs a new <see cref="DependencyDelegateCommand"/>.
         /// </summary>
         /// <param name="executeMethod">Delegate to call when the command is executed.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="executeMethod"/> is null.</exception>
-        public DelegateCommand(Action executeMethod)
+        /// <param name="canExecuteFunction">Delegate to call to determine if the command should be enabled.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="executeMethod"/> or <paramref name="canExecuteFunction"/> is null.</exception>
+        public DependencyDelegateCommand(Action executeMethod, Func<bool> canExecuteFunction)
         {
             if (executeMethod == null)
                 throw new ArgumentNullException("executeMethod");
+            if (canExecuteFunction == null)
+                throw new ArgumentNullException("canExecuteFunction");
 
             _executeMethod = executeMethod;
+            _canExecuteFunction = canExecuteFunction;
         }
 
         private readonly Action _executeMethod;
+        private readonly Func<bool> _canExecuteFunction;
 
+        /// <summary>
+        /// Gets whether or not the command can be executed.
+        /// </summary>
+        /// <returns>True if the command can be executed, false if not.</returns>
+        public override bool CanExecute()
+        {
+            return _canExecuteFunction();
+        }
+
+        /// <summary>
+        /// Executes the command.
+        /// </summary>
         public override void Execute()
         {
             _executeMethod();
@@ -32,28 +52,23 @@ namespace Jamiras.Commands
     /// <summary>
     /// Class for creating an <see cref="ICommand"/> that calls a delegate.
     /// </summary>
-    public sealed class DelegateCommand<T> : CommandBase<T>
+    /// <remarks>
+    /// CanExecute will be re-evaluated any time a dependency property changes.
+    /// </remarks>
+    public sealed class DependencyDelegateCommand<T> : DependencyCommandBase<T>
     {
         /// <summary>
-        /// Constructs a new <see cref="DelegateCommand"/>.
-        /// </summary>
-        /// <param name="executeMethod">Delegate to call when the command is executed.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="executeMethod"/> is null.</exception>
-        public DelegateCommand(Action<T> executeMethod)
-            : this(executeMethod, null)
-        {
-        }
-
-        /// <summary>
-        /// Constructs a new <see cref="DelegateCommand"/>.
+        /// Constructs a new <see cref="DependencyDelegateCommand"/>.
         /// </summary>
         /// <param name="executeMethod">Delegate to call when the command is executed.</param>
         /// <param name="canExecuteFunction">Delegate to call to determine if the command should be enabled.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="executeMethod"/> is null.</exception>
-        public DelegateCommand(Action<T> executeMethod, Predicate<T> canExecuteFunction)
+        /// <exception cref="ArgumentNullException"><paramref name="executeMethod"/> or <paramref name="canExecuteFunction"/> is null.</exception>
+        public DependencyDelegateCommand(Action<T> executeMethod, Predicate<T> canExecuteFunction)
         {
             if (executeMethod == null)
                 throw new ArgumentNullException("executeMethod");
+            if (canExecuteFunction == null)
+                throw new ArgumentNullException("canExecuteFunction");
 
             _executeMethod = executeMethod;
             _canExecuteFunction = canExecuteFunction;
@@ -77,10 +92,7 @@ namespace Jamiras.Commands
         /// <returns>True if the command can be executed, false if not.</returns>
         public override bool CanExecute(T parameter)
         {
-            if (_canExecuteFunction != null)
-                return _canExecuteFunction(parameter);
-
-            return base.CanExecute(parameter);
+            return _canExecuteFunction(parameter);
         }
     }
 }

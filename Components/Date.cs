@@ -75,18 +75,29 @@ namespace Jamiras.Components
         private static readonly string[] _months = new string[]
         {
             "",
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
+            "January",
+            "February",
+            "March",
+            "April",
             "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec"
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December"
+        };
+
+        private static readonly string[] _dayOfWeeks = new string[]
+        {
+            "Sunday",
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday"
         };
 
         /// <summary>
@@ -94,32 +105,241 @@ namespace Jamiras.Components
         /// </summary>
         public override string ToString()
         {
-            StringBuilder builder = new StringBuilder();
-            if (Day > 0)
+            return ToString("[d] [MMM] [YYYY]");
+        }
+
+        /// <summary>
+        /// Gets the value of the <see cref="Date"/> in the specified format.
+        /// </summary>
+        /// <remarks>
+        /// d     Day (0-31)
+        /// dd    Day (00-31)
+        /// ddd   Abbreviated day of week
+        /// dddd  Day of week
+        /// M     Month (1-12)
+        /// MM    Month (01-12)
+        /// MMM   Abbreviated month
+        /// MMMM  Month
+        /// y     Year (0-9999)
+        /// yy    Year (00-99)
+        /// yyyy  Year (0000-9999)
+        /// </remarks>
+        public string ToString(string dateFormat)
+        {
+            if (IsEmpty)
+                return "Unknown";
+
+            var builder = new StringBuilder();
+            bool isFullDate = Day > 0 && Month > 0 && Year > 0;
+            bool isOptional = false;
+            DateTime? fullDate = null;
+            if (isFullDate)
+                fullDate = new DateTime(Year, Month, Day);
+
+            int index = 0;
+            while (index < dateFormat.Length)
             {
-                builder.Append(Day);
+                switch (dateFormat[index])
+                {
+                    case 'd':
+                        index += AppendDay(builder, dateFormat, index, isOptional, fullDate);
+                        break;
+                    case 'M':
+                        index += AppendMonth(builder, dateFormat, index, isOptional);
+                        break;
+                    case 'y':
+                        index += AppendYear(builder, dateFormat, index, isOptional);
+                        break;
+                    case '[':
+                        if (dateFormat[index + 1] == '[')
+                            goto default;
+
+                        isOptional = true;
+                        break;
+                    case ']':
+                        if (!isOptional)
+                            goto default;
+
+                        isOptional = false;
+                        break;
+                    case ' ':
+                        if (builder.Length > 0 && builder[builder.Length - 1] != ' ')
+                            goto default;
+
+                        break;
+                    default:
+                        builder.Append(dateFormat[index++]);
+                        break;
+                }
             }
 
-            if (Month > 0)
-            {
-                if (builder.Length > 0)
-                    builder.Append(' ');
-
-                builder.Append(_months[Month]);
-            }
-
-            if (Year > 0)
-            {
-                if (builder.Length > 0)
-                    builder.Append(' ');
-
-                builder.Append(Year);
-            }
+            if (builder.Length > 0 && builder[builder.Length - 1] == ' ')
+                builder.Length--;
 
             if (builder.Length == 0)
                 return "Unknown";
 
             return builder.ToString();
+        }
+
+        private int AppendDay(StringBuilder builder, string dateFormat, int index, bool isOptional, DateTime? fullDate)
+        {
+            if (dateFormat[index + 1] != 'd')
+            {
+                // d: day of month
+                if (Day > 0)
+                    builder.Append(Day);
+                else if (!isOptional)
+                    builder.Append('?');
+
+                return 1;
+            }
+
+            if (dateFormat[index + 2] != 'd')
+            {
+                // dd: 0-padded day of month
+                if (Day == 0)
+                {
+                    if (!isOptional)
+                        builder.Append("??");
+                }
+                else
+                {
+                    if (Day < 10)
+                        builder.Append('0');
+                    builder.Append(Day);
+                }
+
+                return 2;
+            }
+
+            if (dateFormat[index + 3] != 'd')
+            {
+                // ddd: abbreviate name of day of the week
+                if (fullDate != null)
+                    builder.Append(_dayOfWeeks[(int)fullDate.GetValueOrDefault().DayOfWeek], 0, 3);
+                else if (!isOptional)
+                    builder.Append("???");
+
+                return 3;
+            }
+
+            // dddd: full name of the day of the week
+            if (fullDate != null)
+                builder.Append(_dayOfWeeks[(int)fullDate.GetValueOrDefault().DayOfWeek]);
+            else if (!isOptional)
+                builder.Append("???");
+
+            return 4;
+        }
+
+        private int AppendMonth(StringBuilder builder, string dateFormat, int index, bool isOptional)
+        {
+            var month = Month;
+
+            if (dateFormat[index + 1] != 'M')
+            {
+                // M: month
+                if (month != 0)
+                    builder.Append(month);
+                else if (!isOptional)
+                    builder.Append('?');
+
+                return 1;
+            }
+
+            if (dateFormat[index + 2] != 'M')
+            {
+                // MM: zero-padded month
+                if (month == 0)
+                {
+                    if (!isOptional)
+                        builder.Append("??");
+                }
+                else
+                {
+                    if (month < 10)
+                        builder.Append('0');
+                    builder.Append(month);
+                }
+
+                return 2;
+            }
+
+            if (dateFormat[index + 3] != 'M')
+            {
+                // MMM: abbreviated name of month
+                if (month == 0)
+                    builder.Append("???");
+                else if (!isOptional)
+                    builder.Append(_months[month], 0, 3);
+
+                return 3;
+            }
+
+            // MMMM: name of month
+            if (month == 0)
+                builder.Append("???");
+            else if (!isOptional)
+                builder.Append(_months[month]);
+
+            return 4;
+        }
+
+        private int AppendYear(StringBuilder builder, string dateFormat, int index, bool isOptional)
+        {
+            var year = Year;
+
+            if (dateFormat[index + 1] != 'y')
+            {
+                // y: year (0-99)
+                if (year > 0)
+                    builder.Append(year % 10);
+                else if (!isOptional)
+                    builder.Append('?');
+
+                return 1;
+            }
+
+            if (dateFormat[index + 2] != 'y')
+            {
+                // yy: year (00-99)
+                if (year > 0)
+                {
+                    year = year % 10;
+                    if (year < 10)
+                        builder.Append('0');
+                    builder.Append(year);
+                }
+                else if (!isOptional)
+                {
+                    builder.Append("??");                    
+                }
+
+                return 2;
+            }
+
+            // yyyy: four digit year
+            if (year > 0)
+            {
+                if (year < 1000)
+                {
+                    builder.Append('0');
+                    if (year < 100)
+                    {
+                        builder.Append('0');
+                        if (year < 10)
+                            builder.Append('0');
+                    }
+                }
+                builder.Append(year);
+            }
+            else if (!isOptional)
+            {
+                builder.Append("????");
+            }
+
+            return 4;
         }
 
         /// <summary>
