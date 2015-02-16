@@ -135,7 +135,7 @@ namespace Jamiras.ViewModels.Fields
 
         protected override string Validate(ModelProperty property, object value)
         {
-            if (property == TextProperty && IsMatchRequired)
+            if (property == TextProperty && IsMatchRequired && !IsFixedSelection)
             {
                 if (SelectedId == 0 && !String.IsNullOrEmpty(Text))
                     return String.Format("{0} is not a matching value.", LabelWithoutAccelerators);
@@ -144,5 +144,25 @@ namespace Jamiras.ViewModels.Fields
             return base.Validate(property, value);
         }
 
+        public static readonly ModelProperty IsFixedSelectionProperty =
+            ModelProperty.Register(typeof(AutoCompleteFieldViewModel), "IsFixedSelection", typeof(bool), false, OnIsFixedSelectionChanged);
+
+        /// <summary>
+        /// Gets or sets whether selection is fixed (allows control to be reused in cases where the name can be edited, but he selected id cannot).
+        /// </summary>
+        public bool IsFixedSelection
+        {
+            get { return (bool)GetValue(IsFixedSelectionProperty); }
+            set { SetValue(IsFixedSelectionProperty, value); }
+        }
+
+        private static void OnIsFixedSelectionChanged(object sender, ModelPropertyChangedEventArgs e)
+        {
+            var vm = (AutoCompleteFieldViewModel)sender;
+            if ((bool)e.NewValue)
+                vm.RemovePropertyChangedHandler(TextProperty, vm.OnTextChanged);
+            else
+                vm.AddPropertyChangedHandler(TextProperty, vm.OnTextChanged);
+        }
     }
 }
