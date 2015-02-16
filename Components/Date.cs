@@ -101,11 +101,11 @@ namespace Jamiras.Components
         };
 
         /// <summary>
-        /// Gets the value of the <see cref="Date"/> in the standard format "[d] [MMM] [YYYY]" (i.e. "Jan 1946", "6 Dec", "12 Nov 2005")
+        /// Gets the value of the <see cref="Date"/> in the standard format "[d] [MMM] [yyyy]" (i.e. "Jan 1946", "6 Dec", "12 Nov 2005")
         /// </summary>
         public override string ToString()
         {
-            return ToString("[d] [MMM] [YYYY]");
+            return ToString("[d] [MMM] [yyyy]");
         }
 
         /// <summary>
@@ -154,18 +154,21 @@ namespace Jamiras.Components
                         if (dateFormat[index + 1] == '[')
                             goto default;
 
+                        index++;
                         isOptional = true;
                         break;
                     case ']':
                         if (!isOptional)
                             goto default;
 
+                        index++;
                         isOptional = false;
                         break;
                     case ' ':
                         if (builder.Length > 0 && builder[builder.Length - 1] != ' ')
                             goto default;
 
+                        index++;
                         break;
                     default:
                         builder.Append(dateFormat[index++]);
@@ -269,19 +272,19 @@ namespace Jamiras.Components
             if (dateFormat[index + 3] != 'M')
             {
                 // MMM: abbreviated name of month
-                if (month == 0)
-                    builder.Append("???");
-                else if (!isOptional)
+                if (month > 0)
                     builder.Append(_months[month], 0, 3);
+                else if (!isOptional)
+                    builder.Append("???");
 
                 return 3;
             }
 
             // MMMM: name of month
-            if (month == 0)
-                builder.Append("???");
-            else if (!isOptional)
+            if (month > 0)
                 builder.Append(_months[month]);
+            else if (!isOptional)
+                builder.Append("???");
 
             return 4;
         }
@@ -429,7 +432,7 @@ namespace Jamiras.Components
                     {
                         for (int i = 1; i <= 12; i++)
                         {
-                            if (String.Compare(_months[i], part, StringComparison.OrdinalIgnoreCase) == 0)
+                            if (String.Compare(_months[i], 0, part, 0, 3, StringComparison.OrdinalIgnoreCase) == 0)
                             {
                                 month = i;
                                 break;

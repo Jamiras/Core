@@ -202,5 +202,67 @@ namespace Jamiras.Core.Tests.DataModels
             Assert.That(property.IsValueValid(new TestClass2()), Is.True);
             Assert.That(property.IsValueValid(new TestClass1()), Is.False, "superclass cannot be assigned");
         }
+
+        [Test]
+        public void TestRegisterDependant()
+        {
+            var property1 = ModelProperty.Register(typeof(TestClass1), null, typeof(string), null);
+            var property = ModelProperty.RegisterDependant(typeof(TestClass1), "PropertyName", typeof(string),
+                new[] { property1 }, model => "");
+
+            Assert.That(property.OwnerType, Is.EqualTo(typeof(TestClass1)));
+            Assert.That(property.PropertyName, Is.EqualTo("PropertyName"));
+            Assert.That(property.PropertyType, Is.EqualTo(typeof(string)));
+            Assert.That(property.DefaultValue, Is.InstanceOf<ModelProperty.UnitializedValue>());
+            Assert.That(property.PropertyChangedHandler, Is.Null);
+            Assert.That(property.FullName, Is.EqualTo("TestClass1.PropertyName"));
+            Assert.That(property.Key, Is.GreaterThan(0));
+
+            var propertyLookup = ModelProperty.GetPropertyForKey(property.Key);
+            Assert.That(propertyLookup, Is.Not.Null.And.SameAs(property));
+
+            Assert.That(property1.DependantProperties, Is.Not.Null.And.Contains(property.Key));
+        }
+
+        [Test]
+        public void TestRegisterDependantSubclass()
+        {
+            var property1 = ModelProperty.Register(typeof(TestClass1), null, typeof(string), null);
+            var property = ModelProperty.RegisterDependant(typeof(TestClass2), "PropertyName", typeof(string),
+                new[] { property1 }, model => "");
+
+            Assert.That(property.OwnerType, Is.EqualTo(typeof(TestClass2)));
+            Assert.That(property1.DependantProperties, Is.Not.Null.And.Contains(property.Key));
+        }
+
+        [Test]
+        public void TestRegisterDependantSuperclass()
+        {
+            var property1 = ModelProperty.Register(typeof(TestClass2), null, typeof(string), null);
+
+            Assert.That(() => ModelProperty.RegisterDependant(typeof(TestClass1), "PropertyName", typeof(string),
+                new[] { property1 }, model => ""), Throws.ArgumentException);
+        }
+
+        [Test]
+        public void TestRegisterDependantUnrelated()
+        {
+            var property1 = ModelProperty.Register(typeof(TestClass1), null, typeof(string), null);
+
+            Assert.That(() => ModelProperty.RegisterDependant(typeof(string), "PropertyName", typeof(string),
+                new[] { property1 }, model => ""), Throws.ArgumentException);
+        }
+
+        [Test]
+        public void TestRegisterDependantMultiple()
+        {
+            var property1 = ModelProperty.Register(typeof(TestClass1), null, typeof(string), null);
+            var propertyA = ModelProperty.RegisterDependant(typeof(TestClass1), "PropertyNameA", typeof(string),
+                new[] { property1 }, model => "");
+            var propertyB = ModelProperty.RegisterDependant(typeof(TestClass1), "PropertyNameB", typeof(string),
+                new[] { property1 }, model => "");
+
+            Assert.That(property1.DependantProperties, Is.Not.Null.And.Contains(propertyA.Key).And.Contains(propertyB.Key));
+        }
     }
 }

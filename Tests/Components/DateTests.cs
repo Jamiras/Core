@@ -155,7 +155,7 @@ namespace Jamiras.Core.Tests.Components
         public void TestTryParseValid(string input, int day, int month, int year)
         {
             Date date;
-            Assert.That(Date.TryParse(input, out date), Is.True);
+            Assert.That(Date.TryParse(input, out date), Is.True, "parse failed");
             Assert.That(date.Month, Is.EqualTo(month), "month");
             Assert.That(date.Day, Is.EqualTo(day), "day");
             Assert.That(date.Year, Is.EqualTo(year), "year");

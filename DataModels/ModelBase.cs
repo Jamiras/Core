@@ -33,7 +33,16 @@ namespace Jamiras.DataModels
         {
             object value;
             if (!_values.TryGetValue(property.Key, out value))
+            {
                 value = property.DefaultValue;
+
+                var uninitializedValue = value as ModelProperty.UnitializedValue;
+                if (uninitializedValue != null)
+                {
+                    value = uninitializedValue.GetValue(this);
+                    SetValueCore(property, value);
+                }
+            }
 
             return value;
         }
@@ -108,6 +117,28 @@ namespace Jamiras.DataModels
 
             if (!String.IsNullOrEmpty(e.Property.PropertyName))
                 OnPropertyChanged(new PropertyChangedEventArgs(e.Property.PropertyName));
+
+            if (e.Property.DependantProperties != null)
+            {
+                var changedProperties = new List<ModelPropertyChangedEventArgs>();
+                foreach (var propertyKey in e.Property.DependantProperties)
+                {
+                    object currentValue;
+                    if (_values.TryGetValue(propertyKey, out currentValue))
+                    {
+                        var property = ModelProperty.GetPropertyForKey(propertyKey);
+                        var value = ((ModelProperty.UnitializedValue)property.DefaultValue).GetValue(this);
+                        if (!Object.Equals(value, currentValue))
+                        {
+                            SetValueCore(property, value);
+                            changedProperties.Add(new ModelPropertyChangedEventArgs(property, currentValue, value));
+                        }
+                    }
+                }
+
+                foreach (var changedProperty in changedProperties)
+                    OnModelPropertyChanged(changedProperty);
+            }
         }
 
         /// <summary>
@@ -127,6 +158,13 @@ namespace Jamiras.DataModels
                 }
 
                 handlers.Add(new WeakAction<object, ModelPropertyChangedEventArgs>(handler.Method, handler.Target));
+            }
+
+            var uninitializedValue = property.DefaultValue as ModelProperty.UnitializedValue;
+            if (uninitializedValue != null && !_values.ContainsKey(property.Key))
+            {
+                var value = uninitializedValue.GetValue(this);
+                SetValueCore(property, value);
             }
         }
 

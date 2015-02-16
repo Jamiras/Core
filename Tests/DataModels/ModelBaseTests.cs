@@ -34,6 +34,20 @@ namespace Jamiras.Core.Tests.DataModels
             {
                 ((TestClass)sender).Counter++;
             }
+
+            public static readonly ModelProperty LazyProperty = ModelProperty.RegisterDependant(typeof(TestClass), "Lazy", typeof(string), new[] { StrProperty }, BuildLazy);
+
+            public string Lazy
+            {
+                get { return (string)GetValue(LazyProperty); }
+            }
+
+            private static object BuildLazy(ModelBase model)
+            {
+                return (((TestClass)model).Str ?? "null") + ((TestClass)model).Suffix;
+            }
+
+            public string Suffix { get; set; }
         }
 
         [SetUp]
@@ -232,6 +246,73 @@ namespace Jamiras.Core.Tests.DataModels
             Assert.That(handled, Is.False, "handler called after unsubscribe");
 
             Assert.That(handler, Is.Not.Null, "handler released");
+        }
+
+        [Test]
+        public void TestLazyProperty()
+        {
+            _model.Suffix = "suffix";
+            Assert.That(_model.Str, Is.Null);
+
+            var propertiesChanged = new List<string>();
+            _model.PropertyChanged += (o, e) => propertiesChanged.Add(e.PropertyName);
+
+            _model.Str = "One";
+            Assert.That(_model.Str, Is.EqualTo("One"));
+            Assert.That(_model.Lazy, Is.EqualTo("Onesuffix"), "ensure lazy initialization");
+            Assert.That(propertiesChanged, Has.No.Member("Lazy"));
+
+            _model.Suffix = "newSuffix";
+            Assert.That(_model.Lazy, Is.EqualTo("Onesuffix"), "ensure only initialized once");
+        }
+
+        [Test]
+        public void TestDependantProperty()
+        {
+            var propertiesChanged = new List<string>();
+            _model.PropertyChanged += (o, e) => propertiesChanged.Add(e.PropertyName);
+
+            _model.Suffix = "suffix";
+            _model.Str = "One";
+            Assert.That(_model.Lazy, Is.EqualTo("Onesuffix"));
+            Assert.That(propertiesChanged, Has.No.Member("Lazy"));
+
+            _model.Str = "Two";
+            Assert.That(_model.Lazy, Is.EqualTo("Twosuffix"));
+            Assert.That(propertiesChanged, Has.Member("Lazy"));
+        }
+
+        [Test]
+        [Description("Prevents automatically updating the lazy property (and raising the associated event) until property has been accessed")]
+        public void TestDependantPropertyUnitialized()
+        {
+            var propertiesChanged = new List<string>();
+            _model.PropertyChanged += (o, e) => propertiesChanged.Add(e.PropertyName);
+
+            _model.Suffix = "suffix";
+            _model.Str = "One";
+            Assert.That(propertiesChanged, Has.No.Member("Lazy"));
+
+            _model.Str = "Two";
+            Assert.That(_model.Lazy, Is.EqualTo("Twosuffix"));
+            Assert.That(propertiesChanged, Has.No.Member("Lazy"));
+        }
+
+        [Test]
+        [Description("Subscribing to the property changed handler automatically evaluates the lazy property")]
+        public void TestDependantPropertyUnitializedSubScription()
+        {
+            ModelPropertyChangedEventArgs args = null;
+            _model.Suffix = "suffix";
+            _model.Str = "One";
+
+            _model.AddPropertyChangedHandler(TestClass.LazyProperty, (o, e) => args = e);
+            Assert.That(args, Is.Null);
+
+            _model.Str = "Two";
+            Assert.That(args, Is.Not.Null);
+            Assert.That(args.OldValue, Is.EqualTo("Onesuffix"));
+            Assert.That(args.NewValue, Is.EqualTo("Twosuffix"));
         }
     }
 }

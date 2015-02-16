@@ -10,7 +10,7 @@ namespace Jamiras.DataModels
     [DebuggerDisplay("{FullName,nq} ModelProperty")]
     public class ModelProperty
     {
-        private ModelProperty()
+        internal ModelProperty()
         {
         }
 
@@ -52,6 +52,11 @@ namespace Jamiras.DataModels
         /// </summary>
         public EventHandler<ModelPropertyChangedEventArgs> PropertyChangedHandler { get; private set; }
 
+        /// <summary>
+        /// Gets the properties that are dependant on this property.
+        /// </summary>
+        internal int[] DependantProperties { get; private set; }
+
         private static int _keyCount;
         private static ModelProperty[] _properties;
 
@@ -74,7 +79,7 @@ namespace Jamiras.DataModels
                 PropertyChangedHandler = propertyChangedHandler,
             };
 
-            if (!property.IsValueValid(defaultValue))
+            if (!property.IsValueValid(defaultValue) && !(defaultValue is UnitializedValue))
                 throw new InvalidCastException("Cannot store " + ((defaultValue != null) ? defaultValue.GetType().Name : "null") + " in " + property.FullName + " (" + property.PropertyType.Name + ")");
 
             lock (typeof(ModelProperty))
@@ -95,6 +100,66 @@ namespace Jamiras.DataModels
             }
 
             return property;
+        }
+
+        /// <summary>
+        /// Registers a <see cref="ModelProperty"/>.
+        /// </summary>
+        /// <param name="ownerType">The type of model that owns the property.</param>
+        /// <param name="propertyName">The name of the property on the model.</param>
+        /// <param name="propertyType">The type of the property.</param>
+        /// <param name="dependancies">The properties this property is dependant on.</param>
+        /// <param name="getValueFunction">The method that constructs the property value from the dependant properties.</param>
+        public static ModelProperty RegisterDependant(Type ownerType, string propertyName, Type propertyType,
+                                                      ModelProperty[] dependancies, Func<ModelBase, object> getValueFunction)
+        {
+            foreach (var dependancy in dependancies)
+            {
+                if (!dependancy.OwnerType.IsAssignableFrom(ownerType))
+                    throw new ArgumentException("Dependant properties must be on same model. " + dependancy.FullName + " not on " + ownerType.FullName, "dependancies");
+            }            
+
+            var property = Register(ownerType, propertyName, propertyType, new UnitializedValue(getValueFunction));
+
+            foreach (var dependancy in dependancies)
+            {
+                var dependantProperties = dependancy.DependantProperties;
+                if (dependantProperties == null)
+                {
+                    dependantProperties = new[] { property.Key };
+                }
+                else
+                {
+                    dependantProperties = new int[dependantProperties.Length + 1];
+                    Array.Copy(dependancy.DependantProperties, dependantProperties, dependancy.DependantProperties.Length);
+                    dependantProperties[dependancy.DependantProperties.Length] = property.Key;                    
+                }
+
+                dependancy.DependantProperties = dependantProperties;
+            }
+
+            return property;
+        }
+
+        /// <summary>
+        /// ModelProperty that is constructed from other ModelProperties, and therefore can be lazy populated.
+        /// </summary>
+        internal class UnitializedValue
+        {
+            internal UnitializedValue(Func<ModelBase, object> getValueFunction)
+            {
+                _getValueFunction = getValueFunction;
+            }
+
+            private readonly Func<ModelBase, object> _getValueFunction;
+
+            /// <summary>
+            /// Gets the value of the property for a given model.
+            /// </summary>
+            public object GetValue(ModelBase model)
+            {
+                return _getValueFunction(model);
+            }
         }
 
         /// <summary>
