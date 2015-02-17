@@ -29,7 +29,7 @@
                                 Command="{Binding OkCommand}"
                                 IsDefault="True"
                                 MinWidth="80"
-                                Margin="0,5,4,5" />
+                                Margin="5,5,4,5" />
                         <Button HorizontalAlignment="Right"
                                 AutomationProperties.AutomationId="cancelButton"
                                 Content="{Binding CancelButtonText}"
