@@ -162,7 +162,7 @@ namespace Jamiras.DataModels.Metadata
                 if (!query.FetchRow())
                     return false;
 
-                PopulateItem(model, query);
+                PopulateItem(model, database, query);
             }
 
             return true;
@@ -205,7 +205,7 @@ namespace Jamiras.DataModels.Metadata
         {
         }
 
-        internal void PopulateItem(ModelBase model, IDatabaseQuery query)
+        internal void PopulateItem(ModelBase model, IDatabase database, IDatabaseQuery query)
         {
             int index = 0;
             foreach (var kvp in AllFieldMetadata)
@@ -217,14 +217,19 @@ namespace Jamiras.DataModels.Metadata
                 index++;
             }
 
-            InitializeExistingRecord(model);
+            InitializeExistingRecord(model, database);
+
+            var dataModel = model as DataModelBase;
+            if (dataModel != null && dataModel.IsModified)
+                dataModel.AcceptChanges();
         }
 
         /// <summary>
         /// Initializes default values for a record populated from the database.
         /// </summary>
         /// <param name="model">Model to initialize.</param>
-        protected virtual void InitializeExistingRecord(ModelBase model)
+        /// <param name="database">The database to populate from.</param>
+        protected virtual void InitializeExistingRecord(ModelBase model, IDatabase database)
         {
         }
 

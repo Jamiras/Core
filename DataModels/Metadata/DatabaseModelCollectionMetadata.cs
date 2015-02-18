@@ -119,8 +119,8 @@ namespace Jamiras.DataModels.Metadata
                     while (query.FetchRow())
                     {
                         TModel item = new TModel();
-                        RelatedMetadata.PopulateItem(item, query);
-                        InitializeExistingRecord(item);
+                        RelatedMetadata.PopulateItem(item, database, query);
+                        InitializeExistingRecord(item, database);
                         models.Add(item);
 
                         if (--maxResults == 0)
@@ -145,8 +145,8 @@ namespace Jamiras.DataModels.Metadata
                         }
 
                         item = new TModel();
-                        RelatedMetadata.PopulateItem(item, query);
-                        InitializeExistingRecord(item);
+                        RelatedMetadata.PopulateItem(item, database, query);
+                        InitializeExistingRecord(item, database);
 
                         if (databaseDataModelSource != null)
                             item = databaseDataModelSource.TryCache<TModel>(id, item);
