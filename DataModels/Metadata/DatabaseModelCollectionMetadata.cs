@@ -82,7 +82,7 @@ namespace Jamiras.DataModels.Metadata
             if (primaryKey is int)
                 model.SetValueCore(CollectionFilterKeyProperty, (int)primaryKey);
 
-            if (!Query((ICollection<TCollection>)model, Int32.MaxValue, primaryKey, database))
+            if (!Query((ICollection<TCollection>)model, maxResults, primaryKey, database))
                 return false;
 
             if (AreResultsReadOnly)

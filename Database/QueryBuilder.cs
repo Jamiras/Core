@@ -15,12 +15,14 @@ namespace Jamiras.Database
             _filters = new List<FilterDefinition>();
             _joins = new List<JoinDefinition>();
             _orderBy = new List<OrderByDefinition>();
+            _aggregateFields = new List<AggregateFieldDefinition>();
         }
 
         private readonly List<string> _fields;
         private readonly List<FilterDefinition> _filters;
         private readonly List<JoinDefinition> _joins;
         private readonly List<OrderByDefinition> _orderBy;
+        private readonly List<AggregateFieldDefinition> _aggregateFields;
         private string _filterExpression;
 
         public override string ToString()
@@ -58,6 +60,14 @@ namespace Jamiras.Database
         public ICollection<OrderByDefinition> OrderBy
         {
             get { return _orderBy; }
+        }
+
+        /// <summary>
+        /// Gets the collection of aggregate fields to return from the query.
+        /// </summary>
+        public ICollection<AggregateFieldDefinition> AggregateFields
+        {
+            get { return _aggregateFields; }
         }
 
         /// <summary>

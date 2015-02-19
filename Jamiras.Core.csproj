@@ -110,6 +110,7 @@
     <Compile Include="Database\IDatabaseExtensions.cs" />
     <Compile Include="Database\IDatabaseQuery.cs" />
     <Compile Include="Database\JoinDefinition.cs" />
+    <Compile Include="Database\AggregateFieldDefinition.cs" />
     <Compile Include="Database\OrderByDefinition.cs" />
     <Compile Include="Database\QueryBuilder.cs" />
     <Compile Include="DataModels\DatabaseDataModelSource.cs" />
