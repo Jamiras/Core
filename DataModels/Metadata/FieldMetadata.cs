@@ -42,7 +42,7 @@ namespace Jamiras.DataModels.Metadata
         /// <summary>
         /// Gets attributes of the field.
         /// </summary>
-        public FieldAttributes Attributes { get; private set; }
+        public FieldAttributes Attributes { get; protected set; }
 
         /// <summary>
         /// Determines whether or not a value is valid for a field.

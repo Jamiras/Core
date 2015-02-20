@@ -139,7 +139,12 @@ namespace Jamiras.DataModels.Metadata
                             if (item != null)
                             {
                                 if (!models.Contains(item))
+                                {
                                     models.Add(item);
+                                    if (--maxResults == 0)
+                                        break;                                    
+                                }
+
                                 continue;
                             }
                         }
