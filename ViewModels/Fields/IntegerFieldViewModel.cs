@@ -25,7 +25,7 @@ namespace Jamiras.ViewModels.Fields
         }
 
         public static readonly ModelProperty ValueProperty =
-            ModelProperty.Register(typeof(TextFieldViewModel), "Value", typeof(int?), null, OnValueChanged);
+            ModelProperty.Register(typeof(IntegerFieldViewModel), "Value", typeof(int?), null, OnValueChanged);
 
         private static void OnValueChanged(object sender, ModelPropertyChangedEventArgs e)
         {
@@ -39,7 +39,7 @@ namespace Jamiras.ViewModels.Fields
         }
 
         public static readonly ModelProperty MinValueProperty =
-            ModelProperty.Register(typeof(TextFieldViewModel), "MinValue", typeof(int), 0);
+            ModelProperty.Register(typeof(IntegerFieldViewModel), "MinValue", typeof(int), 0);
 
         public int MinValue
         {
@@ -48,7 +48,7 @@ namespace Jamiras.ViewModels.Fields
         }
 
         public static readonly ModelProperty MaxValueProperty =
-            ModelProperty.Register(typeof(TextFieldViewModel), "MaxValue", typeof(int), Int32.MaxValue);
+            ModelProperty.Register(typeof(IntegerFieldViewModel), "MaxValue", typeof(int), Int32.MaxValue);
 
         public int MaxValue
         {

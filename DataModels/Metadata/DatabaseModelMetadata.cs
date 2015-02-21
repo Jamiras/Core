@@ -344,9 +344,14 @@ namespace Jamiras.DataModels.Metadata
                 else
                     builder.AppendFormat("'{0}'", database.Escape(sVal));
             }
-            else if (value is double || value is float)
+            else if (value is double)
             {
                 double dVal = (double)value;
+                builder.Append(dVal);
+            }
+            else if (value is float)
+            {
+                float dVal = (float)value;
                 builder.Append(dVal);
             }
             else if (value is DateTime)
