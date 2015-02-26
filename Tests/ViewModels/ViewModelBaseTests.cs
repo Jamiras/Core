@@ -8,7 +8,7 @@ using NUnit.Framework;
 namespace Jamiras.Core.Tests.ViewModels
 {
     [TestFixture]
-    class ViewModelBaseTests
+    public class ViewModelBaseTests
     {
         private class TestModel : ModelBase
         {
@@ -45,6 +45,29 @@ namespace Jamiras.Core.Tests.ViewModels
             {
                 get { return (int)GetValue(IntegerProperty); }
                 set { SetValue(IntegerProperty, value); }
+            }
+        }
+
+        private class TestCompositeViewModel : ViewModelBase, ICompositeViewModel
+        {
+            public TestCompositeViewModel()
+            {
+                Child = new TestViewModel();
+            }
+
+            public TestViewModel Child { get; private set; }
+
+            protected override void OnBeforeCommit()
+            {
+                if (Child.Text == "Happy")
+                    Child.Text = "Sad";
+
+                base.OnBeforeCommit();
+            }
+
+            public IEnumerable<ViewModelBase> GetChildren()
+            {
+                yield return Child;
             }
         }
 
@@ -232,6 +255,50 @@ namespace Jamiras.Core.Tests.ViewModels
 
             _viewModel.Text = "abc";
             Assert.That(_model.Integer, Is.EqualTo(123));
+        }
+
+
+        [Test]
+        public void TestBindingModeCommittedComposite()
+        {
+            var viewModel = new TestCompositeViewModel();
+
+            _model.Str = "Banana";
+            Assert.That(viewModel.Child.Text, Is.Null);
+
+            viewModel.Child.SetBinding(TestViewModel.TextProperty, new ModelBinding(_model, TestModel.StrProperty, ModelBindingMode.Committed));
+            Assert.That(viewModel.Child.Text, Is.EqualTo("Banana"));
+
+            _model.Str = "Strawberry";
+            Assert.That(viewModel.Child.Text, Is.EqualTo("Strawberry"));
+
+            var propertiesChanged = new List<string>();
+            _model.PropertyChanged += (o, e) => propertiesChanged.Add(e.PropertyName);
+
+            viewModel.Child.Text = "Apple";
+            Assert.That(_model.Str, Is.EqualTo("Strawberry"), "model should not have been updated");
+            Assert.That(propertiesChanged, Has.No.Member("Str"), "model should not have been updated");
+
+            viewModel.Commit();
+            Assert.That(_model.Str, Is.EqualTo("Apple"), "model should have been updated");
+            Assert.That(propertiesChanged, Has.Member("Str"), "model should have been updated");
+        }
+
+        [Test]
+        public void TestBindingModeCommittedOnBeforeCommitHappensBeforeComposite()
+        {
+            var viewModel = new TestCompositeViewModel();
+
+            _model.Str = "Banana";
+            viewModel.Child.SetBinding(TestViewModel.TextProperty, new ModelBinding(_model, TestModel.StrProperty, ModelBindingMode.Committed));
+            Assert.That(viewModel.Child.Text, Is.EqualTo("Banana"));
+
+            viewModel.Child.Text = "Happy";
+            Assert.That(_model.Str, Is.EqualTo("Banana"), "model should not have been updated");
+
+            viewModel.Commit();
+            Assert.That(viewModel.Child.Text, Is.EqualTo("Sad"), "text not updated in OnBeforeCommit");
+            Assert.That(_model.Str, Is.EqualTo("Sad"), "model should have been updated after calling OnBeforeCommit");
         }
     }
 }
