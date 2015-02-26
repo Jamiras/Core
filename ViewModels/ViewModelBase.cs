@@ -187,6 +187,8 @@ namespace Jamiras.ViewModels
         /// </summary>
         public void Commit()
         {
+            OnBeforeCommit();
+
             var compositeViewModel = this as ICompositeViewModel;
             if (compositeViewModel != null)
             {
@@ -199,8 +201,6 @@ namespace Jamiras.ViewModels
 
         private void PushCommitBindings()
         {
-            OnBeforeCommit();
-
             foreach (var kvp in _bindings)
             {
                 var binding = kvp.Value;
