@@ -9,6 +9,7 @@ namespace Jamiras.ViewModels.Fields
         public TextFieldViewModel(string label, StringFieldMetadata metadata)
             : this(label, metadata.MaxLength)
         {
+            IsMultiline = metadata.IsMultiline;
         }
 
         public TextFieldViewModel(string label, int maxLength)
@@ -62,6 +63,18 @@ namespace Jamiras.ViewModels.Fields
         {
             get { return (bool)GetValue(IsTextBindingDelayedProperty); }
             set { SetValue(IsTextBindingDelayedProperty, value); }
+        }
+
+        public static readonly ModelProperty IsMultilineProperty =
+            ModelProperty.Register(typeof(TextFieldViewModel), "IsMultiline", typeof(bool), false);
+
+        /// <summary>
+        /// Gets or sets whether the field supports newlines.
+        /// </summary>
+        public bool IsMultiline
+        {
+            get { return (bool)GetValue(IsMultilineProperty); }
+            set { SetValue(IsMultilineProperty, value); }
         }
 
         protected override string Validate(ModelProperty property, object value)

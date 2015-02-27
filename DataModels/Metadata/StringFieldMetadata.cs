@@ -19,6 +19,8 @@ namespace Jamiras.DataModels.Metadata
 
         public bool IsRequired { get; set; }
 
+        public bool IsMultiline { get; set; }
+
         public override string Validate(ModelBase model, object value)
         {
             string strValue = value as string;

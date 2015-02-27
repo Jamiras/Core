@@ -148,7 +148,7 @@ namespace Jamiras.ViewModels.Fields
             ModelProperty.Register(typeof(AutoCompleteFieldViewModel), "IsFixedSelection", typeof(bool), false, OnIsFixedSelectionChanged);
 
         /// <summary>
-        /// Gets or sets whether selection is fixed (allows control to be reused in cases where the name can be edited, but he selected id cannot).
+        /// Gets or sets whether selection is fixed (allows control to be reused in cases where the name can be edited, but the selected id cannot).
         /// </summary>
         public bool IsFixedSelection
         {

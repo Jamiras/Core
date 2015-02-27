@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Text;
 using Jamiras.DataModels;
 
 namespace Jamiras.ViewModels.Fields
@@ -10,19 +11,109 @@ namespace Jamiras.ViewModels.Fields
         public static readonly ModelProperty IsRequiredProperty =
             ModelProperty.Register(typeof(FieldViewModelBase), "IsRequired", typeof(bool), false);
 
+        /// <summary>
+        /// Gets or sets whether the field is required.
+        /// </summary>
         public bool IsRequired
         {
             get { return (bool)GetValue(IsRequiredProperty); }
             set { SetValue(IsRequiredProperty, value); }
         }
 
+        public static readonly ModelProperty IsEnabledProperty =
+            ModelProperty.Register(typeof(FieldViewModelBase), "IsEnabled", typeof(bool), true);
+
+        /// <summary>
+        /// Gets or sets whether the field is enabled.
+        /// </summary>
+        public bool IsEnabled
+        {
+            get { return (bool)GetValue(IsEnabledProperty); }
+            set { SetValue(IsEnabledProperty, value); }
+        }
+
         public static readonly ModelProperty LabelProperty =
             ModelProperty.Register(typeof(FieldViewModelBase), "Label", typeof(string), "Value");
 
+        /// <summary>
+        /// Gets or sets a label to associate with the field.
+        /// </summary>
+        /// <remarks>
+        /// Should include one letter prefixed with an underscore to use as an accelerator for the field.
+        /// </remarks>
         public string Label
         {
             get { return (string)GetValue(LabelProperty); }
             set { SetValue(LabelProperty, value); }
+        }
+
+        private static readonly ModelProperty CustomNameProperty =
+            ModelProperty.Register(typeof(FieldViewModelBase), null, typeof(string), null);
+
+        public static readonly ModelProperty NameProperty =
+            ModelProperty.RegisterDependant(typeof(FieldViewModelBase), "Name", typeof(string),
+                new ModelProperty[] { LabelProperty, CustomNameProperty }, GetName);
+
+        /// <summary>
+        /// Gets or sets the unique identifier for the field.
+        /// </summary>
+        public string Name
+        {
+            get { return (string)GetValue(NameProperty); }
+            set { SetValue(CustomNameProperty, value); }
+        }
+
+        private static string GetName(ModelBase model)
+        {
+            var fieldViewModel = (FieldViewModelBase)model;
+            var customName = (string)fieldViewModel.GetValue(CustomNameProperty);
+            if (customName != null)
+                return customName;
+
+            var builder = new StringBuilder();
+            var makeUpper = false;
+            var makeLower = true;
+            var seenAccelerator = false;
+            foreach (var c in fieldViewModel.Label ?? String.Empty)
+            {
+                if (Char.IsLetterOrDigit(c))
+                {
+                    if (makeUpper)
+                    {
+                        makeUpper = false;
+                        builder.Append(Char.ToUpper(c));
+                        makeLower = true;
+                    }
+                    else if (makeLower)
+                    {
+                        builder.Append(Char.ToLower(c));
+                    }
+                    else
+                    {
+                        builder.Append(c);
+                        makeLower = true;
+                    }
+                }
+                else if (c == '_' && !seenAccelerator)
+                {
+                    seenAccelerator = true;
+                    makeLower = false;
+                }
+                else
+                {
+                    makeUpper = true;
+                    makeLower = false;
+                }
+            }
+
+            var typeName = fieldViewModel.GetType().Name;
+            int index = typeName.IndexOf("ViewModel", StringComparison.Ordinal);
+            if (index > 0)
+                builder.Append(typeName, 0, index);
+            else
+                builder.Append(typeName);
+
+            return builder.ToString();
         }
 
         protected override string FormatErrorMessage(string errorMessage)
@@ -30,6 +121,9 @@ namespace Jamiras.ViewModels.Fields
             return String.Format(errorMessage, LabelWithoutAccelerators);
         }
 
+        /// <summary>
+        /// Gets the value of the <see cref="Label"/> property with the accelerators removed.
+        /// </summary>
         protected string LabelWithoutAccelerators
         {
             get
