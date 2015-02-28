@@ -13,9 +13,11 @@ namespace Jamiras.ViewModels
         protected ViewModelBase()
         {
             _bindings = EmptyTinyDictionary<int, ModelBinding>.Instance;
+            _selfBindings = EmptyTinyDictionary<int, ModelBinding>.Instance;
         }
 
         private ITinyDictionary<int, ModelBinding> _bindings;
+        private ITinyDictionary<int, ModelBinding> _selfBindings;
         private int _propertyBeingSynchronized;
 
         /// <summary>
@@ -52,15 +54,26 @@ namespace Jamiras.ViewModels
                 if (!IsObserving(oldBinding.Source, oldBinding.SourceProperty))
                     oldBinding.Source.RemovePropertyChangedHandler(oldBinding.SourceProperty, OnSourcePropertyChanged);
             }
+            else if (_selfBindings.TryGetValue(viewModelProperty.Key, out oldBinding))
+            {
+                _selfBindings = _selfBindings.Remove(viewModelProperty.Key);
+            }
 
             if (binding != null)
             {
-                if (!IsObserving(binding.Source, binding.SourceProperty))
-                    binding.Source.AddPropertyChangedHandler(binding.SourceProperty, OnSourcePropertyChanged);
+                if (ReferenceEquals(binding.Source, this))
+                {
+                    _selfBindings = _selfBindings.Add(viewModelProperty.Key, binding);
+                    RefreshBinding(viewModelProperty.Key, binding);
+                }
+                else
+                {
+                    if (!IsObserving(binding.Source, binding.SourceProperty))
+                        binding.Source.AddPropertyChangedHandler(binding.SourceProperty, OnSourcePropertyChanged);
 
-                _bindings = _bindings.Add(viewModelProperty.Key, binding);
-
-                RefreshBinding(viewModelProperty.Key, binding);
+                    _bindings = _bindings.Add(viewModelProperty.Key, binding);
+                    RefreshBinding(viewModelProperty.Key, binding);
+                }
             }
         }
 
@@ -129,13 +142,22 @@ namespace Jamiras.ViewModels
 
         protected override void OnModelPropertyChanged(ModelPropertyChangedEventArgs e)
         {
-            if (e.Property.Key != _propertyBeingSynchronized)
+            ModelBinding binding;
+            if (_bindings.TryGetValue(e.Property.Key, out binding) ||
+                _selfBindings.TryGetValue(e.Property.Key, out binding))
             {
-                ModelBinding binding;
-                if (_bindings.TryGetValue(e.Property.Key, out binding))
-                    HandleBoundPropertyChanged(binding, e, binding.Mode == ModelBindingMode.TwoWay);
-                else
-                    HandleUnboundPropertyChanged(e);
+                HandleBoundPropertyChanged(binding, e, binding.Mode == ModelBindingMode.TwoWay);
+            }
+            else
+            {
+                HandleUnboundPropertyChanged(e);
+            }
+
+            // if any self bindings are dependant on the modified field, update them now
+            foreach (var kvp in _selfBindings)
+            {
+                if (kvp.Value.SourceProperty == e.Property)
+                    RefreshBinding(kvp.Key, kvp.Value);
             }
 
             base.OnModelPropertyChanged(e);

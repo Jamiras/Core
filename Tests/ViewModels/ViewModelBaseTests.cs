@@ -39,6 +39,14 @@ namespace Jamiras.Core.Tests.ViewModels
                 set { SetValue(TextProperty, value); }
             }
 
+            public static readonly ModelProperty Text2Property = ModelProperty.Register(typeof(TestViewModel), "Text2", typeof(string), null);
+
+            public string Text2
+            {
+                get { return (string)GetValue(Text2Property); }
+                set { SetValue(Text2Property, value); }
+            }
+
             public static readonly ModelProperty IntegerProperty = ModelProperty.Register(typeof(TestViewModel), "Integer", typeof(int), 1);
 
             public int Integer
@@ -299,6 +307,33 @@ namespace Jamiras.Core.Tests.ViewModels
             viewModel.Commit();
             Assert.That(viewModel.Child.Text, Is.EqualTo("Sad"), "text not updated in OnBeforeCommit");
             Assert.That(_model.Str, Is.EqualTo("Sad"), "model should have been updated after calling OnBeforeCommit");
+        }
+
+        [Test]
+        public void TestBoundToSelf()
+        {
+            _viewModel.SetBinding(TestViewModel.Text2Property, new ModelBinding(_viewModel, TestViewModel.TextProperty));
+
+            _model.Str = "Banana";
+            Assert.That(_viewModel.Text, Is.Null);
+            Assert.That(_viewModel.Text2, Is.Null);
+
+            // set binding will trigger a flush from model -> vm -> vm2
+            _viewModel.SetBinding(TestViewModel.TextProperty, new ModelBinding(_model, TestModel.StrProperty));
+            Assert.That(_viewModel.Text, Is.EqualTo("Banana"), "Text");
+            Assert.That(_viewModel.Text2, Is.EqualTo("Banana"), "Text2");
+
+            // setting vm2 should flush in reverse: vm2 -> vm -> model
+            _viewModel.Text2 = "Happy";
+            Assert.That(_viewModel.Text2, Is.EqualTo("Happy"), "Text2");
+            Assert.That(_viewModel.Text, Is.EqualTo("Happy"), "Text");
+            Assert.That(_model.Str, Is.EqualTo("Happy"), "Str");
+
+            // setting vm should flush both ways: model <- vm -> vm2
+            _viewModel.Text = "Joy";
+            Assert.That(_viewModel.Text, Is.EqualTo("Joy"), "Text");
+            Assert.That(_viewModel.Text2, Is.EqualTo("Joy"), "Text2");
+            Assert.That(_model.Str, Is.EqualTo("Joy"), "Str");
         }
     }
 }
