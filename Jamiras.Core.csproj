@@ -159,6 +159,7 @@
     <Compile Include="ViewModels\DialogViewModelBase.cs" />
     <Compile Include="Services\IDialogService.cs" />
     <Compile Include="ViewModels\Fields\AutoCompleteFieldViewModel.cs" />
+    <Compile Include="ViewModels\Fields\TextFieldViewModelBase.cs" />
     <Compile Include="ViewModels\Fields\CurrencyFieldViewModel.cs" />
     <Compile Include="ViewModels\Fields\DateFieldViewModel.cs" />
     <Compile Include="ViewModels\Fields\FieldViewModel.cs" />

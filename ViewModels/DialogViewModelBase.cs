@@ -75,6 +75,7 @@ namespace Jamiras.ViewModels
             else
             {
                 var viewModel = new MessageBoxViewModel(errors, _dialogService);
+                viewModel.DialogTitle = "Corrections required";
                 viewModel.ShowDialog();
             }
         }

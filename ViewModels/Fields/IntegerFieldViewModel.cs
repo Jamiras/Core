@@ -4,7 +4,7 @@ using Jamiras.DataModels.Metadata;
 
 namespace Jamiras.ViewModels.Fields
 {
-    public class IntegerFieldViewModel : TextFieldViewModel
+    public class IntegerFieldViewModel : TextFieldViewModelBase
     {
         public IntegerFieldViewModel(string label, IntegerFieldMetadata metadata)
             : this(label, metadata.MinimumValue, metadata.MaximumValue)
@@ -32,6 +32,9 @@ namespace Jamiras.ViewModels.Fields
             ((IntegerFieldViewModel)sender).Text = (e.NewValue == null) ? String.Empty : e.NewValue.ToString();
         }
 
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
         public int? Value
         {
             get { return (int?)GetValue(ValueProperty); }
@@ -41,6 +44,20 @@ namespace Jamiras.ViewModels.Fields
         public static readonly ModelProperty MinValueProperty =
             ModelProperty.Register(typeof(IntegerFieldViewModel), "MinValue", typeof(int), 0);
 
+        /// <summary>
+        /// Binds the ViewModel to a source model.
+        /// </summary>
+        /// <param name="source">Model to bind to.</param>
+        /// <param name="property">Property on model to bind to.</param>
+        /// <param name="mode">How to bind to the source model.</param>
+        public void BindValue(ModelBase source, ModelProperty property, ModelBindingMode mode = ModelBindingMode.Committed)
+        {
+            SetBinding(ValueProperty, new ModelBinding(source, property, mode));
+        }
+
+        /// <summary>
+        /// Gets or sets the minimum valid value.
+        /// </summary>
         public int MinValue
         {
             get { return (int)GetValue(MinValueProperty); }
@@ -50,6 +67,9 @@ namespace Jamiras.ViewModels.Fields
         public static readonly ModelProperty MaxValueProperty =
             ModelProperty.Register(typeof(IntegerFieldViewModel), "MaxValue", typeof(int), Int32.MaxValue);
 
+        /// <summary>
+        /// Gets or sets the maximum valid value.
+        /// </summary>
         public int MaxValue
         {
             get { return (int)GetValue(MaxValueProperty); }

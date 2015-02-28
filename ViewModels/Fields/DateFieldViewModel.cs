@@ -38,5 +38,16 @@ namespace Jamiras.ViewModels.Fields
             get { return (Date)GetValue(DateProperty); }
             set { SetValue(DateProperty, value); }
         }
+
+        /// <summary>
+        /// Binds the ViewModel to a source model.
+        /// </summary>
+        /// <param name="source">Model to bind to.</param>
+        /// <param name="property">Property on model to bind to.</param>
+        /// <param name="mode">How to bind to the source model.</param>
+        public void BindDate(ModelBase source, ModelProperty property, ModelBindingMode mode = ModelBindingMode.Committed)
+        {
+            SetBinding(DateProperty, new ModelBinding(source, property, mode));
+        }
     }
 }

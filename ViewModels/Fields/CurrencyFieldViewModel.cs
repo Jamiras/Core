@@ -4,7 +4,7 @@ using Jamiras.DataModels.Metadata;
 
 namespace Jamiras.ViewModels.Fields
 {
-    public class CurrencyFieldViewModel : TextFieldViewModel
+    public class CurrencyFieldViewModel : TextFieldViewModelBase
     {
         public CurrencyFieldViewModel(string label, CurrencyFieldMetadata metadata)
             : base(label, 8)
@@ -24,6 +24,17 @@ namespace Jamiras.ViewModels.Fields
         {
             get { return (float?)GetValue(ValueProperty); }
             set { SetValue(ValueProperty, value); }
+        }
+
+        /// <summary>
+        /// Binds the ViewModel to a source model.
+        /// </summary>
+        /// <param name="source">Model to bind to.</param>
+        /// <param name="property">Property on model to bind to.</param>
+        /// <param name="mode">How to bind to the source model.</param>
+        public void BindValue(ModelBase source, ModelProperty property, ModelBindingMode mode = ModelBindingMode.Committed)
+        {
+            SetBinding(ValueProperty, new ModelBinding(source, property, mode));
         }
 
         protected override string Validate(ModelProperty property, object value)

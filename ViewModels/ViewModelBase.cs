@@ -85,7 +85,9 @@ namespace Jamiras.ViewModels
         public ModelBinding GetBinding(ModelProperty viewModelProperty)
         {
             ModelBinding binding;
-            _bindings.TryGetValue(viewModelProperty.Key, out binding);
+            if (!_bindings.TryGetValue(viewModelProperty.Key, out binding))
+                _selfBindings.TryGetValue(viewModelProperty.Key, out binding);
+
             return binding;
         }
 

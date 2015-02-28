@@ -51,6 +51,17 @@
         <Setter Property="IsEnabled" Value="{Binding IsEnabled}" />
     </Style>
     
+    <Style TargetType="{x:Type ComboBox}" x:Key="lookupFieldComboBoxStyle">
+        <Setter Property="ItemsSource" Value="{Binding Items}" />
+        <Setter Property="SelectedValuePath" Value="Id" />
+        <Setter Property="DisplayMemberPath" Value="Label" />
+        <Setter Property="SelectedValue" Value="{Binding SelectedId}" />
+        <Setter Property="Margin" Value="2,0,2,2" />
+        <Setter Property="AutomationProperties.AutomationId" Value="{Binding Name}" />
+        <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />
+        <Setter Property="IsEnabled" Value="{Binding IsEnabled}" />
+    </Style>
+
     <DataTemplate DataType="{x:Type fields:TextFieldViewModel}">
         <Grid>
             <Grid.RowDefinitions>
@@ -92,6 +103,19 @@
         </Grid>
     </DataTemplate>
 
+    <DataTemplate DataType="{x:Type fields:LookupFieldViewModel}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Label Style="{StaticResource fieldLabelStyle}"
+                   Target="{Binding ElementName=comboBox}" />
+            <ComboBox Style="{StaticResource lookupFieldComboBoxStyle}"
+                      Grid.Row="1" Name="comboBox" />
+        </Grid>
+    </DataTemplate>
+    
     <DataTemplate DataType="{x:Type fields:AutoCompleteFieldViewModel}">
         <Grid>
             <Grid.RowDefinitions>

@@ -5,10 +5,10 @@ using Jamiras.DataModels.Metadata;
 
 namespace Jamiras.ViewModels.Fields
 {
-    public class AutoCompleteFieldViewModel : TextFieldViewModel
+    public class AutoCompleteFieldViewModel : TextFieldViewModelBase
     {
         public AutoCompleteFieldViewModel(string label, StringFieldMetadata metadata, Func<string, IEnumerable<LookupItem>> searchFunction, Func<int, string> lookupLabelFunction)
-            : base(label, metadata)
+            : base(label, metadata.MaxLength)
         {
             IsTextBindingDelayed = true;
 
@@ -69,6 +69,17 @@ namespace Jamiras.ViewModels.Fields
         public IEnumerable<LookupItem> Suggestions
         {
             get { return (IEnumerable<LookupItem>)GetValue(SuggestionsProperty); }
+        }
+
+        /// <summary>
+        /// Binds the ViewModel to a source model.
+        /// </summary>
+        /// <param name="source">Model to bind to.</param>
+        /// <param name="property">Property on model to bind to.</param>
+        /// <param name="mode">How to bind to the source model.</param>
+        public void BindSelection(ModelBase source, ModelProperty property, ModelBindingMode mode = ModelBindingMode.Committed)
+        {
+            SetBinding(SelectedIdProperty, new ModelBinding(source, property, mode));
         }
 
         public static readonly ModelProperty SelectedIdProperty =
