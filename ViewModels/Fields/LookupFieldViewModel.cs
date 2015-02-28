@@ -48,6 +48,14 @@ namespace Jamiras.ViewModels.Fields
             return base.Validate(property, value);
         }
 
+        protected override void OnModelPropertyChanged(ModelPropertyChangedEventArgs e)
+        {
+            if (e.Property == IsRequiredProperty)
+                Validate(SelectedIdProperty);
+
+            base.OnModelPropertyChanged(e);
+        }
+
         /// <summary>
         /// Binds the ViewModel to a source model.
         /// </summary>

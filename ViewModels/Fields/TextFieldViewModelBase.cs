@@ -74,6 +74,10 @@ namespace Jamiras.ViewModels.Fields
                 WaitForTyping(() => base.OnModelPropertyChanged(e));
                 return;
             }
+            else if (e.Property == IsRequiredProperty)
+            {
+                Validate(TextProperty);
+            }
 
             base.OnModelPropertyChanged(e);
         }

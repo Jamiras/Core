@@ -155,6 +155,22 @@ namespace Jamiras.ViewModels
         }
 
         /// <summary>
+        /// Validates the current value of a property.
+        /// </summary>
+        /// <param name="property">Property to validate.</param>
+        /// <remarks>Useful for validating a property dependant on another property when the other property changes.</remarks>
+        protected void Validate(ModelProperty property)
+        {
+            var currentValue = GetValue(property);
+            var errorMessage = Validate(property, currentValue);
+
+            if (!String.IsNullOrEmpty(errorMessage))
+                SetError(property, FormatErrorMessage(errorMessage));
+            else
+                SetError(property, null);
+        }
+
+        /// <summary>
         /// Validates a value being assigned to a property.
         /// </summary>
         /// <param name="property">Property being modified.</param>
