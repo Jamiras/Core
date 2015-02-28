@@ -1,24 +1,44 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:fields="clr-namespace:Jamiras.ViewModels.Fields"
-                    xmlns:controls="clr-namespace:Jamiras.Controls">
+                    xmlns:controls="clr-namespace:Jamiras.Controls"
+                    xmlns:componentModel="clr-namespace:System.ComponentModel;assembly=System">
+
+    <BooleanToVisibilityConverter x:Key="boolToVisConverter" />
+
+    <DataTemplate x:Key="errorIconTemplate">
+        <Grid SnapsToDevicePixels="True" Margin="0,0,-8,0">
+            <Image Source="/Jamiras.Core;component/Resources/error10.png" 
+                   RenderOptions.BitmapScalingMode="NearestNeighbor"
+                   ToolTip="{Binding Path=(componentModel:IDataErrorInfo.Error)}"
+                   HorizontalAlignment="Right" VerticalAlignment="Center"
+                   SnapsToDevicePixels="True" Height="10" Width="10" />
+        </Grid>
+    </DataTemplate>
 
     <Style TargetType="{x:Type Label}" x:Key="fieldLabelStyle">
         <Setter Property="Content" Value="{Binding Label}" />
         <Setter Property="AutomationProperties.AutomationId" Value="{Binding Name, StringFormat='{}{0}Label'}" />
         <Setter Property="AutomationProperties.Name" Value="{Binding Label, StringFormat='{}{0} Label'}" />
         <Setter Property="FontSize" Value="10" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="VerticalAlignment" Value="Bottom" />
         <Setter Property="Margin" Value="-2,-2,0,-4" />
+        <Setter Property="controls:Validation.ErrorTemplate" Value="{StaticResource errorIconTemplate}" />
+        <Setter Property="controls:Validation.IsValid" Value="{Binding IsValid}" />
     </Style>
 
-    <Style TargetType="{x:Type TextBox}" x:Key="textFieldTextBoxStyle">
+    <Style TargetType="{x:Type TextBox}" x:Key="textFieldBaseTextBoxStyle">
         <Setter Property="Text" Value="{Binding Text, ValidatesOnDataErrors=True}" />
         <Setter Property="Margin" Value="2,0,2,2" />
         <Setter Property="AutomationProperties.AutomationId" Value="{Binding Name}" />
         <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />
         <Setter Property="MaxLength" Value="{Binding MaxLength}" />
         <Setter Property="IsEnabled" Value="{Binding IsEnabled}" />
+    </Style>
+    
+    <Style TargetType="{x:Type TextBox}" x:Key="textFieldTextBoxStyle"
+           BasedOn="{StaticResource textFieldBaseTextBoxStyle}">
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsMultiline}" Value="True">
                 <Setter Property="TextWrapping" Value="Wrap" />
@@ -83,7 +103,7 @@
             </Grid.RowDefinitions>
             <Label Style="{StaticResource fieldLabelStyle}"
                    Target="{Binding ElementName=textBox}" />
-            <TextBox Style="{StaticResource textFieldTextBoxStyle}"
+            <TextBox Style="{StaticResource textFieldBaseTextBoxStyle}"
                      Grid.Row="1" Name="textBox"
                      TextAlignment="Right" />
         </Grid>
@@ -97,7 +117,7 @@
             </Grid.RowDefinitions>
             <Label Style="{StaticResource fieldLabelStyle}"
                    Target="{Binding ElementName=textBox}" />
-            <TextBox Style="{StaticResource textFieldTextBoxStyle}"
+            <TextBox Style="{StaticResource textFieldBaseTextBoxStyle}"
                      Grid.Row="1" Name="textBox"
                      TextAlignment="Right" />
         </Grid>

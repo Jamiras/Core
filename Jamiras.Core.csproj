@@ -100,6 +100,7 @@
       <DependentUpon>OkCancelView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Controls\ScrollPreserver.cs" />
+    <Compile Include="Controls\Validation.cs" />
     <Compile Include="Database\AccessDatabase.cs" />
     <Compile Include="Database\AccessDatabaseCommand.cs" />
     <Compile Include="Database\AccessDatabaseQuery.cs" />
@@ -210,6 +211,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\Calendar14.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Error10.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
