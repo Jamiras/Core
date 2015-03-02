@@ -92,7 +92,7 @@ namespace Jamiras.DataModels
                 {
                     var oldProperties = _properties;
                     _properties = new ModelProperty[_properties.Length + 256];
-                    Array.Copy(_properties, oldProperties, _keyCount);
+                    Array.Copy(oldProperties, _properties, _keyCount);
                 }
 
                 _properties[_keyCount] = property;
