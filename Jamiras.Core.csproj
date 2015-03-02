@@ -140,6 +140,7 @@
     <Compile Include="DataModels\DataModelCollection.cs" />
     <Compile Include="DataModels\ModelProperty.cs" />
     <Compile Include="DataModels\ModelPropertyChangedEventArgs.cs" />
+    <Compile Include="DataModels\DataModelList.cs" />
     <Compile Include="IO\BitReader.cs" />
     <Compile Include="IO\BitWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -17,6 +17,11 @@ namespace Jamiras.DataModels
             _collection = new List<T>();
         }
 
+        protected List<T> Collection
+        {
+            get { return _collection; }
+        }
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly List<T> _collection;
 
         private static readonly ModelProperty IsReadOnlyProperty =
@@ -35,14 +40,6 @@ namespace Jamiras.DataModels
         {
             var metadata = ServiceRepository.Instance.FindService<IDataModelMetadataRepository>().GetModelMetadata(GetType()) as DatabaseModelMetadata;
             return (metadata != null) ? metadata.GetKey(this) : 0;
-        }
-
-        /// <summary>
-        /// Gets whether or not items have been added to or removed from the collection.
-        /// </summary>
-        public new bool IsModified
-        {
-            get { return base.IsModified; }
         }
 
         public static readonly ModelProperty CountProperty =
@@ -73,10 +70,17 @@ namespace Jamiras.DataModels
             if (IsReadOnly)
                 throw new ReadOnlyException("Cannot modify read only collection.");
 
-            _collection.Add(item);
+            InsertAtIndex(_collection.Count, item);
+        }
+
+        protected void InsertAtIndex(int index, T item)
+        {
+            _collection.Insert(index, item);
 
             UpdateModifications(AddedItemsProperty, RemovedItemsProperty, item);
             Count = _collection.Count;
+
+            OnCollectionChanged();
         }
 
         /// <summary>
@@ -87,12 +91,26 @@ namespace Jamiras.DataModels
             if (IsReadOnly)
                 throw new ReadOnlyException("Cannot modify read only collection.");
 
-            if (!_collection.Remove(item))
+            int index = _collection.IndexOf(item);
+            if (index == -1)
                 return false;
+
+            RemoveAtIndex(index);
+            return true;
+        }
+
+        /// <summary>
+        /// Removes an item from the collection.
+        /// </summary>
+        protected void RemoveAtIndex(int index)
+        {
+            var item = _collection[index];
+            _collection.RemoveAt(index);
 
             UpdateModifications(RemovedItemsProperty, AddedItemsProperty, item);
             Count = _collection.Count;
-            return true;
+
+            OnCollectionChanged();
         }
 
         private void UpdateModifications(ModelProperty collectionToAddToProperty, ModelProperty collectionToRemoveFromProperty, T item)
@@ -174,7 +192,13 @@ namespace Jamiras.DataModels
                 _collection.Clear();
 
                 Count = 0;
+
+                OnCollectionChanged();
             }
+        }
+
+        internal virtual void OnCollectionChanged()
+        { 
         }
 
         /// <summary>

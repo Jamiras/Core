@@ -29,7 +29,8 @@
     </Style>
 
     <Style TargetType="{x:Type TextBox}" x:Key="textFieldBaseTextBoxStyle">
-        <Setter Property="Text" Value="{Binding Text, ValidatesOnDataErrors=True}" />
+        <Setter Property="Text" Value="{Binding Text}" />
+        <Setter Property="Validation.ErrorTemplate" Value="{x:Null}" />
         <Setter Property="Margin" Value="2,0,2,2" />
         <Setter Property="AutomationProperties.AutomationId" Value="{Binding Name}" />
         <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />
@@ -43,6 +44,9 @@
             <DataTrigger Binding="{Binding IsMultiline}" Value="True">
                 <Setter Property="TextWrapping" Value="Wrap" />
                 <Setter Property="AcceptsReturn" Value="True" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsTextBindingDelayed}" Value="True">
+                <Setter Property="Text" Value="{Binding Text, UpdateSourceTrigger=PropertyChanged}" />
             </DataTrigger>
         </Style.Triggers>
     </Style>

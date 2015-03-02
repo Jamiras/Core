@@ -12,6 +12,11 @@ namespace Jamiras.ViewModels.Fields
             IsMultiline = metadata.IsMultiline;
         }
 
+        public TextFieldViewModel(string label, int maxLength)
+            : base(label, maxLength)
+        {
+        }
+
         public static readonly ModelProperty IsMultilineProperty =
             ModelProperty.Register(typeof(TextFieldViewModel), "IsMultiline", typeof(bool), false);
 
