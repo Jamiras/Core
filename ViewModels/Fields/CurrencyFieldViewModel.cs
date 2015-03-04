@@ -17,7 +17,8 @@ namespace Jamiras.ViewModels.Fields
 
         private static void OnValueChanged(object sender, ModelPropertyChangedEventArgs e)
         {
-            ((CurrencyFieldViewModel)sender).Text = (e.NewValue == null) ? String.Empty : String.Format("${0:F2}", e.NewValue);
+            var viewModel = (CurrencyFieldViewModel)sender;
+            viewModel.SetText((e.NewValue == null) ? String.Empty : String.Format("${0:F2}", e.NewValue));
         }
 
         public float? Value
