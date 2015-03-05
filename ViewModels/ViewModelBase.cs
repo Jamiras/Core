@@ -148,7 +148,8 @@ namespace Jamiras.ViewModels
             if (_bindings.TryGetValue(e.Property.Key, out binding) ||
                 _selfBindings.TryGetValue(e.Property.Key, out binding))
             {
-                HandleBoundPropertyChanged(binding, e, binding.Mode == ModelBindingMode.TwoWay);
+                if (binding.Mode != ModelBindingMode.OneWay)
+                    HandleBoundPropertyChanged(binding, e, binding.Mode == ModelBindingMode.TwoWay);
             }
             else
             {

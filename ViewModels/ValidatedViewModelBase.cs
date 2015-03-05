@@ -76,7 +76,7 @@ namespace Jamiras.ViewModels
 
             // first, validate against the view model
             string errorMessage = Validate(e.Property, value);
-            if (String.IsNullOrEmpty(errorMessage))
+            if (String.IsNullOrEmpty(errorMessage) && binding.Mode != ModelBindingMode.OneWay)
             {
                 // then validate the value can be coerced into the source model
                 if (binding.Converter != null)

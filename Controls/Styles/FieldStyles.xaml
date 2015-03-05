@@ -2,7 +2,8 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:fields="clr-namespace:Jamiras.ViewModels.Fields"
                     xmlns:controls="clr-namespace:Jamiras.Controls"
-                    xmlns:componentModel="clr-namespace:System.ComponentModel;assembly=System">
+                    xmlns:componentModel="clr-namespace:System.ComponentModel;assembly=System"
+                    xmlns:grid="clr-namespace:Jamiras.ViewModels.Grid">
 
     <BooleanToVisibilityConverter x:Key="boolToVisConverter" />
 
@@ -164,5 +165,9 @@
             <controls:DatePicker Style="{StaticResource dateFieldDatePickerStyle}"
                                  Grid.Row="1" Name="datePicker"/>
         </Grid>
+    </DataTemplate>
+    
+    <DataTemplate DataType="{x:Type grid:GridViewModel}">
+        <controls:GridView Margin="2" Columns="{Binding Columns}" RowViewModels="{Binding Rows}" />
     </DataTemplate>
 </ResourceDictionary>

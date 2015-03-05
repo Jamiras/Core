@@ -1,6 +1,5 @@
 ﻿using System;
 using Jamiras.DataModels;
-using Jamiras.DataModels.Metadata;
 
 namespace Jamiras.ViewModels.Fields
 {
