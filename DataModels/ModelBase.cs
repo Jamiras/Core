@@ -87,6 +87,33 @@ namespace Jamiras.DataModels
             if (e.Property.PropertyChangedHandler != null)
                 e.Property.PropertyChangedHandler(this, e);
 
+            OnPropertyChanged(e);
+
+            if (e.Property.DependantProperties != null)
+            {
+                var changedProperties = new List<ModelPropertyChangedEventArgs>();
+                foreach (var propertyKey in e.Property.DependantProperties)
+                {
+                    object currentValue;
+                    if (_values.TryGetValue(propertyKey, out currentValue))
+                    {
+                        var property = ModelProperty.GetPropertyForKey(propertyKey);
+                        var value = ((ModelProperty.UnitializedValue)property.DefaultValue).GetValue(this);
+                        if (!Object.Equals(value, currentValue))
+                        {
+                            SetValueCore(property, value);
+                            changedProperties.Add(new ModelPropertyChangedEventArgs(property, currentValue, value));
+                        }
+                    }
+                }
+
+                foreach (var changedProperty in changedProperties)
+                    OnModelPropertyChanged(changedProperty);
+            }
+        }
+
+        internal void OnPropertyChanged(ModelPropertyChangedEventArgs e)
+        {
             if (_propertyChangedHandlers.Count > 0)
             {
                 WeakAction<object, ModelPropertyChangedEventArgs>[] handlers = null;
@@ -117,28 +144,6 @@ namespace Jamiras.DataModels
 
             if (!String.IsNullOrEmpty(e.Property.PropertyName))
                 OnPropertyChanged(new PropertyChangedEventArgs(e.Property.PropertyName));
-
-            if (e.Property.DependantProperties != null)
-            {
-                var changedProperties = new List<ModelPropertyChangedEventArgs>();
-                foreach (var propertyKey in e.Property.DependantProperties)
-                {
-                    object currentValue;
-                    if (_values.TryGetValue(propertyKey, out currentValue))
-                    {
-                        var property = ModelProperty.GetPropertyForKey(propertyKey);
-                        var value = ((ModelProperty.UnitializedValue)property.DefaultValue).GetValue(this);
-                        if (!Object.Equals(value, currentValue))
-                        {
-                            SetValueCore(property, value);
-                            changedProperties.Add(new ModelPropertyChangedEventArgs(property, currentValue, value));
-                        }
-                    }
-                }
-
-                foreach (var changedProperty in changedProperties)
-                    OnModelPropertyChanged(changedProperty);
-            }
         }
 
         /// <summary>

@@ -168,6 +168,7 @@
     </DataTemplate>
     
     <DataTemplate DataType="{x:Type grid:GridViewModel}">
-        <controls:GridView Margin="2" Columns="{Binding Columns}" RowViewModels="{Binding Rows}" />
+        <controls:GridView Margin="2" CanRemove="{Binding CanRemove}" CanReorder="{Binding CanReorder}" 
+                           Columns="{Binding Columns}" RowViewModels="{Binding Rows}" />
     </DataTemplate>
 </ResourceDictionary>

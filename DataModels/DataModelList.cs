@@ -81,7 +81,7 @@ namespace Jamiras.DataModels
             T item = Collection[oldIndex];
             if (oldIndex > newIndex)
             {
-                for (int i = oldIndex; i > newIndex; i++)
+                for (int i = oldIndex; i > newIndex; i--)
                     Collection[i] = Collection[i - 1];
                 Collection[newIndex] = item;
 

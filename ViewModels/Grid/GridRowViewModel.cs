@@ -13,7 +13,7 @@ namespace Jamiras.ViewModels.Grid
             int count = 0;
             foreach (var column in columns)
             {
-                SetBinding(column.SourceProperty, new ModelBinding(Model, column.SourceProperty, bindingMode));
+                SetBinding(column.SourceProperty, new ModelBinding(model, column.SourceProperty, bindingMode));
                 count++;
             }
 
@@ -22,7 +22,17 @@ namespace Jamiras.ViewModels.Grid
 
         public ModelBase Model { get; private set; }
 
+        protected override void OnModelPropertyChanged(ModelPropertyChangedEventArgs e)
+        {
+            // call HandleModelPropertyChanged and NotifyPropertyChangedHandlers instead of
+            // base.OnModelPropertyChanged to avoid raising the ModelProperty.PropertyChangeHandlers
+            // since we're just serving as a passthrough. 
+            HandleModelPropertyChanged(e);
+            OnPropertyChanged(e);
+        }
+
         internal FieldViewModelBase[] Cells { get; private set; }
+        internal GridRowCommandsViewModel Commands { get; set; }
 
         IEnumerable<ViewModelBase> ICompositeViewModel.GetChildren()
         {

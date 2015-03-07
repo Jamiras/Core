@@ -9,6 +9,8 @@ using System.Windows.Data;
 using System.Windows.Media;
 using Jamiras.DataModels;
 using Jamiras.ViewModels.Grid;
+using System.ComponentModel;
+using System.Collections.ObjectModel;
 
 namespace Jamiras.Controls
 {
@@ -20,6 +22,21 @@ namespace Jamiras.Controls
         public GridView()
         {
             InitializeComponent();
+
+            var scrollViewer = (ScrollViewer)FindName("scrollViewer");
+            var desc = DependencyPropertyDescriptor.FromProperty(ScrollViewer.ComputedVerticalScrollBarVisibilityProperty, scrollViewer.GetType());
+            desc.AddValueChanged(scrollViewer, OnVerticalScrollBarVisibilityChanged);
+        }
+
+        private void OnVerticalScrollBarVisibilityChanged(object sender, EventArgs e)
+        {
+            var scrollViewer = (ScrollViewer)sender;
+            double width = scrollViewer.ComputedVerticalScrollBarVisibility == System.Windows.Visibility.Visible ? SystemParameters.VerticalScrollBarWidth : 0.0;
+
+            var headerGrid = (Grid)FindName("headerGrid");
+            headerGrid.Margin = new Thickness(0, 0, width, 0);
+            var footerGrid = (Grid)FindName("footerGrid");
+            ((Border)footerGrid.Parent).Margin = headerGrid.Margin;
         }
 
         private bool _hasFooter;
@@ -45,7 +62,7 @@ namespace Jamiras.Controls
             var columns = Columns;
             if (rows != null && columns != null)
             {
-                var rowViewModels = new List<GridRowViewModel>();
+                var rowViewModels = new ObservableCollection<GridRowViewModel>();
 
                 foreach (ModelBase model in rows)
                 {
@@ -58,12 +75,12 @@ namespace Jamiras.Controls
         }
 
         public static readonly DependencyProperty RowViewModelsProperty =
-            DependencyProperty.Register("RowViewModels", typeof(IEnumerable<GridRowViewModel>), typeof(GridView),
+            DependencyProperty.Register("RowViewModels", typeof(ObservableCollection<GridRowViewModel>), typeof(GridView),
                 new FrameworkPropertyMetadata(OnRowViewModelsChanged));
 
-        public IEnumerable<GridRowViewModel> RowViewModels
+        public ObservableCollection<GridRowViewModel> RowViewModels
         {
-            get { return (IEnumerable<GridRowViewModel>)GetValue(RowViewModelsProperty); }
+            get { return (ObservableCollection<GridRowViewModel>)GetValue(RowViewModelsProperty); }
             set { SetValue(RowViewModelsProperty, value); }
         }
 
@@ -162,16 +179,20 @@ namespace Jamiras.Controls
 
         private static void OnColumnsChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            var columns = e.NewValue == null ? new GridColumnDefinition[0] : ((IEnumerable<GridColumnDefinition>)e.NewValue).ToArray();
+            ((GridView)sender).UpdateHeaders();
+        }
 
-            var view = (GridView)sender;
-            var headerGrid = (Grid)view.FindName("headerGrid");
+        private void UpdateHeaders()
+        {
+            var columns = Columns == null ? new GridColumnDefinition[0] : ((IEnumerable<GridColumnDefinition>)Columns).ToArray();
+
+            var headerGrid = (Grid)FindName("headerGrid");
             headerGrid.ColumnDefinitions.Clear();
             headerGrid.Children.Clear();
             foreach (var column in columns)
                 headerGrid.ColumnDefinitions.Add(GenerateColumnDefinition(column));
 
-            view._hasFooter = false;
+            _hasFooter = false;
             for (int i = 0; i < columns.Length; i++)
             {
                 var border = new Border();
@@ -180,7 +201,7 @@ namespace Jamiras.Controls
 
                 if (i == 0)
                     border.BorderThickness = new Thickness(0, 0, 1, 1);
-                else if (i == columns.Length - 1)
+                else if (i == columns.Length - 1 && !HasCommands)
                     border.BorderThickness = new Thickness(1, 0, 0, 1);
                 else
                     border.BorderThickness = new Thickness(1, 0, 1, 1);
@@ -197,14 +218,27 @@ namespace Jamiras.Controls
                 headerGrid.Children.Add(border);
 
                 if (column.FooterText != null || column.GetValue(GridColumnDefinition.SummarizeFunctionProperty) != null)
-                    view._hasFooter = true;
+                    _hasFooter = true;
             }
 
-            var footerGrid = (Grid)view.FindName("footerGrid");
+            if (HasCommands)
+            {
+                headerGrid.ColumnDefinitions.Add(new ColumnDefinition { SharedSizeGroup = "commands", MinWidth=32 });
+
+                var border = new Border();
+                border.Background = Brushes.Silver;
+                border.BorderBrush = Brushes.Gray;
+                border.BorderThickness = new Thickness(1, 0, 0, 1);
+
+                Grid.SetColumn(border, columns.Length);
+                headerGrid.Children.Add(border);
+            }
+
+            var footerGrid = (Grid)FindName("footerGrid");
             footerGrid.ColumnDefinitions.Clear();
             footerGrid.Children.Clear();
 
-            if (!view._hasFooter)
+            if (!_hasFooter)
             {
                 ((UIElement)footerGrid.Parent).Visibility = Visibility.Collapsed;
             }
@@ -222,13 +256,16 @@ namespace Jamiras.Controls
                         text.TextAlignment = TextAlignment.Right;
                     Grid.SetColumn(text, i);
                     footerGrid.Children.Add(text);
-                }                
+                }
+
+                if (HasCommands)
+                    footerGrid.ColumnDefinitions.Add(new ColumnDefinition { SharedSizeGroup = "commands" });
             }
 
-            if (view.Rows != null)
-                view.RegenerateRowViewModels();
+            if (Rows != null)
+                RegenerateRowViewModels();
             else
-                view.BindRows();
+                BindRows();
         }
 
         private static bool IsRightAligned(GridColumnDefinition column)
@@ -265,6 +302,53 @@ namespace Jamiras.Controls
 
             return definition;
         }
+
+        public static readonly DependencyProperty CanReorderProperty =
+            DependencyProperty.Register("CanReorder", typeof(bool), typeof(GridView), new FrameworkPropertyMetadata(OnCanReorderChanged));
+
+        public bool CanReorder
+        {
+            get { return (bool)GetValue(CanReorderProperty); }
+            set { SetValue(CanReorderProperty, value); }
+        }
+
+        private static void OnCanReorderChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            ((GridView)sender).UpdateHasCommands();
+        }
+
+        public static readonly DependencyProperty CanRemoveProperty =
+            DependencyProperty.Register("CanRemove", typeof(bool), typeof(GridView), new FrameworkPropertyMetadata(OnCanRemoveChanged));
+
+        public bool CanRemove
+        {
+            get { return (bool)GetValue(CanRemoveProperty); }
+            set { SetValue(CanRemoveProperty, value); }
+        }
+
+        private static void OnCanRemoveChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            ((GridView)sender).UpdateHasCommands();
+        }
+
+        private void UpdateHasCommands()
+        {
+            HasCommands = CanRemove || CanReorder;
+        }
+
+        private static readonly DependencyProperty HasCommandsProperty =
+            DependencyProperty.Register("HasCommands", typeof(bool), typeof(GridView), new FrameworkPropertyMetadata(OnHasCommandsChanged));
+
+        private bool HasCommands
+        {
+            get { return (bool)GetValue(HasCommandsProperty); }
+            set { SetValue(HasCommandsProperty, value); }
+        }
+
+        private static void OnHasCommandsChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            ((GridView)sender).UpdateHeaders();
+        }
     }
 
     internal class GridRow : Grid
@@ -288,6 +372,9 @@ namespace Jamiras.Controls
             foreach (var column in view.Columns)
                 row.ColumnDefinitions.Add(GridView.GenerateColumnDefinition(column));
 
+            if (view.CanReorder || view.CanRemove)
+                row.ColumnDefinitions.Add(new ColumnDefinition { SharedSizeGroup = "commands" });
+
             int i = 0;
             foreach (var column in view.Columns)
             {
@@ -303,6 +390,18 @@ namespace Jamiras.Controls
                 Grid.SetColumn(contentPresenter, i);
                 row.Children.Add(contentPresenter);
                 i++;
+            }
+
+            if (view.CanReorder || view.CanRemove)
+            {
+                var commands = rowViewModel.Commands;
+                if (commands == null)
+                    commands = rowViewModel.Commands = new GridRowCommandsViewModel(view, rowViewModel);
+
+                var contentPresenter = new ContentPresenter();
+                contentPresenter.Content = commands;
+                Grid.SetColumn(contentPresenter, i);
+                row.Children.Add(contentPresenter);
             }
         }
     }

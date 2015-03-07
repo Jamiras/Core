@@ -12,6 +12,9 @@ namespace Jamiras.ViewModels.Grid
             Rows = new ObservableCollection<GridRowViewModel>();
         }
 
+        public bool CanReorder { get; set; }
+        public bool CanRemove { get; set; }
+
         public List<GridColumnDefinition> Columns { get; private set; }
 
         public ObservableCollection<GridRowViewModel> Rows { get; private set; }

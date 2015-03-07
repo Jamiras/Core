@@ -144,6 +144,12 @@ namespace Jamiras.ViewModels
 
         protected override void OnModelPropertyChanged(ModelPropertyChangedEventArgs e)
         {
+            HandleModelPropertyChanged(e);
+            base.OnModelPropertyChanged(e);
+        }
+
+        internal void HandleModelPropertyChanged(ModelPropertyChangedEventArgs e)
+        {
             ModelBinding binding;
             if (_bindings.TryGetValue(e.Property.Key, out binding) ||
                 _selfBindings.TryGetValue(e.Property.Key, out binding))
@@ -162,8 +168,6 @@ namespace Jamiras.ViewModels
                 if (kvp.Value.SourceProperty == e.Property)
                     RefreshBinding(kvp.Key, kvp.Value);
             }
-
-            base.OnModelPropertyChanged(e);
         }
 
         internal virtual void HandleUnboundPropertyChanged(ModelPropertyChangedEventArgs e)

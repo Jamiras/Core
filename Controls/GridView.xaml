@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:controls="clr-namespace:Jamiras.Controls"
              xmlns:fields="clr-namespace:Jamiras.ViewModels.Fields"
+             xmlns:grid="clr-namespace:Jamiras.ViewModels.Grid"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
     <Border BorderBrush="Gray" BorderThickness="1">
@@ -22,9 +23,10 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
+            <Border Background="Silver" BorderBrush="Gray" BorderThickness="0,0,0,1" />
             <Grid HorizontalAlignment="Stretch" x:Name="headerGrid" />
 
-            <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Auto">
+            <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Auto" x:Name="scrollViewer">
                 <ItemsControl ItemsSource="{Binding RowViewModels, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type controls:GridView}}}" 
                               HorizontalContentAlignment="Stretch" IsTabStop="False">
                     <ItemsControl.Resources>
@@ -45,11 +47,14 @@
                                 </Trigger>
                             </Style.Triggers>
                         </Style>
+                        
+                        <BooleanToVisibilityConverter x:Key="boolToVisConverter" />
 
                         <DataTemplate DataType="{x:Type fields:ReadOnlyTextFieldViewModel}">
                             <TextBlock Text="{Binding Text}">
                                 <TextBlock.Style>
-                                    <Style TargetType="{x:Type TextBlock}">
+                                    <Style TargetType="{x:Type TextBlock}"
+                                           BasedOn="{StaticResource {x:Type TextBlock}}">
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsRightAligned}" Value="True">
                                                 <Setter Property="TextAlignment" Value="Right" />
@@ -70,6 +75,52 @@
 
                         <DataTemplate DataType="{x:Type fields:CurrencyFieldViewModel}">
                             <TextBox TextAlignment="Right" />
+                        </DataTemplate>
+                        
+                        <Style TargetType="{x:Type Path}" x:Key="commandPath">
+                            <Setter Property="Stroke" Value="#80C0FF" />
+                            <Setter Property="Fill" Value="#90D8FF" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type controls:EventBindingPanel}}}" Value="False">
+                                    <Setter Property="Opacity" Value="0.5" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                        
+                        <DataTemplate DataType="{x:Type grid:GridRowCommandsViewModel}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                
+                                <Grid Visibility="{Binding CanReorder, Converter={StaticResource boolToVisConverter}}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="12" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <controls:EventBindingPanel ClickCommand="{Binding MoveUpCommand}"
+                                                                Visibility="{Binding IsMoveUpEnabled, Converter={StaticResource boolToVisConverter}}">
+                                        <Canvas Width="12" Height="12" SnapsToDevicePixels="True">
+                                            <Path Style="{StaticResource commandPath}" Data="M1,8 L5,3 L9,8 Z" />
+                                        </Canvas>
+                                    </controls:EventBindingPanel>
+                                    <controls:EventBindingPanel ClickCommand="{Binding MoveDownCommand}" Grid.Column="1"
+                                                                Visibility="{Binding IsMoveDownEnabled, Converter={StaticResource boolToVisConverter}}">
+                                        <Canvas Width="12" Height="12" SnapsToDevicePixels="True">
+                                            <Path Style="{StaticResource commandPath}" Data="M1,3 L5,8 L9,3 Z" />
+                                        </Canvas>
+                                    </controls:EventBindingPanel>
+                                </Grid>
+
+                                <controls:EventBindingPanel ClickCommand="{Binding RemoveCommand}" Grid.Column="1"
+                                                            Visibility="{Binding CanRemove, Converter={StaticResource boolToVisConverter}}">
+                                    <Canvas Width="12" Height="12" SnapsToDevicePixels="True">
+                                        <Path Stroke="#FF4000" Fill="#FF8040" Style="{StaticResource commandPath}" Data="M2,1 L5,4 L6,4 L9,1 L10,2 L7,5 L7,6 L10,9 L9,10 L6,7 L5,7 L2,10 L1,9 L4,6 L4,5 L1,2 Z" />
+                                    </Canvas>
+                                </controls:EventBindingPanel>
+                            </Grid>
                         </DataTemplate>
                     </ItemsControl.Resources>
                     <ItemsControl.ItemTemplate>

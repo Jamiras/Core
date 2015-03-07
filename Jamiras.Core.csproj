@@ -167,6 +167,7 @@
     <Compile Include="ViewModels\DialogViewModelBase.cs" />
     <Compile Include="Services\IDialogService.cs" />
     <Compile Include="ViewModels\Fields\AutoCompleteFieldViewModel.cs" />
+    <Compile Include="ViewModels\Grid\GridRowCommandsViewModel.cs" />
     <Compile Include="ViewModels\Grid\IntegerColumnDefinition.cs" />
     <Compile Include="ViewModels\Grid\CurrencyColumnDefinition.cs" />
     <Compile Include="ViewModels\Grid\DisplayTextColumnDefinition.cs" />

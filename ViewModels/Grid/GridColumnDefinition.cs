@@ -73,7 +73,7 @@ namespace Jamiras.ViewModels.Grid
             ModelProperty.Register(typeof(GridColumnDefinition), "IsReadOnly", typeof(bool), false);
 
         /// <summary>
-        /// Gets or sets whether this column is read only.
+        /// Gets or sets whether this column is read only. (default is false)
         /// </summary>
         public bool IsReadOnly
         {
