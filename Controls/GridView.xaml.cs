@@ -11,6 +11,7 @@ using Jamiras.DataModels;
 using Jamiras.ViewModels.Grid;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
+using System.Windows.Input;
 
 namespace Jamiras.Controls
 {
@@ -303,6 +304,15 @@ namespace Jamiras.Controls
             return definition;
         }
 
+        public static readonly DependencyProperty DoubleClickCommandProperty =
+            DependencyProperty.Register("DoubleClickCommand", typeof(ICommand), typeof(GridView));
+
+        public ICommand DoubleClickCommand
+        {
+            get { return (ICommand)GetValue(DoubleClickCommandProperty); }
+            set { SetValue(DoubleClickCommandProperty, value); }
+        }
+
         public static readonly DependencyProperty CanReorderProperty =
             DependencyProperty.Register("CanReorder", typeof(bool), typeof(GridView), new FrameworkPropertyMetadata(OnCanReorderChanged));
 
@@ -403,6 +413,22 @@ namespace Jamiras.Controls
                 Grid.SetColumn(contentPresenter, i);
                 row.Children.Add(contentPresenter);
             }
+        }
+
+        protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+        {
+            if (e.ClickCount == 2)
+            {
+                var command = Owner.DoubleClickCommand;
+                if (command != null)
+                {
+                    var parameter = Owner.Rows != null ? ((GridRowViewModel)this.DataContext).Model : this.DataContext;
+                    if (command.CanExecute(parameter))
+                        command.Execute(parameter);
+                }
+            }
+
+            base.OnMouseLeftButtonDown(e);
         }
     }
 }
