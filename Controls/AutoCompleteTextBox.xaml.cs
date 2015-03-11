@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using Jamiras.ViewModels;
@@ -10,53 +11,44 @@ using Jamiras.ViewModels;
 namespace Jamiras.Controls
 {
     /// <summary>
-    /// Interaction logic for DidYouMeanTextBox.xaml
+    /// Interaction logic for AutoCompleteTextBox.xaml
     /// </summary>
-    public partial class AutoCompleteTextBox : UserControl
+    public partial class AutoCompleteTextBox : TextBox
     {
+        static AutoCompleteTextBox()
+        {
+            // change default UpdateSourceTrigger to PropertyChanged so we get as-you-type suggestions
+            var defaultMetadata = TextProperty.GetMetadata(typeof(TextBox));
+            TextProperty.OverrideMetadata(typeof(AutoCompleteTextBox), new FrameworkPropertyMetadata(
+                string.Empty, FrameworkPropertyMetadataOptions.Journal | FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+                defaultMetadata.PropertyChangedCallback, defaultMetadata.CoerceValueCallback, true,
+                System.Windows.Data.UpdateSourceTrigger.PropertyChanged));
+        }
+
         public AutoCompleteTextBox()
         {
             InitializeComponent();
-            Background = SystemColors.ControlLightLightBrush;
-
-            grid.DataContext = this;
-
+            
             NoMatchesList = new[] { new LookupItem(0, "No Matches") };
         }
 
-        public static readonly DependencyProperty TextProperty =
-            DependencyProperty.Register("Text", typeof(string), typeof(AutoCompleteTextBox),
-            new FrameworkPropertyMetadata(String.Empty, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, TextChanged));
-
-        /// <summary>
-        /// Gets or sets the text
-        /// </summary>
-        public string Text
+        public override void OnApplyTemplate()
         {
-            get { return (string)GetValue(TextProperty); }
-            set { SetValue(TextProperty, value); }
+            base.OnApplyTemplate();
+
+            _suggestionsListBox = (ListBox)GetTemplateChild("suggestionsListBox");
         }
 
-        private static void TextChanged(DependencyObject source, DependencyPropertyChangedEventArgs e)
+        private ListBox _suggestionsListBox;
+
+        protected override void OnTextChanged(TextChangedEventArgs e)
         {
-            AutoCompleteTextBox textBox = ((AutoCompleteTextBox)source);
-            if (textBox.IsTyping)
+            if (IsTyping)
             {
-                textBox.SelectedId = 0;
-                textBox.IsTyping = false;
+                SelectedId = 0;
+                IsTyping = false;
             }
-        }
-
-        public static readonly DependencyProperty MaxLengthProperty =
-            DependencyProperty.Register("MaxLength", typeof(int), typeof(AutoCompleteTextBox));
-
-        /// <summary>
-        /// Gets or sets the maximum length of the text
-        /// </summary>
-        public int MaxLength
-        {
-            get { return (int)GetValue(MaxLengthProperty); }
-            set { SetValue(MaxLengthProperty, value); }
+            base.OnTextChanged(e);
         }
 
         public static readonly DependencyProperty SelectedIdProperty =
@@ -141,69 +133,77 @@ namespace Jamiras.Controls
             }
         }
 
-        private void textBox_GotFocus(object sender, RoutedEventArgs e)
+        protected override void OnGotFocus(RoutedEventArgs e)
         {
-            ((TextBox)sender).SelectAll();
+            SelectAll();
+            base.OnGotFocus(e);
         }
 
-        private void textBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
             IsTyping = true;
 
-            switch (e.Key)
+            if (_suggestionsListBox.IsKeyboardFocusWithin)
             {
-                case Key.Escape:
-                    if (IsPopupOpen)
-                    {
+                switch (e.Key)
+                {
+                    case Key.Escape:
                         IsPopupOpen = false;
+                        Focus();
                         e.Handled = true;
-                    }
-                    break;
+                        break;
 
-                case Key.Tab:
-                    IsPopupOpen = false;
-                    break;
+                    case Key.Tab:
+                    case Key.Enter:
+                    case Key.Space:
+                        LookupItem item = _suggestionsListBox.SelectedItem as LookupItem;
+                        if (item != null)
+                        {
+                            SelectItem(item);
+                            if (e.Key == Key.Tab)
+                                MoveFocus(new TraversalRequest((e.KeyboardDevice.Modifiers == ModifierKeys.Shift) ? FocusNavigationDirection.Previous : FocusNavigationDirection.Next));
+                            else
+                                Focus();
 
-                case Key.Down:
-                    if (IsPopupOpen)
-                    {
-                        suggestionsListBox.SelectedIndex = 0;
-                        suggestionsListBox.Focus();
-                    }
-                    else
-                    {
-                        IsPopupOpen = true;
-                    }
-                    break;
+                            e.Handled = true;
+                        }
+                        break;
+                }
             }
-        }
-
-        private void listBox_PreviewKeyDown(object sender, KeyEventArgs e)
-        {
-            switch (e.Key)
+            else
             {
-                case Key.Escape:
-                    IsPopupOpen = false;
-                    autoCompleteTextBox.Focus();
-                    e.Handled = true;
-                    break;
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        if (IsPopupOpen)
+                        {
+                            IsPopupOpen = false;
+                            e.Handled = true;
+                        }
+                        break;
 
-                case Key.Tab:
-                case Key.Enter:
-                case Key.Space:
-                    LookupItem item = suggestionsListBox.SelectedItem as LookupItem;
-                    if (item != null)
-                    {
-                        SelectItem(item);
-                        if (e.Key == Key.Tab)
-                            autoCompleteTextBox.MoveFocus(new TraversalRequest((e.KeyboardDevice.Modifiers == ModifierKeys.Shift) ? FocusNavigationDirection.Previous : FocusNavigationDirection.Next));
+                    case Key.Tab:
+                        IsPopupOpen = false;
+                        break;
+
+                    case Key.Down:
+                        if (IsPopupOpen)
+                        {
+                            _suggestionsListBox.SelectedIndex = 0;
+                            _suggestionsListBox.UpdateLayout();
+                            var listBoxItem = (ListBoxItem)_suggestionsListBox.ItemContainerGenerator.ContainerFromItem(_suggestionsListBox.SelectedItem);
+                            listBoxItem.Focus();
+                            e.Handled = true;
+                        }
                         else
-                            autoCompleteTextBox.Focus();
-
-                        e.Handled = true;
-                    }
-                    break;
+                        {
+                            IsPopupOpen = true;
+                        }
+                        break;
+                }
             }
+
+            base.OnPreviewKeyDown(e);
         }
 
         private void item_Click(object sender, MouseButtonEventArgs e)
@@ -223,8 +223,8 @@ namespace Jamiras.Controls
         {
             if (item.Id > 0)
             {
-                autoCompleteTextBox.Text = item.Label;
-                autoCompleteTextBox.SelectAll();
+                Text = item.Label;
+                SelectAll();
 
                 SelectedId = item.Id;
                 IsPopupOpen = false;

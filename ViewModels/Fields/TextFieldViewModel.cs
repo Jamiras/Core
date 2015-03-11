@@ -29,6 +29,18 @@ namespace Jamiras.ViewModels.Fields
             set { SetValue(IsMultilineProperty, value); }
         }
 
+        public static readonly ModelProperty IsRightAlignedProperty =
+            ModelProperty.Register(typeof(TextFieldViewModel), "IsRightAligned", typeof(bool), false);
+
+        /// <summary>
+        /// Gets or sets whether the text should be right aligned within the text box.
+        /// </summary>
+        public bool IsRightAligned
+        {
+            get { return (bool)GetValue(IsRightAlignedProperty); }
+            set { SetValue(IsRightAlignedProperty, value); }
+        }
+
         /// <summary>
         /// Binds the ViewModel to a source model.
         /// </summary>

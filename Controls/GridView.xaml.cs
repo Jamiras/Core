@@ -265,7 +265,7 @@ namespace Jamiras.Controls
 
             if (Rows != null)
                 RegenerateRowViewModels();
-            else
+            else if (RowViewModels != null)
                 BindRows();
         }
 

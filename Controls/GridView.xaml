@@ -34,6 +34,7 @@
                             <Setter Property="FontSize" Value="10" />
                             <Setter Property="Margin" Value="2,0,2,0" />
                         </Style>
+
                         <Style TargetType="{x:Type TextBox}">
                             <Setter Property="BorderThickness" Value="0" />
                             <Setter Property="FontSize" Value="10" />
@@ -45,6 +46,9 @@
                                 <Trigger Property="IsKeyboardFocusWithin" Value="True">
                                     <Setter Property="Background" Value="#E0E8F0" />
                                 </Trigger>
+                                <DataTrigger Binding="{Binding IsRightAligned}" Value="True">
+                                    <Setter Property="TextAlignment" Value="Right" />
+                                </DataTrigger>
                             </Style.Triggers>
                         </Style>
                         
@@ -77,6 +81,15 @@
                             <TextBox TextAlignment="Right" />
                         </DataTemplate>
                         
+                        <DataTemplate DataType="{x:Type fields:AutoCompleteFieldViewModel}">
+                            <controls:AutoCompleteTextBox Background="#FFE0C0" MatchColor="White"
+                                                          BorderThickness="0" FontSize="10" Padding="0,0,0,1"
+                                                          MaxLength="{Binding MaxLength}"
+                                                          Suggestions="{Binding Suggestions}"
+                                                          SelectedId="{Binding SelectedId}"
+                                                          Text="{Binding Text}" MinWidth="100" />
+                        </DataTemplate>
+
                         <Style TargetType="{x:Type Path}" x:Key="commandPath">
                             <Setter Property="Stroke" Value="#80C0FF" />
                             <Setter Property="Fill" Value="#90D8FF" />

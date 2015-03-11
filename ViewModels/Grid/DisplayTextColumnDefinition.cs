@@ -1,5 +1,4 @@
-﻿using System;
-using Jamiras.DataModels;
+﻿using Jamiras.DataModels;
 using Jamiras.ViewModels.Converters;
 using Jamiras.ViewModels.Fields;
 
@@ -13,10 +12,10 @@ namespace Jamiras.ViewModels.Grid
             SetValueCore(IsReadOnlyProperty, true);
         }
 
-        public DisplayTextColumnDefinition(string header, ModelProperty sourceProperty, Func<object, string> getDisplayTextFunction)
+        public DisplayTextColumnDefinition(string header, ModelProperty sourceProperty, IConverter converter)
             : this(header, sourceProperty)
         {
-            _converter = new DelegateConverter(o => getDisplayTextFunction(o), null);
+            _converter = converter;
         }
 
         private readonly IConverter _converter;

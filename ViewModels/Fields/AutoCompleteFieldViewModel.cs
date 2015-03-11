@@ -7,7 +7,8 @@ namespace Jamiras.ViewModels.Fields
 {
     public class AutoCompleteFieldViewModel : TextFieldViewModelBase
     {
-        public AutoCompleteFieldViewModel(string label, StringFieldMetadata metadata, Func<string, IEnumerable<LookupItem>> searchFunction, Func<int, string> lookupLabelFunction)
+        public AutoCompleteFieldViewModel(string label, StringFieldMetadata metadata, 
+            Func<string, IEnumerable<LookupItem>> searchFunction, Func<int, string> lookupLabelFunction)
             : base(label, metadata.MaxLength)
         {
             IsTextBindingDelayed = true;
