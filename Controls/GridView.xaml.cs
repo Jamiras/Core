@@ -5,9 +5,11 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Media;
 using Jamiras.DataModels;
+using Jamiras.ViewModels;
 using Jamiras.ViewModels.Grid;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
@@ -108,7 +110,7 @@ namespace Jamiras.Controls
 
                 var observableRows = rowViewModels as INotifyCollectionChanged;
                 if (observableRows != null)
-                    observableRows.CollectionChanged += OnRowsCollectionChanged;                
+                    observableRows.CollectionChanged += OnRowsCollectionChanged;
             }
         }
 
@@ -174,13 +176,17 @@ namespace Jamiras.Controls
 
         public IEnumerable<GridColumnDefinition> Columns
         {
-            get { return (IEnumerable<GridColumnDefinition>)GetValue(ColumnsProperty); } 
+            get { return (IEnumerable<GridColumnDefinition>)GetValue(ColumnsProperty); }
             set { SetValue(ColumnsProperty, value); }
         }
 
         private static void OnColumnsChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            ((GridView)sender).UpdateHeaders();
+            var view = (GridView)sender;
+            view.UpdateHeaders();
+
+            if (view.CanAddRowsDynamically)
+                view.GenerateDynamicRow();
         }
 
         private void UpdateHeaders()
@@ -224,7 +230,11 @@ namespace Jamiras.Controls
 
             if (HasCommands)
             {
-                headerGrid.ColumnDefinitions.Add(new ColumnDefinition { SharedSizeGroup = "commands", MinWidth=32 });
+                headerGrid.ColumnDefinitions.Add(new ColumnDefinition
+                {
+                    SharedSizeGroup = "commands",
+                    MinWidth = 32
+                });
 
                 var border = new Border();
                 border.Background = Brushes.Silver;
@@ -260,7 +270,10 @@ namespace Jamiras.Controls
                 }
 
                 if (HasCommands)
-                    footerGrid.ColumnDefinitions.Add(new ColumnDefinition { SharedSizeGroup = "commands" });
+                    footerGrid.ColumnDefinitions.Add(new ColumnDefinition
+                    {
+                        SharedSizeGroup = "commands"
+                    });
             }
 
             if (Rows != null)
@@ -359,6 +372,173 @@ namespace Jamiras.Controls
         {
             ((GridView)sender).UpdateHeaders();
         }
+
+        public static readonly DependencyProperty CanAddRowsDynamicallyProperty =
+            DependencyProperty.Register("CanAddRowsDynamically", typeof(bool), typeof(GridView), new FrameworkPropertyMetadata(OnCanAddRowsDynamicallyChanged));
+
+        public bool CanAddRowsDynamically
+        {
+            get { return (bool)GetValue(CanAddRowsDynamicallyProperty); }
+            set { SetValue(CanAddRowsDynamicallyProperty, value); }
+        }
+
+        private static void OnCanAddRowsDynamicallyChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            var view = (GridView)sender;
+            if ((bool)e.NewValue)
+            {
+                if (view.DynamicRow == null && view.Columns != null)
+                    view.GenerateDynamicRow();
+            }
+        }
+
+        private void GenerateDynamicRow()
+        {
+            var viewModel = new GridRowViewModel(new EmptyModel(), Columns, ModelBindingMode.OneWay);
+            var row = new GridRow();
+            row.InitializeColumns(this, viewModel);
+            row.IsKeyboardFocusWithinChanged += DynamicRowIsKeyboardFocusWithinChanged;
+            DynamicRow = row;
+        }
+
+        private class EmptyModel : ModelBase
+        {
+        }
+
+        internal static readonly DependencyProperty DynamicRowProperty =
+            DependencyProperty.Register("DynamicRow", typeof(GridRow), typeof(GridView));
+
+        internal GridRow DynamicRow
+        {
+            get { return (GridRow)GetValue(DynamicRowProperty); }
+            set { SetValue(DynamicRowProperty, value); }
+        }
+
+        public static readonly DependencyProperty GenerateDynamicRowMethodProperty =
+            DependencyProperty.Register("GenerateDynamicRowMethod", typeof(Func<ModelBase>), typeof(GridView));
+
+        public Func<ModelBase> GenerateDynamicRowMethod
+        {
+            get { return (Func<ModelBase>)GetValue(GenerateDynamicRowMethodProperty); }
+            set { SetValue(GenerateDynamicRowMethodProperty, value); }
+        }
+
+        private void DynamicRowIsKeyboardFocusWithinChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if ((bool)e.NewValue)
+            {
+                var model = GenerateDynamicRowMethod();
+                if (Rows != null)
+                    ((IList)Rows).Add(model);
+
+                var rowsList = (ItemsControl)FindName("rowsList");
+                var viewModels = (IList)RowViewModels;
+                int rowIndex = viewModels.Count;
+                int columnIndex = -1;
+                foreach (UIElement child in DynamicRow.Children)
+                {
+                    if (child.IsKeyboardFocusWithin)
+                    {
+                        columnIndex = Grid.GetColumn(child);
+                        break;
+                    }
+                }
+
+                rowsList.ItemContainerGenerator.StatusChanged += new NewRowFocusHelper(rowIndex, columnIndex).ItemContainerGeneratorStatusChanged;
+
+                var row = new GridRowViewModel(model, Columns, ModelBindingMode.TwoWay);
+                ((IList)RowViewModels).Add(row);
+            }
+        }
+
+        private class NewRowFocusHelper
+        {
+            public NewRowFocusHelper(int rowIndex, int columnIndex)
+            {
+                _rowIndex = rowIndex;
+                _columnIndex = columnIndex;
+            }
+
+            private readonly int _rowIndex;
+            private readonly int _columnIndex;
+            private FrameworkElement _container;
+
+            public void ItemContainerGeneratorStatusChanged(object sender, EventArgs e)
+            {
+                var itemContainerGenerator = (ItemContainerGenerator)sender;
+                if (itemContainerGenerator.Status == GeneratorStatus.ContainersGenerated)
+                {
+                    itemContainerGenerator.StatusChanged -= ItemContainerGeneratorStatusChanged;
+
+                    _container = (FrameworkElement)itemContainerGenerator.ContainerFromIndex(_rowIndex);
+                    if (_container.IsLoaded)
+                        FocusChild();
+                    else
+                        _container.Loaded += ContainerLoaded;
+                }
+            }
+
+            private void ContainerLoaded(object sender, RoutedEventArgs e)
+            {
+                ((FrameworkElement)sender).Loaded -= ContainerLoaded;
+                FocusChild();
+            }
+
+            private void FocusChild()
+            {
+                var gridRow = FindGridRow(_container);
+                if (_columnIndex == -1)
+                {
+                    gridRow.Focus();
+                }
+                else
+                {
+                    foreach (UIElement child in gridRow.Children)
+                    {
+                        if (Grid.GetColumn(child) == _columnIndex)
+                        {
+                            var c = FindFocusableChild(child);
+                            child.Dispatcher.BeginInvoke(new Func<bool>(c.Focus));
+                            break;
+                        }
+                    }
+                }
+            }
+
+            private static GridRow FindGridRow(DependencyObject container)
+            {
+                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(container); i++)
+                {
+                    var child = VisualTreeHelper.GetChild(container, i);
+                    var gridRow = child as GridRow;
+                    if (gridRow != null)
+                        return gridRow;
+
+                    gridRow = FindGridRow(child);
+                    if (gridRow != null)
+                        return gridRow;
+                }
+
+                return null;
+            }
+
+            private static UIElement FindFocusableChild(DependencyObject container)
+            {
+                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(container); i++)
+                {
+                    var child = VisualTreeHelper.GetChild(container, i);
+                    var uiElement = child as UIElement;
+                    if (uiElement != null && uiElement.Focusable)
+                        return uiElement;
+
+                    uiElement = FindFocusableChild(child);
+                    if (uiElement != null)
+                        return uiElement;
+                }
+
+                return null;
+            }
+        }
     }
 
     internal class GridRow : Grid
@@ -379,11 +559,19 @@ namespace Jamiras.Controls
             var row = (GridRow)sender;
             var rowViewModel = (GridRowViewModel)row.DataContext;
 
+            row.InitializeColumns(view, rowViewModel);
+        }
+
+        public void InitializeColumns(GridView view, GridRowViewModel rowViewModel)
+        {
             foreach (var column in view.Columns)
-                row.ColumnDefinitions.Add(GridView.GenerateColumnDefinition(column));
+                ColumnDefinitions.Add(GridView.GenerateColumnDefinition(column));
 
             if (view.CanReorder || view.CanRemove)
-                row.ColumnDefinitions.Add(new ColumnDefinition { SharedSizeGroup = "commands" });
+                ColumnDefinitions.Add(new ColumnDefinition
+                {
+                    SharedSizeGroup = "commands"
+                });
 
             int i = 0;
             foreach (var column in view.Columns)
@@ -398,7 +586,7 @@ namespace Jamiras.Controls
 
                 contentPresenter.Content = cell;
                 Grid.SetColumn(contentPresenter, i);
-                row.Children.Add(contentPresenter);
+                Children.Add(contentPresenter);
                 i++;
             }
 
@@ -411,7 +599,7 @@ namespace Jamiras.Controls
                 var contentPresenter = new ContentPresenter();
                 contentPresenter.Content = commands;
                 Grid.SetColumn(contentPresenter, i);
-                row.Children.Add(contentPresenter);
+                Children.Add(contentPresenter);
             }
         }
 

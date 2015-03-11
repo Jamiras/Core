@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Jamiras.DataModels;
@@ -15,6 +16,9 @@ namespace Jamiras.ViewModels.Grid
 
         public bool CanReorder { get; set; }
         public bool CanRemove { get; set; }
+        public bool CanAddRowsDynamically { get; set; }
+
+        public Func<ModelBase> GenerateDynamicRow { get; set; }
 
         public ICommand DoubleClickCommand { get; set; }
 

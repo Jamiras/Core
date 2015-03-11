@@ -169,6 +169,8 @@
     
     <DataTemplate DataType="{x:Type grid:GridViewModel}">
         <controls:GridView Margin="2" CanRemove="{Binding CanRemove}" CanReorder="{Binding CanReorder}" 
+                           CanAddRowsDynamically="{Binding CanAddRowsDynamically}" 
+                           GenerateDynamicRowMethod="{Binding GenerateDynamicRow}"
                            Columns="{Binding Columns}" RowViewModels="{Binding Rows}" 
                            DoubleClickCommand="{Binding DoubleClickCommand}" />
     </DataTemplate>
