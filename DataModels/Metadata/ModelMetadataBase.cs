@@ -40,13 +40,5 @@ namespace Jamiras.DataModels.Metadata
             _fieldMetadata.TryGetValue(property.Key, out metadata);
             return metadata;
         }
-
-        /// <summary>
-        /// Initializes default values for a new record.
-        /// </summary>
-        /// <param name="dataModel">Model to initialize.</param>
-        public virtual void InitializeNewRecord(ModelBase dataModel)
-        {
-        }
     }
 }

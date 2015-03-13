@@ -9,9 +9,9 @@ using Jamiras.Database;
 namespace Jamiras.DataModels.Metadata
 {
     /// <summary>
-    /// Base class for database-based metadata
+    /// Metadata for a database-based model.
     /// </summary>
-    public abstract class DatabaseModelMetadata : ModelMetadata
+    public abstract class DatabaseModelMetadata : ModelMetadata, IDatabaseModelMetadata
     {
         /// <summary>
         /// Constructs a new <see cref="DatabaseModelMetadata"/>
@@ -35,6 +35,11 @@ namespace Jamiras.DataModels.Metadata
         /// Gets the property for the primary key of the record.
         /// </summary>
         public ModelProperty PrimaryKeyProperty { get; protected set; }
+
+        /// <summary>
+        /// Gets or sets whether a new model should be created by Query() if existing data is not found (instead of returning false).
+        /// </summary>
+        protected bool CreateNewModelIfQueryFails { get; set; }
 
         /// <summary>
         /// Gets the primary key value of a model.
@@ -137,10 +142,22 @@ namespace Jamiras.DataModels.Metadata
         /// Initializes default values for a new record.
         /// </summary>
         /// <param name="model">Model to initialize.</param>
-        public override void InitializeNewRecord(ModelBase model)
+        /// <param name="database">The database to populate from.</param>
+        void IDatabaseModelMetadata.InitializeNewRecord(ModelBase model, IDatabase database)
         {
             if (PrimaryKeyProperty != null)
                 model.SetValue(PrimaryKeyProperty, _nextKey--);
+
+            InitializeNewRecord(model, database);
+        }
+
+        /// <summary>
+        /// Initializes default values for a new record.
+        /// </summary>
+        /// <param name="model">Model to initialize.</param>
+        /// <param name="database">The database to populate from.</param>
+        protected virtual void InitializeNewRecord(ModelBase model, IDatabase database)
+        {
         }
 
         /// <summary>
@@ -150,17 +167,26 @@ namespace Jamiras.DataModels.Metadata
         /// <param name="primaryKey">The primary key of the model to populate.</param>
         /// <param name="database">The database to populate from.</param>
         /// <returns><c>true</c> if the model was populated, <c>false</c> if not.</returns>
-        public virtual bool Query(ModelBase model, object primaryKey, IDatabase database)
+        public bool Query(ModelBase model, object primaryKey, IDatabase database)
         {
             if (_queryString == null)
                 _queryString = BuildQueryString(database);
 
             using (var query = database.PrepareQuery(_queryString))
             {
-                query.Bind("@filterValue", primaryKey);
+                query.Bind(FilterValueToken, primaryKey);
 
                 if (!query.FetchRow())
-                    return false;
+                {
+                    if (!CreateNewModelIfQueryFails)
+                        return false;
+
+                    if (PrimaryKeyProperty != null)
+                        model.SetValue(PrimaryKeyProperty, primaryKey);
+
+                    InitializeNewRecord(model, database);
+                    return true;
+                }
 
                 PopulateItem(model, database, query);
             }
@@ -181,6 +207,7 @@ namespace Jamiras.DataModels.Metadata
             return database.BuildQueryString(query);
         }
 
+        // internal for access from DatabaseModelCollectionMetadata
         internal QueryBuilder BuildQueryExpression()
         {
             var query = new QueryBuilder();
@@ -205,6 +232,7 @@ namespace Jamiras.DataModels.Metadata
         {
         }
 
+        // internal for access from DatabaseModelCollectionMetadata
         internal void PopulateItem(ModelBase model, IDatabase database, IDatabaseQuery query)
         {
             int index = 0;
@@ -309,7 +337,7 @@ namespace Jamiras.DataModels.Metadata
 
             if (property.PropertyType == typeof(Date))
             {
-                Date date = (Date)modelValue;
+                var date = (Date)modelValue;
                 if (date.IsEmpty)
                     return null;
 
@@ -330,7 +358,7 @@ namespace Jamiras.DataModels.Metadata
             }
             else if (value is int || value.GetType().IsEnum)
             {
-                int iVal = (int)value;
+                var iVal = (int)value;
                 if (iVal == 0 && fieldMetadata is ForeignKeyFieldMetadata)
                     AppendQueryNull(builder);
                 else
@@ -338,7 +366,7 @@ namespace Jamiras.DataModels.Metadata
             }
             else if (value is string)
             {
-                string sVal = (string)value;
+                var sVal = (string)value;
                 if (sVal.Length == 0)
                     AppendQueryNull(builder);
                 else
@@ -346,17 +374,17 @@ namespace Jamiras.DataModels.Metadata
             }
             else if (value is double)
             {
-                double dVal = (double)value;
+                var dVal = (double)value;
                 builder.Append(dVal);
             }
             else if (value is float)
             {
-                float dVal = (float)value;
+                var dVal = (float)value;
                 builder.Append(dVal);
             }
             else if (value is DateTime)
             {
-                DateTime dttm = (DateTime)value;
+                var dttm = (DateTime)value;
                 builder.AppendFormat("#{0}#", dttm);
             }
             else if (value is bool)

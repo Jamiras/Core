@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Jamiras.Database;
 using Jamiras.DataModels.Metadata;
-using System.Collections;
-using System.Diagnostics;
 
 namespace Jamiras.DataModels
 {
@@ -34,7 +34,7 @@ namespace Jamiras.DataModels
                 return "Count = " + _cache.Count;
             }
 
-            internal sealed class DataModelCacheDebugView
+            private sealed class DataModelCacheDebugView
             {
                 public DataModelCacheDebugView(DataModelCache cache)
                 {
@@ -161,10 +161,9 @@ namespace Jamiras.DataModels
                             expire = collection.ModelType.IsAssignableFrom(modelType);
                             break;
                         }
-                        else if (item.Value.Target != null)
-                        {
+                        
+                        if (item.Value.Target != null)
                             break;
-                        }
                     }
 
                     if (expire)
@@ -182,7 +181,7 @@ namespace Jamiras.DataModels
         public T Get<T>(int id)
             where T : DataModelBase, new()
         {
-            var metadata = _metadataRepository.GetModelMetadata(typeof(T)) as DatabaseModelMetadata;
+            var metadata = _metadataRepository.GetModelMetadata(typeof(T)) as IDatabaseModelMetadata;
             if (metadata == null)
                 throw new ArgumentException("No metadata registered for " + typeof(T).FullName);
 
@@ -253,7 +252,7 @@ namespace Jamiras.DataModels
         public T Query<T>(object searchData)
             where T : DataModelBase, new()
         {
-            var metadata = _metadataRepository.GetModelMetadata(typeof(T)) as DatabaseModelMetadata;
+            var metadata = _metadataRepository.GetModelMetadata(typeof(T)) as IDatabaseModelMetadata;
             if (metadata == null)
                 throw new ArgumentException("No metadata registered for " + typeof(T).FullName);
 
@@ -274,7 +273,7 @@ namespace Jamiras.DataModels
         public T Query<T>(object searchData, int maxResults)
             where T : DataModelBase, new()
         {
-            var metadata = _metadataRepository.GetModelMetadata(typeof(T)) as DatabaseModelMetadata;
+            var metadata = _metadataRepository.GetModelMetadata(typeof(T)) as IDatabaseModelMetadata;
             if (metadata == null)
                 throw new ArgumentException("No metadata registered for " + typeof(T).FullName);
 
@@ -297,15 +296,15 @@ namespace Jamiras.DataModels
         public T Create<T>()
             where T : DataModelBase, new()
         {
-            var metadata = _metadataRepository.GetModelMetadata(typeof(T)) as DatabaseModelMetadata;
+            var metadata = _metadataRepository.GetModelMetadata(typeof(T)) as IDatabaseModelMetadata;
             if (metadata == null)
                 throw new ArgumentException("No metadata registered for " + typeof(T).FullName);
 
             var model = new T();
-            metadata.InitializeNewRecord(model);
+            metadata.InitializeNewRecord(model, _database);
             int id = metadata.GetKey(model);
             if (id != 0)
-                model = TryCache<T>(id, model);
+                model = TryCache(id, model);
             return model;
         }
 
@@ -319,14 +318,14 @@ namespace Jamiras.DataModels
             if (!dataModel.IsModified && !(dataModel is IDataModelCollection))
                 return true;
 
-            var metadata = _metadataRepository.GetModelMetadata(dataModel.GetType()) as DatabaseModelMetadata;
+            var metadata = _metadataRepository.GetModelMetadata(dataModel.GetType()) as IDatabaseModelMetadata;
             if (metadata == null)
                 return false;
 
             return Commit(dataModel, metadata);
         }
 
-        private bool Commit(DataModelBase dataModel, DatabaseModelMetadata metadata)
+        private bool Commit(DataModelBase dataModel, IDatabaseModelMetadata metadata)
         {
             var collection = dataModel as IDataModelCollection;
             if (collection != null && !Commit(collection, metadata as IDataModelCollectionMetadata)) 
@@ -351,7 +350,7 @@ namespace Jamiras.DataModels
 
         private bool Commit(IDataModelCollection collection, IDataModelCollectionMetadata collectionMetadata)
         {
-            var modelMetadata = (collectionMetadata != null) ? collectionMetadata.ModelMetadata as DatabaseModelMetadata : null;
+            var modelMetadata = (collectionMetadata != null) ? collectionMetadata.ModelMetadata as IDatabaseModelMetadata : null;
             if (modelMetadata != null)
             {
                 if (modelMetadata.PrimaryKeyProperty == null)
@@ -393,7 +392,7 @@ namespace Jamiras.DataModels
                 if (!kvp.Value.Models.Any())
                     continue;
 
-                var modelMetadata = _metadataRepository.GetModelMetadata(kvp.Key) as DatabaseModelMetadata;
+                var modelMetadata = _metadataRepository.GetModelMetadata(kvp.Key);
                 var collectionMetadata = modelMetadata as IDataModelCollectionMetadata;
                 if (collectionMetadata != null)
                 {
@@ -412,7 +411,7 @@ namespace Jamiras.DataModels
                         var firstModel = kvp.Value.Models.First();
                         if (firstModel is IDataModelCollection)
                         {
-                            foreach (IDataModelCollection collection in kvp.Value.Models)
+                            foreach (var collection in kvp.Value.Models.OfType<IDataModelCollection>())
                                 UpdateKeys(collection, dependantProperty, key, newKey);
                         }
                         else
@@ -428,7 +427,7 @@ namespace Jamiras.DataModels
             }
         }
 
-        private ModelProperty GetDependantProperty(ModelMetadata modelMetadata, string fieldName)
+        private static ModelProperty GetDependantProperty(ModelMetadata modelMetadata, string fieldName)
         {
             foreach (var kvp in modelMetadata.AllFieldMetadata)
             {
@@ -443,7 +442,7 @@ namespace Jamiras.DataModels
             return null;
         }
 
-        private void UpdateKeys(IEnumerable collection, ModelProperty property, int key, int newKey)
+        private static void UpdateKeys(IEnumerable collection, ModelProperty property, int key, int newKey)
         {
             foreach (ModelBase model in collection)
             {

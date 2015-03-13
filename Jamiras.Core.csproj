@@ -126,15 +126,16 @@
     <Compile Include="DataModels\Metadata\AutoIncrementFieldMetadata.cs" />
     <Compile Include="DataModels\Metadata\BooleanFieldMetadata.cs" />
     <Compile Include="DataModels\Metadata\DatabaseModelCollectionSearchMetadata.cs" />
+    <Compile Include="DataModels\Metadata\DatabaseModelMetadata.cs" />
     <Compile Include="DataModels\Metadata\DateTimeFieldMetadata.cs" />
     <Compile Include="DataModels\Metadata\DoubleFieldMetadata.cs" />
     <Compile Include="DataModels\Metadata\DatabaseModelCollectionMetadata.cs" />
-    <Compile Include="DataModels\Metadata\DatabaseModelMetadata.cs" />
     <Compile Include="DataModels\Metadata\DataModelMetadataRepository.cs" />
     <Compile Include="DataModels\Metadata\EnumFieldMetadata.cs" />
     <Compile Include="DataModels\Metadata\FieldAttributes.cs" />
     <Compile Include="DataModels\Metadata\FieldMetadata.cs" />
     <Compile Include="DataModels\Metadata\ForeignKeyFieldMetadata.cs" />
+    <Compile Include="DataModels\Metadata\IDatabaseModelMetadata.cs" />
     <Compile Include="DataModels\Metadata\IDataModelMetadataRepository.cs" />
     <Compile Include="DataModels\IDataModelSource.cs" />
     <Compile Include="DataModels\Metadata\CurrencyFieldMetadata.cs" />
