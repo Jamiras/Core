@@ -112,24 +112,42 @@ namespace Jamiras.Controls
                 if (observableRows != null)
                     observableRows.CollectionChanged += OnRowsCollectionChanged;
             }
+            else if (CanReorder)
+            {
+                var observableRows = RowViewModels as INotifyCollectionChanged;
+                if (observableRows != null)
+                    observableRows.CollectionChanged += OnRowsCollectionChanged;
+            }
         }
 
         private void OnRowsCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            switch (e.Action)
+            if (_hasFooter)
             {
-                case NotifyCollectionChangedAction.Add:
-                    foreach (GridRowViewModel row in e.NewItems)
-                        BindRow(row);
-                    break;
+                switch (e.Action)
+                {
+                    case NotifyCollectionChangedAction.Add:
+                        foreach (GridRowViewModel row in e.NewItems)
+                            BindRow(row);
+                        break;
 
-                case NotifyCollectionChangedAction.Remove:
-                    foreach (GridRowViewModel row in e.NewItems)
-                        UnbindRow(row);
-                    break;
+                    case NotifyCollectionChangedAction.Remove:
+                        foreach (GridRowViewModel row in e.NewItems)
+                            UnbindRow(row);
+                        break;
+                }
+ 
+                UpdateSummaries();
             }
 
-            UpdateSummaries();
+            if (CanReorder)
+            {
+                foreach (var row in RowViewModels)
+                {
+                    if (row.Commands != null)
+                        row.Commands.UpdateMoveCommands();
+                }
+            }
         }
 
         private void BindRow(GridRowViewModel row)

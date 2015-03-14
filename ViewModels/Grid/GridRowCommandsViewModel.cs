@@ -63,7 +63,7 @@ namespace Jamiras.ViewModels.Grid
             }
         }
 
-        private void UpdateMoveCommands()
+        internal void UpdateMoveCommands()
         {
             bool isFirst = true;
             var enumerator = _view.RowViewModels.GetEnumerator();

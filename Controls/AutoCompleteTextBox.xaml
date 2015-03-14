@@ -18,6 +18,9 @@
                                 <DataTrigger Binding="{Binding IsKeyboardFocusWithin, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type controls:AutoCompleteTextBox}}}" Value="True">
                                     <Setter Property="Background" Value="#E0E8F0" />
                                 </DataTrigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Background" Value="#E0E0E0" />
+                                </Trigger>
                             </Style.Triggers>
                         </Style>
                     </Border.Style>
