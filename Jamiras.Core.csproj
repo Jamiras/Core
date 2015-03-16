@@ -163,6 +163,7 @@
     <Compile Include="Services\PersistantDataRepository.cs" />
     <Compile Include="Services\WindowSettingsRepository.cs" />
     <Compile Include="ViewModels\Converters\DateToDateTimeConverter.cs" />
+    <Compile Include="ViewModels\Converters\DateToStringConverter.cs" />
     <Compile Include="ViewModels\Converters\DelegateConverter.cs" />
     <Compile Include="ViewModels\Converters\IConverter.cs" />
     <Compile Include="ViewModels\Converters\IntegerToStringConverter.cs" />
@@ -170,6 +171,7 @@
     <Compile Include="Services\IDialogService.cs" />
     <Compile Include="ViewModels\Fields\AutoCompleteFieldViewModel.cs" />
     <Compile Include="ViewModels\Grid\AutoCompleteColumnDefinition.cs" />
+    <Compile Include="ViewModels\Grid\DateColumnDefinition.cs" />
     <Compile Include="ViewModels\Grid\TextColumnDefinition.cs" />
     <Compile Include="ViewModels\Grid\GridRowCommandsViewModel.cs" />
     <Compile Include="ViewModels\Grid\IntegerColumnDefinition.cs" />

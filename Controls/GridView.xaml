@@ -6,6 +6,7 @@
              xmlns:controls="clr-namespace:Jamiras.Controls"
              xmlns:fields="clr-namespace:Jamiras.ViewModels.Fields"
              xmlns:grid="clr-namespace:Jamiras.ViewModels.Grid"
+             xmlns:converters="clr-namespace:Jamiras.ViewModels.Converters"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
     <Border BorderBrush="Gray" BorderThickness="1">
@@ -30,7 +31,8 @@
                 <StackPanel>
                     <StackPanel.Resources>
                         <BooleanToVisibilityConverter x:Key="boolToVisConverter" />
-
+                        <converters:DateToStringConverter x:Key="dateToStringConverter" />
+                        
                         <Style TargetType="{x:Type TextBlock}">
                             <Setter Property="FontSize" Value="10" />
                             <Setter Property="Margin" Value="2,0,2,0" />
@@ -89,6 +91,10 @@
 
                         <DataTemplate DataType="{x:Type fields:CurrencyFieldViewModel}">
                             <TextBox TextAlignment="Right" />
+                        </DataTemplate>
+
+                        <DataTemplate DataType="{x:Type fields:DateFieldViewModel}">
+                            <TextBox TextAlignment="Right" Text="{Binding Date, Converter={StaticResource dateToStringConverter}}" />
                         </DataTemplate>
 
                     </StackPanel.Resources>

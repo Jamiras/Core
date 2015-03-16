@@ -251,7 +251,6 @@ namespace Jamiras.Controls
                 headerGrid.ColumnDefinitions.Add(new ColumnDefinition
                 {
                     SharedSizeGroup = "commands",
-                    MinWidth = 32
                 });
 
                 var border = new Border();
@@ -324,7 +323,7 @@ namespace Jamiras.Controls
 
                 case GridColumnWidthType.Auto:
                     definition.Width = new GridLength();
-                    definition.SharedSizeGroup = column.Header;
+                    definition.SharedSizeGroup = column.Header.Replace(" ", "");
                     break;
 
                 case GridColumnWidthType.Fixed:

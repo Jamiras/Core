@@ -33,6 +33,13 @@ namespace Jamiras.ViewModels.Grid
             return row;
         }
 
+        public GridRowViewModel InsertRow(int index, ModelBase model, ModelBindingMode bindingMode = ModelBindingMode.Committed)
+        {
+            var row = new GridRowViewModel(model, Columns, bindingMode);
+            Rows.Insert(index, row);
+            return row;
+        }
+
         IEnumerable<ViewModelBase> ICompositeViewModel.GetChildren()
         {
             foreach (var row in Rows)
