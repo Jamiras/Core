@@ -1,0 +1,98 @@
+﻿<Window x:Class="BundleFileViewer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:jamiras="clr-namespace:Jamiras.Controls;assembly=Jamiras.Core"
+        Title="{Binding Title}" Height="480" Width="640">
+    <DockPanel LastChildFill="True">
+        <Menu DockPanel.Dock="Top" x:Name="menu">
+            <MenuItem Header="_File">
+                <MenuItem Header="_New" Command="{Binding NewBundleCommand}" />
+                <MenuItem Header="_Open" Command="{Binding OpenBundleCommand}" />
+                <MenuItem Header="_Recent" ItemsSource="{Binding RecentFiles}">
+                    <MenuItem.ItemContainerStyle>
+                        <Style TargetType="{x:Type MenuItem}">
+                            <Setter Property="Command" Value="{Binding DataContext.OpenRecentBundleCommand, ElementName=menu}" />
+                            <Setter Property="CommandParameter" Value="{Binding}" />
+                        </Style>
+                    </MenuItem.ItemContainerStyle>
+                </MenuItem>
+                <Separator />
+                <MenuItem Header="E_xit" Command="{Binding ExitCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Merge">
+                <MenuItem Header="_Directory" Command="{Binding MergeDirectoryCommand}" />
+                <MenuItem Header="_File" Command="{Binding MergeFileCommand}" />
+            </MenuItem>
+        </Menu>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" MinWidth="200"/>
+                <ColumnDefinition Width="*" MinWidth="300" />
+            </Grid.ColumnDefinitions>
+            
+            <TreeView ItemsSource="{Binding Folders}" HorizontalAlignment="Stretch" Margin="0,0,4,0"
+                      SelectedItemChanged="TreeView_SelectedItemChanged" x:Name="treeView">
+                <TreeView.ItemContainerStyle>
+                    <Style TargetType="{x:Type TreeViewItem}">
+                        <Setter Property="IsExpanded" Value="{Binding IsExpanded}" />
+                    </Style>
+                </TreeView.ItemContainerStyle>
+                <TreeView.ItemTemplate>
+                    <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                        <Grid>
+                            <Grid.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Rename" Command="{Binding DataContext.RenameFolderCommand, Source={x:Reference treeView}}" CommandParameter="{Binding}" />
+                                    <MenuItem Header="New Folder" Command="{Binding DataContext.NewFolderCommand, Source={x:Reference treeView}}" CommandParameter="{Binding}" />
+                                </ContextMenu>
+                            </Grid.ContextMenu>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="16" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Canvas Width="12" Height="12" SnapsToDevicePixels="True">
+                                <Path Stroke="#808080" Fill="#FFFFC0" Data="M1,2 L4,2 L4,4 L11,4 L11,11 L1,11 Z" />
+                            </Canvas>
+                            
+                            <ContentPresenter Grid.Column="1" Content="{Binding}">
+                                <ContentPresenter.Resources>
+                                    <Style TargetType="{x:Type TextBox}">
+                                        <EventSetter Event="Loaded" Handler="TextBox_Loaded" />
+                                        <EventSetter Event="LostFocus" Handler="TextBox_LostFocus" />
+                                    </Style>
+                                </ContentPresenter.Resources>
+                                <ContentPresenter.Style>
+                                    <Style TargetType="{x:Type ContentPresenter}">
+                                        <Setter Property="ContentTemplate">
+                                            <Setter.Value>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Name}" Margin="4,2,4,2" />
+                                                </DataTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsEditing}" Value="True">
+                                                <Setter Property="ContentTemplate">
+                                                    <Setter.Value>
+                                                        <DataTemplate>
+                                                            <TextBox Text="{Binding Name}" Margin="0,0,0,0" Height="20" Padding="0" />
+                                                        </DataTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ContentPresenter.Style>
+                            </ContentPresenter>
+                        </Grid>
+                    </HierarchicalDataTemplate>
+                </TreeView.ItemTemplate>
+            </TreeView>
+            <GridSplitter Width="4" />
+
+            <jamiras:GridView Grid.Column="2" HorizontalAlignment="Stretch"
+                              DoubleClickCommand="{Binding OpenItemCommand}"
+                              Columns="{Binding Columns}" Rows="{Binding Items}" />
+        </Grid>
+    </DockPanel>
+</Window>

@@ -169,6 +169,9 @@ namespace Jamiras.DataModels.Metadata
         /// <returns><c>true</c> if the model was populated, <c>false</c> if not.</returns>
         public bool Query(ModelBase model, object primaryKey, IDatabase database)
         {
+            if (_tableMetadata.Count == 0)
+                return HandleFailedQuery(model, primaryKey, database);
+
             if (_queryString == null)
                 _queryString = BuildQueryString(database);
 
@@ -177,19 +180,27 @@ namespace Jamiras.DataModels.Metadata
                 query.Bind(FilterValueToken, primaryKey);
 
                 if (!query.FetchRow())
-                {
-                    if (!CreateNewModelIfQueryFails)
-                        return false;
-
-                    if (PrimaryKeyProperty != null)
-                        model.SetValue(PrimaryKeyProperty, primaryKey);
-
-                    InitializeNewRecord(model, database);
-                    return true;
-                }
+                    return HandleFailedQuery(model, primaryKey, database);
 
                 PopulateItem(model, database, query);
             }
+
+            return true;
+        }
+
+        private bool HandleFailedQuery(ModelBase model, object primaryKey, IDatabase database)
+        {
+            if (!CreateNewModelIfQueryFails)
+                return false;
+
+            if (PrimaryKeyProperty != null)
+                model.SetValue(PrimaryKeyProperty, primaryKey);
+
+            InitializeNewRecord(model, database);
+
+            var dataModel = model as DataModelBase;
+            if (dataModel != null && dataModel.IsModified)
+                dataModel.AcceptChanges();
 
             return true;
         }

@@ -65,6 +65,7 @@
     <Compile Include="Commands\DisabledCommand.cs" />
     <Compile Include="Components\BucketTinyDictionary.cs" />
     <Compile Include="Components\EmptyTinyDictionary.cs" />
+    <Compile Include="IO\FileBundle.cs" />
     <Compile Include="Components\ITinyDictionary.cs" />
     <Compile Include="Components\OneItemTinyDictionary.cs" />
     <Compile Include="Components\Date.cs" />
@@ -149,6 +150,7 @@
     <Compile Include="DataModels\DataModelList.cs" />
     <Compile Include="IO\BitReader.cs" />
     <Compile Include="IO\BitWriter.cs" />
+    <Compile Include="IO\FileBundleFileSystemService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\DialogService.cs" />
     <Compile Include="Services\CoreServices.cs" />
