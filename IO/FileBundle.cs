@@ -9,21 +9,55 @@ namespace Jamiras.IO
 {
     public class FileBundle : IFileSystemService
     {
+        private const byte Version = 1;
+        private readonly string _fileName;
+        private int _numBuckets;
+        private int[] _bucketOffset;
+        private int _freeSpaceOffset;
+        private readonly IFileSystemService _fileSystem;
+        private readonly FileInfo[] _recentFiles;
+        private int _recentFilesIndex;
+
         public FileBundle(string fileName)
+            : this(fileName, 17, new FileSystemService())
         {
-            if (File.Exists(fileName))
+        }
+
+        internal FileBundle(string fileName, IFileSystemService fileSystem)
+            : this(fileName, 17, fileSystem)
+        {            
+        }
+
+        internal FileBundle(string fileName, int numBuckets, IFileSystemService fileSystem)
+        {
+            _fileSystem = fileSystem;
+            if (_fileSystem.FileExists(fileName))
                 OpenBundle(fileName);
             else
-                CreateBundle(fileName);
+                CreateBundle(fileName, numBuckets);
 
             _fileName = fileName;
             _recentFiles = new FileInfo[16];
         }
 
+        // File structure:
+        //  - Header Block
+        //     JBD# - 4 byte header - 4th byte is format version indicator
+        //     #### - 4 byte integer - number of buckets in hash table
+        //    x#### - num buckets x 4 byte integer - address of first element for bucket
+        //     #### - 4 byte integer - address of first deleted element
+        //  - File Block
+        //     #### - 4 byte integer - address of next element in bucket
+        //     #### - 4 byte integer - size of file
+        // ######## - 8 byte long - binary form of DateTime representing the last modified time of the file
+        //        # - 1 byte - number of characters in file name
+        //       x# - name length bytes - characters in file name
+        //       x# - file size bytes - contents of file
+
         private void OpenBundle(string fileName)
         {
-            var stream = File.OpenRead(fileName);
-            byte[] signature = new byte[4];
+            var stream = _fileSystem.OpenFile(fileName, OpenFileMode.Read);
+            var signature = new byte[4];
             stream.Read(signature, 0, 4);
             if (signature[0] != 'J' || signature[1] != 'B' || signature[2] != 'D')
                 throw new InvalidOperationException(fileName + " is not a Jamiras Bundle");
@@ -41,28 +75,22 @@ namespace Jamiras.IO
             stream.Close();
         }
 
-        private void CreateBundle(string fileName)
+        private void CreateBundle(string fileName, int numBuckets)
         {
-            var stream = File.Create(fileName);
-            stream.Write(new byte[] { (byte)'J', (byte)'B', (byte)'D', Version }, 0, 4);
+            var stream = _fileSystem.CreateFile(fileName);
+            stream.Write(new[] { (byte)'J', (byte)'B', (byte)'D', Version }, 0, 4);
             var writer = new BinaryWriter(stream);
 
-            _numBuckets = 719;
+            _numBuckets = numBuckets;
             _bucketOffset = new int[_numBuckets];
             writer.Write(_numBuckets);
             for (int i = 0; i < _numBuckets; i++)
-                writer.Write((int)0);
+                writer.Write(0);
 
-            writer.Write((int)0);
+            writer.Write(0);
 
             stream.Close();
         }
-
-        private const byte Version = 1;
-        private string _fileName;
-        private int _numBuckets;
-        private int[] _bucketOffset;
-        private int _freeSpaceOffset;
 
         [DebuggerDisplay("{FileName} {Size}@{Offset}")]
         private class FileInfo
@@ -78,9 +106,6 @@ namespace Jamiras.IO
                 get { return Modified == DateTime.MinValue; }
             }
         }
-
-        private FileInfo[] _recentFiles;
-        private int _recentFilesIndex;
 
         private FileInfo GetFileInfo(string path)
         {
@@ -125,7 +150,7 @@ namespace Jamiras.IO
             uint hash = 0x3BAD84E1;
             foreach (var c in path)
             {
-                long l = (long)hash;
+                long l = hash;
                 l *= (int)Char.ToLower(c) * ((hash & 0xFF) + 1);
                 hash = (uint)(l & 0xFFFFFFFF) ^ (uint)(l >> 32);
             }
@@ -180,7 +205,7 @@ namespace Jamiras.IO
 
         private static bool InFolder(FileInfo info, string path)
         {
-            int index = info.FileName.LastIndexOf('\\');
+            var index = info.FileName.LastIndexOf('\\');
             if (index == -1)
                 return String.IsNullOrEmpty(path);
 
@@ -196,7 +221,7 @@ namespace Jamiras.IO
                 if (bucketOffset != 0)
                 {
                     if (reader == null)
-                        reader = new BinaryReader(File.OpenRead(_fileName));
+                        reader = new BinaryReader(_fileSystem.OpenFile(_fileName, OpenFileMode.Read));
 
                     foreach (var info in EnumerateFiles(reader, bucketOffset))
                         yield return info;
@@ -209,7 +234,7 @@ namespace Jamiras.IO
 
         private IEnumerable<FileInfo> EnumerateFiles(int bucketOffset)
         {
-            using (var reader = new BinaryReader(File.OpenRead(_fileName)))
+            using (var reader = new BinaryReader(_fileSystem.OpenFile(_fileName, OpenFileMode.Read)))
             {
                 foreach (var info in EnumerateFiles(reader, bucketOffset))
                     yield return info;
@@ -276,11 +301,11 @@ namespace Jamiras.IO
 
         private void Commit(BundleWriteStream stream)
         {
-            for (int i = 0; i < _recentFiles.Length; i++)
+            foreach (FileInfo info in _recentFiles)
             {
-                if (_recentFiles[i] != null && ReferenceEquals(_recentFiles[i].Stream, stream))
+                if (info != null && ReferenceEquals(info.Stream, stream))
                 {
-                    Commit(_recentFiles[i]);
+                    Commit(info);
                     break;
                 }
             }
@@ -288,9 +313,9 @@ namespace Jamiras.IO
 
         private void Commit(FileInfo info)
         {
-            using (var fileStream = File.Open(_fileName, FileMode.Open, FileAccess.ReadWrite))
+            using (var fileStream = _fileSystem.OpenFile(_fileName, OpenFileMode.ReadWrite))
             {
-                int headerOffset = GetAvailableSpaceOffset(info, fileStream);
+                var headerOffset = GetAvailableSpaceOffset(info, fileStream);
 
                 var writer = new BinaryWriter(fileStream);
 
@@ -316,12 +341,13 @@ namespace Jamiras.IO
                 }
 
                 writer.Seek(headerOffset, SeekOrigin.Begin);
-                writer.Write((int)0); // no next
+                writer.Write(0); // no next
 
                 if (info.Stream != null)
                     info.Size = (int)info.Stream.Position;
-
                 writer.Write(info.Size);
+
+                info.Modified = DateTime.UtcNow;
                 writer.Write(info.Modified.ToBinary());
 
                 writer.Write((byte)info.FileName.Length);
@@ -332,7 +358,7 @@ namespace Jamiras.IO
 
                 if (info.Stream != null)
                 {
-                    byte[] buffer = new byte[8192];
+                    var buffer = new byte[8192];
                     info.Stream.Seek(0, SeekOrigin.Begin);
                     do
                     {
@@ -350,7 +376,7 @@ namespace Jamiras.IO
             }
         }
 
-        private int GetAvailableSpaceOffset(FileInfo info, FileStream fileStream)
+        private int GetAvailableSpaceOffset(FileInfo info, Stream fileStream)
         {
             if (_freeSpaceOffset == 0)
                 return (int)fileStream.Length;
@@ -443,22 +469,22 @@ namespace Jamiras.IO
             if (info == null || info.IsDirectory)
                 return null;
 
-            return new BundleReadStream(_fileName, info.Offset, info.Size);
+            return new BundleReadStream(_fileName, info.Offset, info.Size, _fileSystem);
         }
 
         private class BundleReadStream : Stream
         {
-            public BundleReadStream(string fileName, int offset, int length)
+            public BundleReadStream(string fileName, int offset, int length, IFileSystemService fileSystem)
             {
-                _baseStream = File.OpenRead(fileName);
+                _baseStream = fileSystem.OpenFile(fileName, OpenFileMode.Read);
                 _baseStream.Seek(offset, SeekOrigin.Begin);
                 _offset = offset;
                 _length = length;
             }
 
-            private Stream _baseStream;
-            private int _length;
-            private int _offset;
+            private readonly Stream _baseStream;
+            private readonly int _length;
+            private readonly int _offset;
 
             public override void Flush()
             {
@@ -566,7 +592,7 @@ namespace Jamiras.IO
 
             var offset = _bucketOffset[bucket];
 
-            using (var fileStream = File.Open(_fileName, FileMode.Open, FileAccess.ReadWrite))
+            using (var fileStream = _fileSystem.OpenFile(_fileName, OpenFileMode.ReadWrite))
             {
                 var reader = new BinaryReader(fileStream);
                 do
@@ -589,6 +615,9 @@ namespace Jamiras.IO
                             var writer = new BinaryWriter(fileStream);
                             writer.BaseStream.Seek(lastOffset, SeekOrigin.Begin);
                             writer.Write(nextOffset);
+
+                            if (lastOffset == GetBucketOffset(bucket))
+                                _bucketOffset[bucket] = nextOffset;
 
                             if (_freeSpaceOffset == 0)
                             {
@@ -615,7 +644,7 @@ namespace Jamiras.IO
 
                             // update node.next to null
                             writer.BaseStream.Seek(offset, SeekOrigin.Begin);
-                            writer.Write((int)0);
+                            writer.Write(0);
 
                             return true;
                         }
