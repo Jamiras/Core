@@ -15,6 +15,7 @@ using Jamiras.Services;
 using Jamiras.ViewModels;
 using Jamiras.ViewModels.Grid;
 using Microsoft.Win32;
+using System.Diagnostics;
 
 namespace BundleFileViewer
 {
@@ -134,6 +135,30 @@ namespace BundleFileViewer
                     var path = file.Split('\\');
                     AddFolder(root, path, 0);
                 }
+
+                int[] buckets = new int[1024];
+                int count = 0;
+                foreach (var file in _bundle.GetFiles())
+                {
+                    buckets[Bundle.GetBucket(file)]++;
+                    count++;
+                }
+
+                int numBuckets = 0;
+                for (int i = buckets.Length - 1; i >= 0; i--)
+                {
+                    if (buckets[i] != 0)
+                    {
+                        numBuckets = i + 1;
+                        break;
+                    }
+                }
+
+                Array.Sort(buckets, 0, numBuckets);
+                int min = buckets[0], max = buckets[numBuckets - 1];
+                int median = buckets[numBuckets / 2];
+
+                Debug.WriteLine("{0} files ({1} buckets: {2} min, {3} max, {4} median fill)", count, numBuckets, min, max, median);
             }
         }
 

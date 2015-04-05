@@ -120,7 +120,7 @@ namespace Jamiras.IO
                 _recentFilesIndex = 0;
         }
 
-        private int GetBucket(string path)
+        public int GetBucket(string path)
         {
             uint hash = 0x3BAD84E1;
             foreach (var c in path)
