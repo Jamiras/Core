@@ -41,6 +41,18 @@ namespace Jamiras.ViewModels.Fields
             set { SetValue(IsRightAlignedProperty, value); }
         }
 
+        public static readonly ModelProperty PatternProperty =
+            ModelProperty.Register(typeof(TextFieldViewModel), "Pattern", typeof(string), null);
+
+        /// <summary>
+        /// Gets or sets the pattern mask for the field (#=number, A=letter, ?=any, all others are fixed characters).
+        /// </summary>
+        public string Pattern
+        {
+            get { return (string)GetValue(PatternProperty); }
+            set { SetValue(PatternProperty, value); }
+        }
+
         /// <summary>
         /// Binds the ViewModel to a source model.
         /// </summary>
