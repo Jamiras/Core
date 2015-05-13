@@ -41,6 +41,7 @@
     
     <Style TargetType="{x:Type TextBox}" x:Key="textFieldTextBoxStyle"
            BasedOn="{StaticResource textFieldBaseTextBoxStyle}">
+        <Setter Property="controls:TextPattern.Pattern" Value="{Binding Pattern}" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsMultiline}" Value="True">
                 <Setter Property="TextWrapping" Value="Wrap" />
