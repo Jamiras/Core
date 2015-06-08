@@ -81,6 +81,28 @@ namespace Jamiras.ViewModels.Fields
             base.OnModelPropertyChanged(e);
         }
 
+        protected override void OnBeforeCommit()
+        {
+            if (_typingTimerCallback != null)
+            {
+                Action callback = null;
+
+                lock (typeof(TextFieldViewModel))
+                {
+                    if (_typingTimerCallback != null)
+                    {
+                        callback = _typingTimerCallback;
+                        _typingTimerCallback = null;
+                    }
+                }
+
+                if (callback != null)
+                    callback();
+            }
+
+            base.OnBeforeCommit();
+        }
+        
         public static void WaitForTyping(Action callback)
         {
             lock (typeof(TextFieldViewModel))
