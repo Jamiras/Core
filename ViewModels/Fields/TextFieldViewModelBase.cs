@@ -5,7 +5,7 @@ namespace Jamiras.ViewModels.Fields
 {
     public abstract class TextFieldViewModelBase : FieldViewModelBase
     {
-        public TextFieldViewModelBase(string label, int maxLength)
+        protected TextFieldViewModelBase(string label, int maxLength)
         {
             Label = label;
             MaxLength = maxLength;

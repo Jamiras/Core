@@ -38,8 +38,16 @@ namespace Jamiras.DataModels
         /// </summary>
         protected int GetFilterKey()
         {
-            var metadata = ServiceRepository.Instance.FindService<IDataModelMetadataRepository>().GetModelMetadata(GetType()) as DatabaseModelMetadata;
-            return (metadata != null) ? metadata.GetKey(this) : 0;
+            var metadata = ServiceRepository.Instance.FindService<IDataModelMetadataRepository>().GetModelMetadata(GetType());
+            var modelMetadata = metadata as DatabaseModelMetadata;
+            if (modelMetadata != null)
+                return modelMetadata.GetKey(this);
+
+            var collectionMetadata = metadata as IDataModelCollectionMetadata;
+            if (collectionMetadata != null)
+                return (int)GetValue(collectionMetadata.CollectionFilterKeyProperty);
+
+            return 0;
         }
 
         public static readonly ModelProperty CountProperty =

@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Windows.Input;
 using Jamiras.DataModels;
 
 namespace Jamiras.ViewModels.Grid
 {
+    [DebuggerDisplay("GridViewModel (Rows = {Rows.Count})")]
     public class GridViewModel : ViewModelBase, ICompositeViewModel
     {
         public GridViewModel()
@@ -20,6 +22,7 @@ namespace Jamiras.ViewModels.Grid
 
         public Func<ModelBase> GenerateDynamicRow { get; set; }
 
+        // CommandParameter will be the GridRowViewModel that was double clicked
         public ICommand DoubleClickCommand { get; set; }
 
         public List<GridColumnDefinition> Columns { get; private set; }
