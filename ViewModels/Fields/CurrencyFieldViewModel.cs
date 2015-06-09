@@ -57,7 +57,7 @@ namespace Jamiras.ViewModels.Fields
 
                     float fVal;
                     if (!float.TryParse(strValue, out fVal))
-                        return String.Format("{0} is not a valid dollar amound", LabelWithoutAccelerators);
+                        return String.Format("{0} is not a valid dollar amount", LabelWithoutAccelerators);
 
                     Value = (float)Math.Round(fVal, 2);
                 }
