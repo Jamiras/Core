@@ -20,7 +20,7 @@ namespace Jamiras.ViewModels.Grid
 
         private static string ConvertInteger(object c)
         {
-            return c.ToString();
+            return (c != null) ? c.ToString() : String.Empty;
         }
 
         public static readonly ModelProperty SummarizationProperty =
