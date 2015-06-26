@@ -65,6 +65,7 @@
     <Compile Include="Commands\DisabledCommand.cs" />
     <Compile Include="Components\BucketTinyDictionary.cs" />
     <Compile Include="Components\EmptyTinyDictionary.cs" />
+    <Compile Include="Components\FileLogger.cs" />
     <Compile Include="Controls\TextPattern.cs" />
     <Compile Include="IO\FileBundle.cs" />
     <Compile Include="Components\ITinyDictionary.cs" />
@@ -159,9 +160,12 @@
     <Compile Include="Services\FileSystemService.cs" />
     <Compile Include="Services\IExceptionDispatcher.cs" />
     <Compile Include="Services\IFileSystemService.cs" />
+    <Compile Include="Components\ILogger.cs" />
     <Compile Include="Services\ILogService.cs" />
+    <Compile Include="Components\ILogTarget.cs" />
     <Compile Include="Services\IPersistantDataRepository.cs" />
     <Compile Include="Services\IWindowSettingsRepository.cs" />
+    <Compile Include="Components\Logger.cs" />
     <Compile Include="Services\LogService.cs" />
     <Compile Include="Services\PersistantDataRepository.cs" />
     <Compile Include="Services\WindowSettingsRepository.cs" />

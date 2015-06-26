@@ -1,63 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
+using Jamiras.Components;
 
 namespace Jamiras.Services
 {
     public interface ILogService
     {
         /// <summary>
-        /// Gets or sets the active logging levels.
+        /// Gets or sets the active logging level.
         /// </summary>
-        LogLevels Levels { get; set; }
+        LogLevel Level { get; set; }
 
         /// <summary>
-        /// Gets the most recent buffered log messages.
+        /// Gets or sets whether the timestamp should be logged.
         /// </summary>
-        IEnumerable<string> Messages { get; }
+        bool IsTimestampLogged { get; set; }
 
         /// <summary>
-        /// Writes a general message to the log.
+        /// Gets the collection of loggers that messages will be written to.
         /// </summary>
-        void Write(string message);
+        ICollection<ILogTarget> Loggers { get; }
 
         /// <summary>
-        /// Writes a general message to the log.
+        /// Gets a logger for the provided key.
         /// </summary>
-        void Write(string message, params object[] args);
-
-        /// <summary>
-        /// Writes a verbose message to the log.
-        /// </summary>
-        void WriteVerbose(string message);
-
-        /// <summary>
-        /// Writes a verbose message to the log.
-        /// </summary>
-        void WriteVerbose(string message, params object[] args);
-
-        /// <summary>
-        /// Writes a warning message to the log.
-        /// </summary>
-        void WriteWarning(string message);
-
-        /// <summary>
-        /// Writes a warning message to the log.
-        /// </summary>
-        void WriteWarning(string message, params object[] args);
-
-        /// <summary>
-        /// Writes an error message to the log.
-        /// </summary>
-        void WriteError(string message);
-
-        /// <summary>
-        /// Writes an error message to the log.
-        /// </summary>
-        void WriteError(string message, params object[] args);
+        ILogger GetLogger(string key);
     }
 
     [Flags]
-    public enum LogLevels
+    public enum LogLevel
     {
         /// <summary>
         /// Logging is disabled.
@@ -67,26 +38,21 @@ namespace Jamiras.Services
         /// <summary>
         /// Detailed logging is enabled.
         /// </summary>
-        Verbose = 0x01,
+        Verbose = 1,
 
         /// <summary>
         /// General logging is enabled.
         /// </summary>
-        General = 0x02,
+        General = 2,
 
         /// <summary>
         /// Warning logging is enabled.
         /// </summary>
-        Warning = 0x04,
+        Warning = 3,
 
         /// <summary>
         /// Error logging is enabled.
         /// </summary>
-        Error = 0x08,
-
-        /// <summary>
-        /// Include timestamps on each message.
-        /// </summary>
-        Timestamps = 0x10,
+        Error = 4,
     }
 }

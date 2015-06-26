@@ -9,6 +9,7 @@ namespace Jamiras.Database
     [DebuggerDisplay("{_connection.DataSource}")]
     public class AccessDatabase : IDatabase
     {
+        private readonly ILogger _logger = Logger.GetLogger("AccessDatabase");
         private System.Data.OleDb.OleDbConnection _connection;
 
         /// <summary>
@@ -18,9 +19,13 @@ namespace Jamiras.Database
         {
             if (_connection != null)
             {
+                _logger.Write("Closing database: {0}", _connection.DataSource);
+
                 _connection.Close();
                 _connection.Dispose();
                 _connection = null;
+
+                _logger.WriteVerbose("Database closed");
             }
         }
 
@@ -31,6 +36,7 @@ namespace Jamiras.Database
         /// <returns>A query result row enumerator.</returns>
         public IDatabaseQuery PrepareQuery(string query)
         {
+            _logger.WriteVerbose("Preparing query: {0}", query);
             return new AccessDatabaseQuery(_connection, query);
         }
 
@@ -51,6 +57,7 @@ namespace Jamiras.Database
         /// <returns>Helper object for binding tokens and executing the command.</returns>
         public IDatabaseCommand PrepareCommand(string command)
         {
+            _logger.WriteVerbose("Preparing query: {0}", command);
             return new AccessDatabaseCommand(_connection, command);
         }
 
@@ -61,6 +68,8 @@ namespace Jamiras.Database
         /// <returns>Number of affected rows.</returns>
         public int ExecuteCommand(string command)
         {
+            _logger.WriteVerbose("Executing query: {0}", command);
+
             using (System.Data.Common.DbCommand cmd = _connection.CreateCommand())
             {
                 cmd.CommandText = command;
@@ -84,18 +93,14 @@ namespace Jamiras.Database
         internal static string EscapeString(string value)
         {
             int idx = value.IndexOf('\'');
-            //if (idx == -1)
-            //    idx = value.IndexOf('[');
             if (idx == -1)
                 return value;
 
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
             foreach (char c in value)
             {
                 if (c == '\'')
                     builder.Append("''");
-                //else if (c == '[')
-                //    builder.Append("[[]");
                 else
                     builder.Append(c);
             }
@@ -120,10 +125,12 @@ namespace Jamiras.Database
         public bool Connect(string fileName)
         {
             string connectionString;
-            if (fileName.EndsWith(".accdb", System.StringComparison.OrdinalIgnoreCase))
+            if (fileName.EndsWith(".accdb", StringComparison.OrdinalIgnoreCase))
                 connectionString = "Provider=Microsoft.ACE.OLEDB.12.0; Data Source=" + fileName;
             else
                 connectionString = "Provider=Microsoft.Jet.OLEDB.4.0; Data Source=" + fileName;
+
+            _logger.Write("Opening database: {0}", fileName);
 
             var connection = new System.Data.OleDb.OleDbConnection(connectionString);
             connection.Open();
@@ -132,7 +139,14 @@ namespace Jamiras.Database
                 System.Threading.Thread.Sleep(100);
 
             if (connection.State == System.Data.ConnectionState.Open)
+            {
+                _logger.Write("Database opened");
                 _connection = connection;
+            }
+            else
+            {
+                _logger.Write("Failed to open database: " + connection.State);
+            }
 
             return (connection.State == System.Data.ConnectionState.Open);
         }

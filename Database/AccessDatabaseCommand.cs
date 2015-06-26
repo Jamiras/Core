@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Data.Common;
 
 namespace Jamiras.Database
@@ -14,7 +11,7 @@ namespace Jamiras.Database
             _command.CommandText = query;
         }
 
-        private DbCommand _command;
+        private readonly DbCommand _command;
 
         public int Execute()
         {

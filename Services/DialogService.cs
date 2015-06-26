@@ -14,6 +14,8 @@ namespace Jamiras.Services
     [Export(typeof(IDialogService))]
     internal class DialogService : IDialogService
     {
+        private readonly ILogger _logger = Logger.GetLogger("DialogService");
+
         public DialogService()
         {
             RegisterDialogHandler(typeof(MessageBoxViewModel), CreateMessageBoxView);
@@ -87,6 +89,8 @@ namespace Jamiras.Services
             if (_mainWindow == null)
                 throw new InvalidOperationException("Cannot show dialog without setting MainWindow");
 
+            _logger.Write("Showing dialog: {0}", viewModel.DialogTitle);
+
             FrameworkElement view = GetView(viewModel, viewModel.GetType());
             if (view == null)
                 throw new ArgumentException("No view registered for " + viewModel.GetType().Name, "viewModel");
@@ -119,8 +123,8 @@ namespace Jamiras.Services
 
             if (viewModel.CanResize)
             {
-                window.MaxHeight = System.Windows.SystemParameters.WorkArea.Height;
-                window.MaxWidth = System.Windows.SystemParameters.WorkArea.Width;
+                window.MaxHeight = SystemParameters.WorkArea.Height;
+                window.MaxWidth = SystemParameters.WorkArea.Width;
             }
 
             EventHandler closeHandler = null;
@@ -133,6 +137,8 @@ namespace Jamiras.Services
             {
                 if (e.PropertyName == "DialogResult" && viewModel.DialogResult != DialogResult.None)
                 {
+                    _logger.Write("Closing dialog ({0}): {1}", viewModel.DialogResult, viewModel.DialogTitle);
+
                     window.Closing -= preventCloseHandler;
                     window.Closed -= closeHandler;
                     window.Dispatcher.BeginInvoke(new Action(window.Close), null);
@@ -146,6 +152,8 @@ namespace Jamiras.Services
                     viewModel.PropertyChanged -= propertyChangedHandler;
                     viewModel.SetValue(DialogViewModelBase.DialogResultProperty, DialogResult.Cancel);
                 }
+
+                _logger.Write("Dialog closed ({0}): {1}", viewModel.DialogResult, viewModel.DialogTitle);
             };
 
             window.Loaded += (o, e) =>
@@ -160,6 +168,7 @@ namespace Jamiras.Services
                 {
                     EnsureVisible(window);
 
+                    _logger.WriteVerbose("Focusing first field");
                     view.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
                 }));
             };

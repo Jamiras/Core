@@ -7,6 +7,7 @@ namespace Jamiras.Services
     [Export(typeof(IExceptionDispatcher))]
     internal class ExceptionDispatcher : IExceptionDispatcher
     {
+        private readonly ILogger _logger = Logger.GetLogger("ExceptionDispatcher");
         private EventHandler<DispatchExceptionEventArgs> _reportHandler;
         private bool _isTerminating;
 
@@ -54,11 +55,18 @@ namespace Jamiras.Services
             if (PreviewException != null)
                 PreviewException(this, e);
 
-            if (e.ShouldReport && _reportHandler != null)
-                _reportHandler(this, e);
+            if (e.ShouldReport)
+            {
+                _logger.WriteError(e.IsUnhandled ? "Unhandled exception: {0}\r\n{1}" : "Exception: {0}\r\n{1}", e.Exception.Message, e.Exception.StackTrace);
+
+                if (_reportHandler != null)
+                    _reportHandler(this, e);
+            }
 
             if (e.ShouldTerminate && !_isTerminating)
             {
+                _logger.WriteWarning("Terminating application");
+
                 _isTerminating = true;
                 Application.Current.Shutdown();
             }

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Jamiras.Components;
 using Jamiras.Database;
 using Jamiras.DataModels.Metadata;
 
@@ -20,6 +21,7 @@ namespace Jamiras.DataModels
         private readonly IDataModelMetadataRepository _metadataRepository;
         private readonly IDatabase _database;
         private readonly Dictionary<Type, DataModelCache> _items;
+        private readonly ILogger _logger = Logger.GetLogger("DatabaseDataModelSource");
 
         [DebuggerTypeProxy(typeof(DataModelCacheDebugView))]
         private class DataModelCache
@@ -256,9 +258,14 @@ namespace Jamiras.DataModels
             if (metadata == null)
                 throw new ArgumentException("No metadata registered for " + typeof(T).FullName);
 
+            _logger.Write("Querying {0}({1})", typeof(T).Name, searchData);
+
             var model = new T();
             if (!metadata.Query(model, searchData, _database))
+            {
+                _logger.WriteVerbose("{0}({1}) not found", typeof(T).Name, searchData);
                 return null;
+            }
 
             return model;
         }
@@ -281,9 +288,18 @@ namespace Jamiras.DataModels
             if (collectionMetadata == null)
                 throw new ArgumentException(typeof(T).FullName + " is not registered to a collection metadata");
 
+            _logger.Write("Querying {0}({1}) limit {2}", typeof(T).Name, searchData, maxResults);
+
             var model = new T();
             if (!collectionMetadata.Query(model, maxResults, searchData, _database))
+            {
+                _logger.WriteVerbose("{0}({1}) not found", typeof(T).Name, searchData);
                 return null;
+            }
+
+            var collection = model as IDataModelCollection;
+            if (collection != null)
+                _logger.Write("Returning {0} {1}", collection.Count, typeof(T).Name);
 
             return model;
         }
@@ -299,6 +315,8 @@ namespace Jamiras.DataModels
             var metadata = _metadataRepository.GetModelMetadata(typeof(T)) as IDatabaseModelMetadata;
             if (metadata == null)
                 throw new ArgumentException("No metadata registered for " + typeof(T).FullName);
+
+            _logger.Write("Creating {0}", typeof(T).Name);
 
             var model = new T();
             metadata.InitializeNewRecord(model, _database);
@@ -332,12 +350,18 @@ namespace Jamiras.DataModels
                 return false;
 
             var key = metadata.GetKey(dataModel);
+            _logger.Write("Committing {0}({1})", dataModel.GetType().Name, key);
             if (!metadata.Commit(dataModel, _database))
+            {
+                _logger.WriteWarning("Commit failed {0}({1})", dataModel.GetType().Name, key);
                 return false;
+            }
 
             var newKey = metadata.GetKey(dataModel);
             if (key != newKey)
             {
+                _logger.WriteVerbose("New key for {0}:{1}", dataModel.GetType().Name, newKey);
+
                 ExpireCollections(dataModel.GetType());
 
                 var fieldMetadata = metadata.GetFieldMetadata(metadata.PrimaryKeyProperty);
@@ -354,7 +378,12 @@ namespace Jamiras.DataModels
             if (modelMetadata != null)
             {
                 if (modelMetadata.PrimaryKeyProperty == null)
+                {
+                    _logger.Write("Commit aborted, no primary key for collection");
                     return true;
+                }
+
+                _logger.Write("Committing {0}", collection.GetType().Name);
 
                 foreach (DataModelBase model in collection)
                 {
@@ -364,6 +393,8 @@ namespace Jamiras.DataModels
             }
             else
             {
+                _logger.Write("Committing {0}", collection.GetType().Name);
+
                 foreach (DataModelBase model in collection)
                 {
                     if (!Commit(model))

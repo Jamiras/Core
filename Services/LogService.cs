@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using Jamiras.Components;
 
 namespace Jamiras.Services
@@ -10,135 +8,41 @@ namespace Jamiras.Services
     {
         public LogService()
         {
-            Levels = LogLevels.General | LogLevels.Warning | LogLevels.Error;
-            _messages = new Queue<string>(QueueSize);
+            Level = LogLevel.General;
+            _loggers = new List<ILogTarget>();
         }
 
-        private readonly Queue<string> _messages;
-        private const int QueueSize = 512;
+        private readonly List<ILogTarget> _loggers;
 
         /// <summary>
-        /// Gets the most recent buffered log messages.
+        /// Gets or sets the active logging level.
         /// </summary>
-        public IEnumerable<string> Messages
-        {
-            get { return _messages; } 
-        }
+        public LogLevel Level { get; set; }
 
         /// <summary>
-        /// Gets or sets the active logging levels.
+        /// Gets or sets whether the timestamp should be logged.
         /// </summary>
-        public LogLevels Levels { get; set; }
+        public bool IsTimestampLogged { get; set; }
 
-        private bool IsEnabled(LogLevels level)
+        /// <summary>
+        /// Gets the collection of loggers that messages will be written to.
+        /// </summary>
+        public ICollection<ILogTarget> Loggers
         {
-            return (Levels & level) != 0;
-        }
-
-        private void Write(LogLevels level, string message)
-        {
-            var builder = new StringBuilder();
-
-            if ((Levels & LogLevels.Timestamps) != 0)
-            {
-                builder.Append(DateTime.Now.ToString("HH:mm:ss.fff"));
-                builder.Append(' ');
-            }
-
-            switch (level)
-            {
-                case LogLevels.General:
-                    builder.Append("GEN ");
-                    break;
-                case LogLevels.Verbose:
-                    builder.Append("VER ");
-                    break;
-                case LogLevels.Warning:
-                    builder.Append("WRN ");
-                    break;
-                case LogLevels.Error:
-                    builder.Append("ERR ");
-                    break;
-            }
-
-            builder.Append(message);
-
-            if (_messages.Count == QueueSize)
-                _messages.Dequeue();
-
-            _messages.Enqueue(builder.ToString());
+            get { return _loggers; }
         }
 
         /// <summary>
-        /// Writes a general message to the log.
+        /// Gets a logger for the provided key.
         /// </summary>
-        public void Write(string message)
+        public ILogger GetLogger(string key)
         {
-            if (IsEnabled(LogLevels.General))
-                Write(LogLevels.General, message);
+            return new Logger(this, IsEnabledForLevel);
         }
 
-        /// <summary>
-        /// Writes a general message to the log.
-        /// </summary>
-        public void Write(string message, params object[] args)
+        private bool IsEnabledForLevel(LogLevel level)
         {
-            if (IsEnabled(LogLevels.General))
-                Write(LogLevels.General, String.Format(message, args));
-        }
-
-        /// <summary>
-        /// Writes a verbose message to the log.
-        /// </summary>
-        public void WriteVerbose(string message)
-        {
-            if (IsEnabled(LogLevels.Verbose))
-                Write(LogLevels.Verbose, message);
-        }
-
-        /// <summary>
-        /// Writes a verbose message to the log.
-        /// </summary>
-        public void WriteVerbose(string message, params object[] args)
-        {
-            if (IsEnabled(LogLevels.Verbose))
-                Write(LogLevels.Verbose, String.Format(message, args));
-        }
-
-        /// <summary>
-        /// Writes a warning message to the log.
-        /// </summary>
-        public void WriteWarning(string message)
-        {
-            if (IsEnabled(LogLevels.Warning))
-                Write(LogLevels.Warning, message);
-        }
-
-        /// <summary>
-        /// Writes a warning message to the log.
-        /// </summary>
-        public void WriteWarning(string message, params object[] args)
-        {
-            if (IsEnabled(LogLevels.Warning))
-                Write(LogLevels.Warning, String.Format(message, args));
-        }
-
-        /// <summary>
-        /// Writes an error message to the log.
-        /// </summary>
-        public void WriteError(string message)
-        {
-            if (IsEnabled(LogLevels.Error))
-                Write(LogLevels.Error, message);
-        }
-
-        /// <summary>
-        /// Writes an error message to the log.
-        /// </summary>
-        public void WriteError(string message, params object[] args)
-        {
-            if (IsEnabled(LogLevels.Error))
-                Write(LogLevels.Error, String.Format(message, args));
+            return (level >= Level && _loggers.Count > 0);
         }
     }
 }

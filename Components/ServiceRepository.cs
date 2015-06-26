@@ -54,6 +54,7 @@ namespace Jamiras.Components
         /// <param name="service">Service instance to register.</param>
         /// <typeparam name="TService">Type to register service against.</typeparam>
         public void RegisterInstance<TService>(TService service)
+            where TService : class
         {
             lock (_services)
             {
@@ -67,6 +68,7 @@ namespace Jamiras.Components
         /// <typeparam name="T">requested service</typeparam>
         /// <returns>service implementation</returns>
         public T FindService<T>()
+            where T : class
         {
             lock (_services)
             {
