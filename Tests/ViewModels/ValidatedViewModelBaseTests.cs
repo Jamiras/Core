@@ -182,8 +182,8 @@ namespace Jamiras.Core.Tests.ViewModels
             IDataErrorInfo error = _viewModel;
 
             Assert.That(_viewModel.Text, Is.EqualTo("0"));
-            Assert.That(_viewModel.IsValid, Is.True);
-            Assert.That(error["Text"], Is.EqualTo(""));
+            Assert.That(_viewModel.IsValid, Is.False);
+            Assert.That(error["Text"], Is.EqualTo("metadata error"));
 
             _viewModel.Text = "Not a number";
             Assert.That(_viewModel.IsValid, Is.False);

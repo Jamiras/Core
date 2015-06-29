@@ -646,6 +646,12 @@ namespace Jamiras.IO
                             writer.BaseStream.Seek(offset, SeekOrigin.Begin);
                             writer.Write(0);
 
+                            for (int j = 0; j < _recentFiles.Length; j++)
+                            {
+                                if (_recentFiles[j] != null && String.Compare(_recentFiles[j].FileName, path, StringComparison.OrdinalIgnoreCase) == 0)
+                                    _recentFiles[j] = null;
+                            }
+
                             return true;
                         }
                     }
