@@ -17,7 +17,7 @@ namespace Jamiras.Database
 
         private readonly System.Data.OleDb.OleDbCommand _command;
         private System.Data.OleDb.OleDbDataReader _reader;
-        private static readonly string[] ReservedWords = { "user", "session", "when" };
+        private static readonly string[] ReservedWords = { "user", "session", "when", "size" };
 
         #region IDatabaseQuery
 

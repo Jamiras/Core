@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using Jamiras.Components;
 using Jamiras.DataModels;
+using System.Collections;
 
 namespace Jamiras.ViewModels
 {
@@ -183,7 +184,7 @@ namespace Jamiras.ViewModels
             if (pushToSource)
                 SynchronizeValue(binding.Source, binding.SourceProperty, convertedValue);
 
-            if (binding.Converter != null && binding.Converter.Convert(ref convertedValue) == null && convertedValue != e.NewValue)
+            if (binding.Converter != null && binding.Converter.Convert(ref convertedValue) == null && !Equals(convertedValue, e.NewValue) && !ArrayEquals(convertedValue, e.NewValue))
             {
                 SynchronizeValue(this, e.Property, convertedValue);
 
@@ -196,6 +197,29 @@ namespace Jamiras.ViewModels
                         action();
                 }
             }
+        }
+
+        private static bool ArrayEquals(object a, object b)
+        {
+            if (a is IEnumerable && b is IEnumerable)
+            {
+                var iterA = ((IEnumerable)a).GetEnumerator();
+                var iterB = ((IEnumerable)b).GetEnumerator();
+
+                while (iterA.MoveNext())
+                {
+                    if (!iterB.MoveNext())
+                        return false;
+
+                    if (!Equals(iterA.Current, iterB.Current))
+                        return false;
+                }
+
+                if (!iterB.MoveNext())
+                    return true;
+            }
+
+            return false;
         }
 
         internal void SynchronizeValue(ModelBase model, ModelProperty property, object newValue)
