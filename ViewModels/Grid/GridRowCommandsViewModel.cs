@@ -5,7 +5,7 @@ using Jamiras.Controls;
 
 namespace Jamiras.ViewModels.Grid
 {
-    public class GridRowCommandsViewModel : PropertyChangedObject
+    internal class GridRowCommandsViewModel : PropertyChangedObject
     {
         public GridRowCommandsViewModel(GridView view, GridRowViewModel row)
         {

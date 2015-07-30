@@ -82,7 +82,7 @@
                         </DataTemplate>
 
                         <DataTemplate DataType="{x:Type fields:TextFieldViewModel}">
-                            <TextBox />
+                            <TextBox MaxLength="{Binding MaxLength}" />
                         </DataTemplate>
 
                         <DataTemplate DataType="{x:Type fields:IntegerFieldViewModel}">

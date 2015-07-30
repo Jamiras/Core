@@ -177,6 +177,7 @@
     <Compile Include="ViewModels\DialogViewModelBase.cs" />
     <Compile Include="Services\IDialogService.cs" />
     <Compile Include="ViewModels\Fields\AutoCompleteFieldViewModel.cs" />
+    <Compile Include="ViewModels\FileDialogViewModel.cs" />
     <Compile Include="ViewModels\Grid\AutoCompleteColumnDefinition.cs" />
     <Compile Include="ViewModels\Grid\DateColumnDefinition.cs" />
     <Compile Include="ViewModels\Grid\TextColumnDefinition.cs" />
