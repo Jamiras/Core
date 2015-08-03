@@ -35,9 +35,14 @@ namespace Jamiras.ViewModels.Grid
             }
 
             var viewModel = new AutoCompleteFieldViewModel(Header, _metadata, _searchFunction, _lookupLabelFunction);
+
+            // bind the property through to the data model
+            row.SetBinding(_stringProperty, new ModelBinding(row.Model, _stringProperty));
+
             // bind text first so selection binding will cause it to be updated
             viewModel.SetBinding(AutoCompleteFieldViewModel.TextProperty, new ModelBinding(row, _stringProperty, ModelBindingMode.TwoWay));
             viewModel.BindSelection(row, SourceProperty, ModelBindingMode.TwoWay);
+
             return viewModel;
         }
     }
