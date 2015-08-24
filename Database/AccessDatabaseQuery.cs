@@ -251,7 +251,7 @@ namespace Jamiras.Database
             string primaryTable = tables[0];
             if (tables.Count == 1)
             {
-                builder.Append(primaryTable);
+                AppendTable(builder, query, primaryTable);
                 return;
             }
 
@@ -259,7 +259,7 @@ namespace Jamiras.Database
             for (int i = 1; i < tables.Count; i++)
                 builder.Append('(');
 
-            builder.Append(primaryTable);
+            AppendTable(builder, query, primaryTable);
 
             foreach (var join in query.Joins)
             {
@@ -290,7 +290,7 @@ namespace Jamiras.Database
                         else
                             throw new InvalidOperationException("Unsupported join type: " + join.JoinType);
 
-                        builder.Append(table);
+                        AppendTable(builder, query, table);
                         builder.Append(" ON ");
                         AppendFieldName(builder, fieldName);
                         builder.Append('=');
@@ -304,6 +304,22 @@ namespace Jamiras.Database
 
             if (tables.Count > 0)
                 throw new InvalidOperationException("No join defined between " + primaryTable + " and " + tables[0]);
+        }
+
+        private static void AppendTable(StringBuilder builder, QueryBuilder query, string tableName)
+        {
+            foreach (var alias in query.Aliases)
+            {
+                if (alias.Alias == tableName)
+                {
+                    builder.Append(alias.TableName);
+                    builder.Append(" AS ");
+                    builder.Append(alias.Alias);
+                    return;
+                }
+            }
+
+            builder.Append(tableName);
         }
 
         private static bool AppendFilters(StringBuilder builder, QueryBuilder query)
@@ -375,6 +391,10 @@ namespace Jamiras.Database
                         builder.Append(" IS NULL");
                         break;
 
+                    case FilterOperation.NotEquals:
+                        builder.Append(" IS NOT NULL");
+                        break;
+
                     default:
                         throw new InvalidOperationException("Unsupported comparison to null: " + filter.Operation);
                 }
@@ -397,6 +417,10 @@ namespace Jamiras.Database
 
                 case FilterOperation.Equals:
                     builder.Append('=');
+                    break;
+
+                case FilterOperation.NotEquals:
+                    builder.Append("<>");
                     break;
 
                 default:

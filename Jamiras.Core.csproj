@@ -67,6 +67,7 @@
     <Compile Include="Components\EmptyTinyDictionary.cs" />
     <Compile Include="Components\FileLogger.cs" />
     <Compile Include="Controls\TextPattern.cs" />
+    <Compile Include="Database\AliasDefinition.cs" />
     <Compile Include="IO\FileBundle.cs" />
     <Compile Include="Components\ITinyDictionary.cs" />
     <Compile Include="Components\OneItemTinyDictionary.cs" />

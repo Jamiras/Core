@@ -83,6 +83,7 @@ namespace Jamiras.Database
     {
         None = 0,
         Equals,
+        NotEquals,
         GreaterThan,
         LessThan,
         Like,

@@ -15,6 +15,7 @@ namespace Jamiras.Database
             _filters = new List<FilterDefinition>();
             _joins = new List<JoinDefinition>();
             _orderBy = new List<OrderByDefinition>();
+            _aliases = new List<AliasDefinition>();
             _aggregateFields = new List<AggregateFieldDefinition>();
         }
 
@@ -22,6 +23,7 @@ namespace Jamiras.Database
         private readonly List<FilterDefinition> _filters;
         private readonly List<JoinDefinition> _joins;
         private readonly List<OrderByDefinition> _orderBy;
+        private readonly List<AliasDefinition> _aliases;
         private readonly List<AggregateFieldDefinition> _aggregateFields;
         private string _filterExpression;
 
@@ -60,6 +62,14 @@ namespace Jamiras.Database
         public ICollection<OrderByDefinition> OrderBy
         {
             get { return _orderBy; }
+        }
+
+        /// <summary>
+        /// Gets the collection of aliases used in the query.
+        /// </summary>
+        public ICollection<AliasDefinition> Aliases
+        {
+            get { return _aliases; }
         }
 
         /// <summary>
