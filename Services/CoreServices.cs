@@ -31,6 +31,7 @@ namespace Jamiras.Services
             repository.RegisterService(typeof(WindowSettingsRepository));
             repository.RegisterService(typeof(LogService));
             repository.RegisterService(typeof(DataModelMetadataRepository));
+            repository.RegisterService(typeof(SoundPlayer));
         }
 
         private static void DefaultExceptionHandler(object sender, DispatchExceptionEventArgs e)

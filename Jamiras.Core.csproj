@@ -165,10 +165,12 @@
     <Compile Include="Services\ILogService.cs" />
     <Compile Include="Components\ILogTarget.cs" />
     <Compile Include="Services\IPersistantDataRepository.cs" />
+    <Compile Include="Services\ISoundPlayer.cs" />
     <Compile Include="Services\IWindowSettingsRepository.cs" />
     <Compile Include="Components\Logger.cs" />
     <Compile Include="Services\LogService.cs" />
     <Compile Include="Services\PersistantDataRepository.cs" />
+    <Compile Include="Services\SoundPlayer.cs" />
     <Compile Include="Services\WindowSettingsRepository.cs" />
     <Compile Include="ViewModels\Converters\DateToDateTimeConverter.cs" />
     <Compile Include="ViewModels\Converters\DateToStringConverter.cs" />
