@@ -159,9 +159,15 @@
     <Compile Include="Services\CoreServices.cs" />
     <Compile Include="Services\ExceptionDispatcher.cs" />
     <Compile Include="Services\FileSystemService.cs" />
+    <Compile Include="Services\HttpRequest.cs" />
+    <Compile Include="Services\HttpRequestService.cs" />
+    <Compile Include="Services\HttpResponse.cs" />
     <Compile Include="Services\IExceptionDispatcher.cs" />
     <Compile Include="Services\IFileSystemService.cs" />
     <Compile Include="Components\ILogger.cs" />
+    <Compile Include="Services\IHttpRequest.cs" />
+    <Compile Include="Services\IHttpRequestService.cs" />
+    <Compile Include="Services\IHttpResponse.cs" />
     <Compile Include="Services\ILogService.cs" />
     <Compile Include="Components\ILogTarget.cs" />
     <Compile Include="Services\IPersistantDataRepository.cs" />
