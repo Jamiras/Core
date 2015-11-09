@@ -391,7 +391,7 @@ namespace Jamiras.Components
                         // system format MM/DD/YYYY - may not contains zeros
                         if (!Int32.TryParse(parts[0], out month) || month == 0 || month > 12 ||
                             !Int32.TryParse(parts[1], out day) || day == 0 || day > 31 ||
-                            !Int32.TryParse(parts[2], out year) || year == 0)
+                            !Int32.TryParse(parts[2], out year) || (year == 0 && parts[2].Length == 4))
                         {
                             isValid = false;
                         }
