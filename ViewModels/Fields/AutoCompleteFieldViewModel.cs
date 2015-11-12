@@ -100,7 +100,7 @@ namespace Jamiras.ViewModels.Fields
             var vm = (AutoCompleteFieldViewModel)sender;
             var id = (int)e.NewValue;
 
-            if (vm.Suggestions != null)
+            if (vm.Suggestions != null && !vm.IsDisplayTextDifferentFromSearchText)
             {
                 foreach (var lookupItem in vm.Suggestions)
                 {
@@ -131,6 +131,21 @@ namespace Jamiras.ViewModels.Fields
             {
                 _searchDisabled = false;
             }
+        }
+
+        public static readonly ModelProperty IsDisplayTextDifferentFromSearchTextProperty =
+            ModelProperty.Register(typeof(AutoCompleteFieldViewModel), "IsDisplayTextDifferentFromSearchText", typeof(bool), false);
+
+        /// <summary>
+        /// Gets or sets whether the search text differs from the lookup text.
+        /// </summary>
+        /// <remarks>
+        /// If <c>true</c>, the lookup method will be called when an item is selected from the search list.
+        /// </remarks>
+        public bool IsDisplayTextDifferentFromSearchText
+        {
+            get { return (bool)GetValue(IsDisplayTextDifferentFromSearchTextProperty); }
+            set { SetValue(IsDisplayTextDifferentFromSearchTextProperty, value); }
         }
 
         public static readonly ModelProperty IsMatchRequiredProperty =

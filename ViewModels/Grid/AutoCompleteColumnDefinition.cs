@@ -24,6 +24,8 @@ namespace Jamiras.ViewModels.Grid
         private readonly Func<string, IEnumerable<LookupItem>> _searchFunction;
         private readonly Func<int, string> _lookupLabelFunction;
 
+        public bool IsDisplayTextDifferentFromSearchText { get; set; }
+
         protected override FieldViewModelBase CreateFieldViewModel(GridRowViewModel row)
         {
             if (IsReadOnly)
@@ -35,6 +37,7 @@ namespace Jamiras.ViewModels.Grid
             }
 
             var viewModel = new AutoCompleteFieldViewModel(Header, _metadata, _searchFunction, _lookupLabelFunction);
+            viewModel.IsDisplayTextDifferentFromSearchText = IsDisplayTextDifferentFromSearchText;
 
             // bind the property through to the data model
             row.SetBinding(_stringProperty, new ModelBinding(row.Model, _stringProperty));

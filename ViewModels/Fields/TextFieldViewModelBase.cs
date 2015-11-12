@@ -31,6 +31,7 @@ namespace Jamiras.ViewModels.Fields
             }
             else
             {
+                StopWaitingForTyping();
                 SetValueCore(IsTextBindingDelayedProperty, false); // use SetValueCore to avoid raising the PropertyChanged event
                 Text = value;
                 SetValueCore(IsTextBindingDelayedProperty, true);
@@ -47,7 +48,7 @@ namespace Jamiras.ViewModels.Fields
         }
 
         public static readonly ModelProperty IsTextBindingDelayedProperty =
-            ModelProperty.Register(typeof(TextFieldViewModel), "IsTextBindingDelayed", typeof(bool), false);
+            ModelProperty.Register(typeof(TextFieldViewModel), "IsTextBindingDelayed", typeof(bool), false, OnIsTextBindingDelayedChanged);
 
         /// <summary>
         /// Gets or sets whether the Text property binding should be delayed to account for typing.
@@ -56,6 +57,12 @@ namespace Jamiras.ViewModels.Fields
         {
             get { return (bool)GetValue(IsTextBindingDelayedProperty); }
             set { SetValue(IsTextBindingDelayedProperty, value); }
+        }
+
+        private static void OnIsTextBindingDelayedChanged(object sender, ModelPropertyChangedEventArgs e)
+        {
+            if (!(bool)e.NewValue)
+                TextFieldViewModelBase.StopWaitingForTyping();
         }
 
         protected override string Validate(ModelProperty property, object value)
@@ -135,6 +142,19 @@ namespace Jamiras.ViewModels.Fields
 
             if (callback != null)
                 callback();
+        }
+
+        private static void StopWaitingForTyping()
+        {
+            if (_typingTimer != null)
+            {
+                _typingTimer.Stop();
+
+                lock (typeof(TextFieldViewModel))
+                {
+                    _typingTimerCallback = null;
+                }
+            }
         }
 
         private static System.Timers.Timer _typingTimer;
