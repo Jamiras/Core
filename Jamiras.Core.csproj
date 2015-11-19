@@ -66,6 +66,7 @@
     <Compile Include="Components\BucketTinyDictionary.cs" />
     <Compile Include="Components\EmptyTinyDictionary.cs" />
     <Compile Include="Components\FileLogger.cs" />
+    <Compile Include="Components\Tokenizer.cs" />
     <Compile Include="Controls\TextPattern.cs" />
     <Compile Include="Database\AliasDefinition.cs" />
     <Compile Include="IO\FileBundle.cs" />
@@ -154,6 +155,8 @@
     <Compile Include="IO\BitReader.cs" />
     <Compile Include="IO\BitWriter.cs" />
     <Compile Include="IO\FileBundleFileSystemService.cs" />
+    <Compile Include="IO\Serialization\GraphQuery.cs" />
+    <Compile Include="IO\Serialization\Json.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\DialogService.cs" />
     <Compile Include="Services\CoreServices.cs" />
