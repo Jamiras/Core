@@ -30,6 +30,7 @@ namespace Jamiras.Services
             repository.RegisterService(typeof(HttpRequestService));
             repository.RegisterService(typeof(PersistantDataRepository));
             repository.RegisterService(typeof(WindowSettingsRepository));
+            repository.RegisterService(typeof(BackgroundWorkerService));
             repository.RegisterService(typeof(LogService));
             repository.RegisterService(typeof(EventBus));
             repository.RegisterService(typeof(DataModelMetadataRepository));
