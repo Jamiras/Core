@@ -3,11 +3,11 @@ using System.Windows.Input;
 
 namespace Jamiras.Commands
 {
-    public class DisabledCommand : ICommand
+    public class DisabledCommand : CommandBase, ICommand
     {
         private DisabledCommand()
         {
-
+            CanExecute = false;
         }
 
         public static DisabledCommand Instance
@@ -16,24 +16,15 @@ namespace Jamiras.Commands
         }
         private static DisabledCommand _instance;
 
-        #region ICommand Members
-
-        public bool CanExecute(object parameter)
-        {
-            return false;
-        }
-
-        public event EventHandler CanExecuteChanged
+        event EventHandler ICommand.CanExecuteChanged
         {
             add { }
             remove { }
         }
 
-        public void Execute(object parameter)
+        public override void Execute()
         {
             throw new NotSupportedException("DisableCommand cannot be executed");
         }
-
-        #endregion
     }
 }
