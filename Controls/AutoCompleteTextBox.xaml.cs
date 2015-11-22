@@ -7,6 +7,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using Jamiras.ViewModels;
+using Jamiras.ViewModels.Fields;
 
 namespace Jamiras.Controls
 {
@@ -223,7 +224,13 @@ namespace Jamiras.Controls
         {
             if (item.Id > 0)
             {
-                Text = item.Label;
+                // if backed by a TextFieldViewModel, call SetText to circumvent the typing delay
+                var textFieldViewModel = this.DataContext as TextFieldViewModelBase;
+                if (textFieldViewModel != null)
+                    textFieldViewModel.SetText(item.Label);
+                else
+                    Text = item.Label;
+
                 SelectAll();
 
                 SelectedId = item.Id;

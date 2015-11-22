@@ -121,6 +121,13 @@ namespace Jamiras.ViewModels.Fields
 
         internal override void SetText(string value)
         {
+            if (Text == value)
+            {
+                _searchPending = false;
+                Validate(TextProperty);
+                return;
+            }
+
             _searchDisabled = true;
             try
             {

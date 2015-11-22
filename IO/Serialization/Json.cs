@@ -28,6 +28,14 @@ namespace Jamiras.IO.Serialization
             var tokenizer = new Tokenizer(input);
             tokenizer.SkipWhitespace();
 
+            if (tokenizer.NextChar == '[')
+            {
+                var array = ParseArray("root", tokenizer);
+                var dict = new TinyDictionary<string, object>();
+                dict.Add("items", array);
+                return dict;
+            }
+
             return ParseObject("root", tokenizer);
         }
 
