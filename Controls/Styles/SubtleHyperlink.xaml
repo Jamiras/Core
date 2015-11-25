@@ -9,6 +9,9 @@
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Foreground" Value="DarkSlateBlue" />
             </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type TextBlock}}}" />
+            </Trigger>
         </Style.Triggers>
     </Style>
 
