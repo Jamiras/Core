@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using System.Collections.Generic;
 
 namespace Jamiras.Components
 {
@@ -14,10 +15,13 @@ namespace Jamiras.Components
         public Tokenizer(Stream input)
         {
             _stream = input;
+            _bufferedChars = new List<char>();
+
             Advance();
         }
 
         private readonly Stream _stream;
+        private readonly List<char> _bufferedChars;
 
         /// <summary>
         /// Gets the next character in the stream.
@@ -29,34 +33,42 @@ namespace Jamiras.Components
         /// </summary>
         public void Advance()
         {
+            if (_bufferedChars.Count > 0)
+            {
+                NextChar = _bufferedChars[0];
+                _bufferedChars.RemoveAt(0);
+                return;
+            }
+
+            NextChar = ReadChar();
+        }
+
+        private char ReadChar()
+        {
             var b = _stream.ReadByte();
             if (b < 0)
+                return (char)0x00;
+
+            if (b < 0x80)
+                return (char)b;
+
+            if (b >= 0xC0)
             {
-                NextChar = (char)0x00;
+                if (b < 0xE0)
+                {
+                    var b2 = _stream.ReadByte();
+                    return (char)((b << 5) | (b2 & 0x1F));
+                }
+
+                if (b < 0xF0)
+                {
+                    var b2 = _stream.ReadByte();
+                    var b3 = _stream.ReadByte();
+                    return (char)((b << 10) | ((b2 & 0x1F) << 5) | (b3 & 0x1F));
+                }
             }
-            else if (b < 0x80)
-            {
-                NextChar = (char)b;
-            }
-            else if (b < 0xC0)
-            {
-                NextChar = (char)0xFFFD;
-            }
-            else if (b < 0xE0)
-            {
-                var b2 = _stream.ReadByte();
-                NextChar = (char)((b << 5) | (b2 & 0x1F));
-            }
-            else if (b < 0xF0)
-            {
-                var b2 = _stream.ReadByte();
-                var b3 = _stream.ReadByte();
-                NextChar = (char)((b << 10) | ((b2 & 0x1F) << 5) | (b3 & 0x1F));
-            }
-            else
-            {
-                NextChar = (char)0xFFFD;
-            }
+
+            return (char)0xFFFD;
         }
 
         /// <summary>
@@ -168,6 +180,61 @@ namespace Jamiras.Components
 
             Advance();
             return (builder.Length == 0) ? String.Empty : builder.ToString();
+        }
+
+        /// <summary>
+        /// Attempts to match a string against the next few characters of the input.
+        /// </summary>
+        /// <param name="token">token to match</param>
+        /// <returns><c>true</c> if the token matches (tokenizer will advance over the token), <c>false</c> if not.</returns>
+        public bool Match(string token)
+        {
+            int matchingChars = MatchSubstring(token);
+            if (matchingChars != token.Length)
+                return false;
+
+            for (int i = 0; i < token.Length; i++)
+                Advance();
+
+            return true;
+        }
+
+        /// <summary>
+        /// Attempts to match as much of the provided token as possible.
+        /// </summary>
+        /// <param name="token">token to match</param>
+        /// <returns>number of matching characters. tokenizer is not advanced.</returns>
+        public int MatchSubstring(string token)
+        {
+            if (token.Length == 0 || NextChar != token[0])
+                return 0;
+
+            int bufferIndex = 0;
+            int tokenIndex = 1;
+
+            while (bufferIndex < _bufferedChars.Count)
+            {
+                if (tokenIndex == token.Length)
+                    return tokenIndex;
+
+                if (_bufferedChars[bufferIndex] != token[tokenIndex])
+                    return tokenIndex;
+
+                bufferIndex++;
+                tokenIndex++;
+            }
+
+            while (tokenIndex < token.Length)
+            {
+                var c = ReadChar();
+                _bufferedChars.Add(c);
+                if (token[tokenIndex] != c)
+                    return tokenIndex;
+
+                tokenIndex++;
+            }
+
+            return tokenIndex;
         }
     }
 }

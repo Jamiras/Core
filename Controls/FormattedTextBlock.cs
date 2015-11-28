@@ -6,9 +6,22 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using Jamiras.Commands;
+using Jamiras.Components;
+using System.Text;
+using System.Windows.Media;
 
 namespace Jamiras.Controls
 {
+    /// <summary>
+    /// Creates a formatted block of text from wiki markup.
+    /// 
+    /// == heading ==    - string in two or more equals is a heading
+    /// ''italic''       - string in two single quotes is italicized
+    /// '''bold'''       - string in three single quotes is bolded
+    /// [[text:link]]    - creates a link with the provided text. command will be passed to the LinkCommand
+    /// :indent          - indents a piece of text for each colon at the start of a line
+    /// {{color|c|text}} - renders text in the color specified by c.
+    /// </summary>
     public class FormattedTextBlock : TextBlock
     {
         public FormattedTextBlock()
@@ -87,162 +100,234 @@ namespace Jamiras.Controls
             if (String.IsNullOrEmpty(input))
                 return;
 
-            bool isBold = false, isItalic = false, isLink = false, isHeading = false, isRedirectedLink = false;
-            bool isNewLine = true;
-            Stack<InlineCollection> formatStack = new Stack<InlineCollection>();
-            formatStack.Push(Inlines);
+            var converter = new SyntaxToInlineConverter(_hyperlinkCommand);
+            converter.Convert(input, Inlines);
+        }
 
-            int index = 0, start = 0;
-            while (index < input.Length)
+        private class SyntaxToInlineConverter
+        {
+            public SyntaxToInlineConverter(ICommand hyperlinkCommand)
             {
-                switch (input[index])
-                {
-                    case '\'':
-                        if (index + 1 == input.Length || input[index + 1] != '\'')
-                            goto default;
-
-                        if (index < input.Length - 2 && input[index + 2] == '\'')
-                        {
-                            FlushInline(formatStack.Peek(), input, start, index);
-                            isBold = ToggleState(isBold, formatStack, () => new Bold());
-                            index += 3;
-                        }
-                        else
-                        {
-                            FlushInline(formatStack.Peek(), input, start, index);
-                            isItalic = ToggleState(isItalic, formatStack, () => new Italic());
-                            index += 2;
-                        }
-                        start = index;
-                        break;
-
-                    case '=':
-                        if (!isNewLine && !isHeading)
-                            goto default;
-
-                        int headingLevel = 1;
-                        while (index + headingLevel < input.Length && input[index + headingLevel] == '=')
-                            headingLevel++;
-                        if (headingLevel == 1)
-                            goto default;
-
-                        if (isHeading)
-                        {
-                            if (index == 0 || input[index - 1] != ' ')
-                                goto default;
-
-                            index--;
-                        }
-                        else 
-                        {
-                            if (index + headingLevel == input.Length || input[index + headingLevel] != ' ')
-                                goto default;
-                        }
-
-                        FlushInline(formatStack.Peek(), input, start, index);
-                        isHeading = ToggleState(isHeading, formatStack, () => new Bold { FontSize = headingLevel + 11 });
-                        index += headingLevel + 1;
-                        start = index;
-                        break;
-
-                    case ':':
-                        if (!isNewLine)
-                            goto default;
-
-                        int indent = 1;
-                        while (index + indent < input.Length && input[index + indent] == ':')
-                            indent++;
-                        if (index + indent == input.Length || input[index + indent] != ' ')
-                            goto default;
-
-                        FlushInline(formatStack.Peek(), input, start, index);
-                        formatStack.Peek().Add(new Run(new String(' ', indent * 2)));
-                        index += indent + 1;
-                        start = index;
-                        break;
-
-                    case '[':
-                        if (isLink || index + 1 == input.Length || input[index + 1] != '[')
-                            goto default;
-
-                        isRedirectedLink = false;
-                        FlushInline(formatStack.Peek(), input, start, index);
-                        isLink = ToggleState(isLink, formatStack, () => new Hyperlink { Command = _hyperlinkCommand });
-                        index += 2;
-                        start = index;
-                        break;
-
-                    case ']':
-                        if (!isLink || index + 1 == input.Length || input[index + 1] != ']')
-                            goto default;
-
-                        string parameter = input.Substring(start, index - start);
-                        if (!isRedirectedLink)
-                            FlushInline(formatStack.Peek(), input, start, index);
-
-                        isLink = ToggleState(isLink, formatStack, null);
-
-                        var hyperlink = formatStack.Peek().Last() as Hyperlink;
-                        if (hyperlink != null)
-                            hyperlink.CommandParameter = parameter;
-
-                        index += 2;
-                        start = index;
-                        break;
-
-                    case '|':
-                        if (!isLink)
-                            goto default;
-
-                        isRedirectedLink = true;
-                        FlushInline(formatStack.Peek(), input, start, index);
-                        index++;
-                        start = index;
-                        break;
-
-                    case '\r':
-                        FlushInline(formatStack.Peek(), input, start, index);
-                        index++;
-                        start = index;
-                        break;
-
-                    case '\n':
-                        FlushInline(formatStack.Peek(), input, start, index);
-                        formatStack.Peek().Add(new LineBreak());
-                        index++;
-                        start = index;
-                        isNewLine = true;
-                        continue;
-
-                    default:
-                        index++;
-                        break;
-                }
-
-                isNewLine = false;
+                _formatStack = new Stack<InlineCollection>();
+                _buffer = new StringBuilder();
+                _hyperlinkCommand = hyperlinkCommand;
             }
 
-            FlushInline(formatStack.Peek(), input, start, index);
-        }
+            private readonly ICommand _hyperlinkCommand;
+            private readonly Stack<InlineCollection> _formatStack;
+            private readonly StringBuilder _buffer;
+            private bool _isBold;
+            private bool _isItalic;
+            private bool _isHeading;
+            private bool _isLink;
+            private bool _isRedirectedLink;
+            private bool _isColor;
+            private bool _isNewLine;
+            private Tokenizer _tokenizer;
 
-        private static void FlushInline(InlineCollection container, string input, int start, int index)
-        {
-            if (index > start)
-                container.Add(new Run(input.Substring(start, index - start)));
-        }
-
-        private static bool ToggleState(bool state, Stack<InlineCollection> formatStack, Func<Span> createState)
-        {
-            if (state)
+            public void Convert(string input, InlineCollection inlinesToPopulate)
             {
-                formatStack.Pop();
+                _formatStack.Push(inlinesToPopulate);
+                _isNewLine = true;
+                _tokenizer = new Tokenizer(input);
+
+                while (_tokenizer.NextChar != '\0')
+                {
+                    switch (_tokenizer.NextChar)
+                    {
+                        case '\'':
+                            if (_tokenizer.Match("'''"))
+                            {
+                                FlushInline();
+                                ToggleState(ref _isBold, () => new Bold());
+                                continue;
+                            }
+                            if (_tokenizer.Match("''"))
+                            {
+                                FlushInline();
+                                ToggleState(ref _isItalic, () => new Italic());
+                                continue;
+                            }
+                            break;
+
+                        case '=':
+                            if (HandleHeader())
+                                continue;
+                            break;
+
+                        case ':':
+                            if (_isNewLine && HandleIndent())
+                                continue;
+                            break;
+
+                        case '[':
+                            if (!_isLink && _tokenizer.Match("[["))
+                            {
+                                _isRedirectedLink = false;
+                                FlushInline();
+                                ToggleState(ref _isLink, () => new Hyperlink { Command = _hyperlinkCommand });
+                                continue;
+                            }
+                            break;
+
+                        case ']':
+                            if (_isLink && _tokenizer.Match("]]"))
+                            {
+                                var parameter = _buffer.ToString();
+                                _buffer.Length = 0;
+
+                                if (!_isRedirectedLink)
+                                    FlushInline();
+
+                                ToggleState(ref _isLink, null);
+
+                                var hyperlink = _formatStack.Peek().Last() as Hyperlink;
+                                if (hyperlink != null)
+                                    hyperlink.CommandParameter = parameter;
+
+                                continue;
+                            }
+                            break;
+
+                        case '|':
+                            if (_isLink)
+                            {
+                                _isRedirectedLink = true;
+                                _tokenizer.Advance();
+                                FlushInline();
+                                continue;
+                            }
+                            break;
+
+                        case '{':
+                            if (HandleColoredText())
+                                continue;
+                            break;
+
+                        case '\r':
+                            _tokenizer.Advance();
+                            FlushInline();
+                            continue;
+
+                        case '\n':
+                            _tokenizer.Advance();
+                            FlushInline();
+                            _formatStack.Peek().Add(new LineBreak());
+                            _isNewLine = true;
+                            continue;
+                    }
+
+                    _isNewLine = false;
+                    _buffer.Append(_tokenizer.NextChar);
+                    _tokenizer.Advance();
+                }
+
+                FlushInline();
+            }
+
+            private bool HandleColoredText()
+            {
+                if (!_tokenizer.Match("{{color|"))
+                    return false;
+
+                FlushInline();
+                while (_tokenizer.NextChar != '|')
+                {
+                    if (_tokenizer.NextChar == '\0')
+                        return false;
+
+                    _buffer.Append(_tokenizer.NextChar);
+                    _tokenizer.Advance();
+                }
+
+                var color = _buffer.ToString();
+                _buffer.Length = 0;
+
+                _tokenizer.Advance();
+                while (!_tokenizer.Match("}}"))
+                {
+                    if (_tokenizer.NextChar == '\0')
+                        return false;
+
+                    _buffer.Append(_tokenizer.NextChar);
+                    _tokenizer.Advance();
+                }
+
+                var inline = new Run(_buffer.ToString());
+                inline.Foreground = (Brush)new BrushConverter().ConvertFromString(color);
+                _formatStack.Peek().Add(inline);
+
+                _buffer.Length = 0;
+                return true;
+            }
+
+            private bool HandleHeader()
+            {
+                int headingLevel = _tokenizer.MatchSubstring("======");
+                if (headingLevel >= 2)
+                {
+                    if (_isHeading)
+                    {
+                        if (_buffer.Length == 0 || _buffer[_buffer.Length - 1] != ' ')
+                            return false;
+
+                        _buffer.Length--;
+                        FlushInline();
+                        ToggleState(ref _isHeading, null);
+                        return true;
+                    }
+
+                    if (_isNewLine)
+                    {
+                        var headerToken = new String('=', headingLevel) + ' ';
+                        if (_tokenizer.Match(headerToken))
+                        {
+                            FlushInline();
+                            ToggleState(ref _isHeading, () => new Bold { FontSize = headingLevel + 11 });
+                            return true;
+                        }
+                    }
+                }
+
                 return false;
             }
 
-            var inline = createState();
-            formatStack.Peek().Add(inline);
-            formatStack.Push(inline.Inlines);
-            return true;
+            private bool HandleIndent()
+            {
+                int indent = _tokenizer.MatchSubstring("::::::::::::::::::::");
+                var indentToken = new String(':', indent) + ' ';
+                if (!_tokenizer.Match(indentToken))
+                    return false;
+
+                FlushInline();
+                _formatStack.Peek().Add(new Run(new String(' ', indent * 2)));
+                return true;
+            }
+
+            private void FlushInline()
+            {
+                if (_buffer.Length > 0)
+                {
+                    _formatStack.Peek().Add(new Run(_buffer.ToString()));
+                    _buffer.Length = 0;
+                }
+            }
+
+            private void ToggleState(ref bool state, Func<Span> createState)
+            {
+                if (state)
+                {
+                    _formatStack.Pop();
+                    state = false;
+                }
+                else
+                {
+                    var inline = createState();
+                    _formatStack.Peek().Add(inline);
+                    _formatStack.Push(inline.Inlines);
+                    state = true;
+                }
+            }
         }
     }
 }

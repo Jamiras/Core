@@ -68,6 +68,7 @@ namespace Jamiras.Controls
                 scrollViewer.Loaded += ScrollViewerOnLoaded;
 
             scrollViewer.Unloaded += ScrollViewerOnUnloaded;
+            scrollViewer.LostFocus += ScrollViewerLostFocus;
             scrollViewer.DataContextChanged += ScrollViewerOnDataContextChanged;
         }
 
@@ -75,6 +76,7 @@ namespace Jamiras.Controls
         {
             scrollViewer.Loaded -= ScrollViewerOnLoaded;
             scrollViewer.Unloaded -= ScrollViewerOnUnloaded;
+            scrollViewer.LostFocus -= ScrollViewerLostFocus;
             scrollViewer.DataContextChanged -= ScrollViewerOnDataContextChanged;
         }
 
@@ -95,6 +97,12 @@ namespace Jamiras.Controls
         {
             var scrollViewer = (ScrollViewer)sender;
             RememberOffset(scrollViewer, scrollViewer.DataContext);
+        }
+
+        private static void ScrollViewerLostFocus(object sender, RoutedEventArgs e)
+        {
+            var scrollViewer = (ScrollViewer)sender;
+            StoreOffset(scrollViewer, scrollViewer.DataContext);
         }
 
         private static void ScrollViewerOnUnloaded(object sender, RoutedEventArgs routedEventArgs)
