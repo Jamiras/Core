@@ -128,5 +128,15 @@ namespace Jamiras.Components
             _services[serviceType] = service;
             return service;
         }
+
+        internal void Shutdown()
+        {
+            foreach (var service in _services.Values)
+            {
+                var disposable = service as IDisposable;
+                if (disposable != null)
+                    disposable.Dispose();
+            }
+        }
     }
 }

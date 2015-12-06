@@ -8,7 +8,7 @@ using Jamiras.Components;
 namespace Jamiras.Services
 {
     [Export(typeof(ISoundPlayer))]
-    internal class SoundPlayer : ISoundPlayer
+    internal class SoundPlayer : ISoundPlayer, IDisposable
     {
         [DebuggerDisplay("{_player.Source} {State}")]
         private class Sound
@@ -70,24 +70,24 @@ namespace Jamiras.Services
 
             private void Invoke(Action action)
             {
-                if (_player.Dispatcher.CheckAccess())
-                    action();
-                else if (_player.Dispatcher.HasShutdownStarted)
+                if (_owner._isDisposed)
                     State = SoundState.Stopped;
+                else if (_player.Dispatcher.CheckAccess())
+                    action();
                 else
                     _player.Dispatcher.Invoke(action, null);
             }
 
             private TimeSpan InvokeGetTimeSpan(Func<TimeSpan> action)
             {
-                if (_player.Dispatcher.CheckAccess())
-                    return action();
-
-                if (_player.Dispatcher.HasShutdownStarted)
+                if (_owner._isDisposed)
                 {
                     State = SoundState.Stopped;
                     return TimeSpan.Zero;
                 }
+
+                if (_player.Dispatcher.CheckAccess())
+                    return action();
 
                 try
                 {
@@ -123,6 +123,15 @@ namespace Jamiras.Services
                 }
             }
 
+            public void Stop()
+            {
+                if (State == SoundState.Playing)
+                {
+                    Invoke(_player.Stop);
+                    State = SoundState.Stopped;
+                }
+            }
+
             public TimeSpan Length
             {
                 get { return InvokeGetTimeSpan(() => _player.NaturalDuration.TimeSpan); }
@@ -146,16 +155,16 @@ namespace Jamiras.Services
         }
 
         private readonly List<Sound> _activeSounds = new List<Sound>();
+        private bool _isDisposed;
 
-        public SoundPlayer()
+        public void Dispose()
         {
-            Application.Current.Exit += ApplicationExit;
-        }
+            _isDisposed = true;
 
-        private void ApplicationExit(object sender, ExitEventArgs e)
-        {
             foreach (var sound in _activeSounds)
-                sound.Pause();
+                sound.Stop();
+
+            _activeSounds.Clear();
         }
 
         private class SoundIdComparer : IComparer<Sound>

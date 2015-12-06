@@ -20,6 +20,8 @@ namespace Jamiras.Services
                 repository = ServiceRepository.Instance;
             }
 
+            Application.Current.Dispatcher.ShutdownStarted += DispatcherShutdownStarted;
+
             // explicitly instantiate and register the ExceptionDispatcher to hook up the UnhandledException handler
             var dispatcher = new ExceptionDispatcher();
             repository.RegisterInstance<IExceptionDispatcher>(dispatcher);
@@ -35,6 +37,11 @@ namespace Jamiras.Services
             repository.RegisterService(typeof(EventBus));
             repository.RegisterService(typeof(DataModelMetadataRepository));
             repository.RegisterService(typeof(SoundPlayer));
+        }
+
+        private static void DispatcherShutdownStarted(object sender, EventArgs e)
+        {
+            ServiceRepository.Instance.Shutdown();
         }
 
         private static void DefaultExceptionHandler(object sender, DispatchExceptionEventArgs e)
