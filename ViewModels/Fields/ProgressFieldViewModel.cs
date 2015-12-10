@@ -147,5 +147,13 @@ namespace Jamiras.ViewModels.Fields
 
             return String.Format("Approximately {0} minutes remaining", (int)Math.Round(timeSpan.TotalMinutes));
         }
+
+        public void Reset(int newMaximum)
+        {
+            Target = 0; // disable updating TimeRemaining while changing Current
+            Current = 0;
+            Target = newMaximum;
+            _progressStart = null;
+        }
     }
 }
