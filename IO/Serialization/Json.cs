@@ -219,6 +219,20 @@ namespace Jamiras.IO.Serialization
                 {
                     builder.Append("null");
                 }
+                else if (field.Value is float)
+                {
+                    if ((float)field.Value == 0.0)
+                        builder.Append("0.0");
+                    else
+                        builder.Append(field.Value);
+                }
+                else if (field.Value is double)
+                {
+                    if ((double)field.Value == 0.0)
+                        builder.Append("0.0");
+                    else
+                        builder.Append(field.Value);
+                }
                 else
                 {
                     var nestedObject = field.Value as IDictionary<string, object>;

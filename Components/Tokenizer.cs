@@ -167,6 +167,9 @@ namespace Jamiras.Components
                             builder.AppendLine();
                             Advance();
                             continue;
+                        case 'r':
+                            Advance();
+                            continue;
                     }
                 }
                 else if (NextChar == 0)
