@@ -18,7 +18,6 @@ namespace Jamiras.Services
         public HttpRequest(string url)
         {
             Url = url;
-            PostData = new Dictionary<string, string>();
             Headers = new WebHeaderCollection();
             Timeout = TimeSpan.FromSeconds(100);
         }
@@ -39,7 +38,7 @@ namespace Jamiras.Services
         /// <remarks>
         /// If not set, a GET request will be made.
         /// </remarks>
-        public Dictionary<string, string> PostData { get; private set; }
+        public string PostData { get; set; }
 
         /// <summary>
         /// Gets or set the time-out period for the request.

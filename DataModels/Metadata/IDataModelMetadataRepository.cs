@@ -15,6 +15,13 @@ namespace Jamiras.DataModels.Metadata
         ModelMetadata GetModelMetadata(Type type);
 
         /// <summary>
+        /// Resolves a model type to a <see cref="Type"/>.
+        /// </summary>
+        /// <param name="modelName">Type of model to resolve to a <see cref="Type"/></param>
+        /// <returns><see cref="Type"/> for the model, or <c>null</c> if not found.</returns>
+        Type GetModelType(string modelName);
+
+        /// <summary>
         /// Registers metadata for a model type.
         /// </summary>
         /// <param name="type">Type of model to register metadata for.</param>

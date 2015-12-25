@@ -247,13 +247,18 @@ namespace Jamiras.DataModels
             _collection.CopyTo(array, arrayIndex);
         }
 
+        void IDataModelCollection.MakeReadOnly()
+        {
+            IsReadOnly = true;
+        }
+
         /// <summary>
         /// Gets whether or not the collection is read only.
         /// </summary>
         public bool IsReadOnly
         {
             get { return (bool)GetValue(IsReadOnlyProperty); }
-            internal set
+            private set
             {
                 if (IsReadOnly)
                     throw new InvalidOperationException("Cannot modify IsReadOnly property once it's been set to true.");

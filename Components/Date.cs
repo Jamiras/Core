@@ -187,7 +187,7 @@ namespace Jamiras.Components
 
         private int AppendDay(StringBuilder builder, string dateFormat, int index, bool isOptional, DateTime? fullDate)
         {
-            if (dateFormat[index + 1] != 'd')
+            if (index + 1 == dateFormat.Length || dateFormat[index + 1] != 'd')
             {
                 // d: day of month
                 if (Day > 0)
@@ -198,7 +198,7 @@ namespace Jamiras.Components
                 return 1;
             }
 
-            if (dateFormat[index + 2] != 'd')
+            if (index + 2 == dateFormat.Length || dateFormat[index + 2] != 'd')
             {
                 // dd: 0-padded day of month
                 if (Day == 0)
@@ -216,7 +216,7 @@ namespace Jamiras.Components
                 return 2;
             }
 
-            if (dateFormat[index + 3] != 'd')
+            if (index + 3 == dateFormat.Length || dateFormat[index + 3] != 'd')
             {
                 // ddd: abbreviate name of day of the week
                 if (fullDate != null)

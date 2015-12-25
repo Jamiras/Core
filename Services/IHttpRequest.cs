@@ -25,7 +25,7 @@ namespace Jamiras.Services
         /// <remarks>
         /// If not set, a GET request will be made.
         /// </remarks>
-        Dictionary<string, string> PostData { get; }
+        string PostData { get; set; }
 
         /// <summary>
         /// Gets or set the time-out period for the request.

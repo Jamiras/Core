@@ -110,13 +110,6 @@ namespace Jamiras.DataModels.Metadata
             if (!Query((ICollection<TCollection>)model, maxResults, primaryKey, database))
                 return false;
 
-            if (AreResultsReadOnly)
-            {
-                var collection = model as DataModelCollection<TCollection>;
-                if (collection != null)
-                    collection.IsReadOnly = true;
-            }
-
             return true;
         }
 

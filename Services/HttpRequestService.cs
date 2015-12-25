@@ -94,11 +94,8 @@ namespace Jamiras.Services
 
         internal byte[] GetPostData(IHttpRequest request)
         {
-            if (request.PostData != null && request.PostData.Count > 0)
-            {
-                var queryString = CreateQueryString(request.PostData);
-                return Encoding.UTF8.GetBytes(queryString);
-            }
+            if (!String.IsNullOrEmpty(request.PostData))
+                return Encoding.UTF8.GetBytes(request.PostData);
 
             return null;
         }

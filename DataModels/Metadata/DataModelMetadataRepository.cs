@@ -10,10 +10,12 @@ namespace Jamiras.DataModels.Metadata
         {
             _repository = EmptyTinyDictionary<Type, ModelMetadata>.Instance;
             _mapping = EmptyTinyDictionary<Type, Type>.Instance;
+            _modelNames = EmptyTinyDictionary<string, Type>.Instance;
         }
 
         private ITinyDictionary<Type, ModelMetadata> _repository;
         private ITinyDictionary<Type, Type> _mapping;
+        private ITinyDictionary<string, Type> _modelNames;
 
         /// <summary>
         /// Gets the metadata for the provided model type.
@@ -37,6 +39,18 @@ namespace Jamiras.DataModels.Metadata
         }
 
         /// <summary>
+        /// Resolves a model type to a <see cref="Type"/>.
+        /// </summary>
+        /// <param name="modelName">Type of model to resolve to a <see cref="Type"/></param>
+        /// <returns><see cref="Type"/> for the model, or <c>null</c> if not found.</returns>
+        public Type GetModelType(string modelName)
+        {
+            Type type;
+            _modelNames.TryGetValue(modelName.ToLower(), out type);
+            return type;
+        }
+
+        /// <summary>
         /// Registers metadata for a model type.
         /// </summary>
         /// <param name="type">Type of model to register metadata for.</param>
@@ -47,6 +61,7 @@ namespace Jamiras.DataModels.Metadata
                 throw new InvalidOperationException(metadataType.Name + " does not inherit from ModelMetadata");
 
             _mapping = _mapping.AddOrUpdate(type, metadataType);
+            _modelNames = _modelNames.AddOrUpdate(type.Name.ToLower(), type);
         }
     }
 }

@@ -14,6 +14,8 @@ namespace Jamiras.DataModels
         int Count { get; }
 
         Type ModelType { get; }
+
+        void MakeReadOnly();
     }
 
     internal interface IDataModelCollectionMetadata
@@ -21,6 +23,8 @@ namespace Jamiras.DataModels
         ModelMetadata ModelMetadata { get; }
 
         ModelProperty CollectionFilterKeyProperty { get; }
+
+        bool AreResultsReadOnly { get; }
 
         bool Query(ModelBase model, int maxResults, object primaryKey, IDatabase database);
     }

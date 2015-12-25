@@ -70,6 +70,7 @@
     <Compile Include="Controls\GridUtils.cs" />
     <Compile Include="Controls\TextPattern.cs" />
     <Compile Include="Database\AliasDefinition.cs" />
+    <Compile Include="DataModels\DataModelSourceBase.cs" />
     <Compile Include="IO\FileBundle.cs" />
     <Compile Include="Components\ITinyDictionary.cs" />
     <Compile Include="Components\OneItemTinyDictionary.cs" />
@@ -157,7 +158,7 @@
     <Compile Include="IO\BitWriter.cs" />
     <Compile Include="IO\FileBundleFileSystemService.cs" />
     <Compile Include="IO\Serialization\GraphQuery.cs" />
-    <Compile Include="IO\Serialization\Json.cs" />
+    <Compile Include="IO\Serialization\JsonObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\BackgroundWorkerService.cs" />
     <Compile Include="Services\DialogService.cs" />
@@ -165,6 +166,7 @@
     <Compile Include="Services\EventBus.cs" />
     <Compile Include="Services\ExceptionDispatcher.cs" />
     <Compile Include="Services\FileSystemService.cs" />
+    <Compile Include="Services\HttpListener.cs" />
     <Compile Include="Services\HttpRequest.cs" />
     <Compile Include="Services\HttpRequestService.cs" />
     <Compile Include="Services\HttpResponse.cs" />
@@ -173,6 +175,7 @@
     <Compile Include="Services\IExceptionDispatcher.cs" />
     <Compile Include="Services\IFileSystemService.cs" />
     <Compile Include="Components\ILogger.cs" />
+    <Compile Include="Services\IHttpListener.cs" />
     <Compile Include="Services\IHttpRequest.cs" />
     <Compile Include="Services\IHttpRequestService.cs" />
     <Compile Include="Services\IHttpResponse.cs" />

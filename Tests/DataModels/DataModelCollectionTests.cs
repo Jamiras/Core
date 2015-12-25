@@ -228,10 +228,9 @@ namespace Jamiras.Core.Tests.DataModels
             var c = new TestClass();
 
             Assert.That(_model.IsReadOnly, Is.False);
-            _model.IsReadOnly = true;
+            ((IDataModelCollection)_model).MakeReadOnly();
             Assert.That(_model.IsReadOnly, Is.True);
-            Assert.That(() => _model.IsReadOnly = true, Throws.InvalidOperationException);
-            Assert.That(() => _model.IsReadOnly = false, Throws.InvalidOperationException);
+            Assert.That(() => ((IDataModelCollection)_model).MakeReadOnly(), Throws.InvalidOperationException);
 
             Assert.That(_model.IsModified, Is.False);
             Assert.That(_model.Count, Is.EqualTo(0));
