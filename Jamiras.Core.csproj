@@ -71,6 +71,8 @@
     <Compile Include="Controls\TextPattern.cs" />
     <Compile Include="Database\AliasDefinition.cs" />
     <Compile Include="DataModels\DataModelSourceBase.cs" />
+    <Compile Include="DataModels\Metadata\JsonFieldConverter.cs" />
+    <Compile Include="DataModels\Metadata\JsonRelatedFieldConverter.cs" />
     <Compile Include="IO\FileBundle.cs" />
     <Compile Include="Components\ITinyDictionary.cs" />
     <Compile Include="Components\OneItemTinyDictionary.cs" />

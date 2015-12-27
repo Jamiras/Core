@@ -1,4 +1,7 @@
 ﻿using Jamiras.Components;
+using System.Collections.Generic;
+using Jamiras.ViewModels.Converters;
+using Jamiras.IO.Serialization;
 
 namespace Jamiras.DataModels.Metadata
 {
@@ -10,9 +13,11 @@ namespace Jamiras.DataModels.Metadata
         protected ModelMetadata()
         {
             _fieldMetadata = EmptyTinyDictionary<int, FieldMetadata>.Instance;
+            _jsonFields = new List<JsonFieldConverter>();
         }
 
         private ITinyDictionary<int, FieldMetadata> _fieldMetadata;
+        private readonly List<JsonFieldConverter> _jsonFields;
 
         internal ITinyDictionary<int, FieldMetadata> AllFieldMetadata
         {
@@ -39,6 +44,47 @@ namespace Jamiras.DataModels.Metadata
             FieldMetadata metadata;
             _fieldMetadata.TryGetValue(property.Key, out metadata);
             return metadata;
+        }
+
+        /// <summary>
+        /// Gets the JSON object name associated to the model.
+        /// </summary>
+        public string JsonObjectName { get; protected set; }
+
+        /// <summary>
+        /// Gets the JSON fields associated to the model.
+        /// </summary>
+        public IEnumerable<JsonFieldConverter> JsonFields
+        {
+            get { return _jsonFields; }
+        }
+
+        /// <summary>
+        /// Registers a JSON field for the model.
+        /// </summary>
+        protected JsonFieldConverter AddJsonField(string jsonFieldName, ModelProperty modelProperty)
+        {
+            var field = new JsonFieldConverter(jsonFieldName, modelProperty);
+            _jsonFields.Add(field);
+            return field;
+        }
+
+        /// <summary>
+        /// Registers a JSON field for the model.
+        /// </summary>
+        protected JsonFieldConverter AddJsonField(string jsonFieldName, ModelProperty modelProperty, IConverter converter, JsonFieldType type)
+        {
+            var field = new JsonFieldConverter(jsonFieldName, modelProperty, converter, type);
+            _jsonFields.Add(field);
+            return field;
+        }
+
+        /// <summary>
+        /// Registers a JSON field for the model.
+        /// </summary>
+        protected void AddJsonField(JsonFieldConverter field)
+        {
+            _jsonFields.Add(field);
         }
     }
 }

@@ -458,7 +458,7 @@ namespace Jamiras.IO.Serialization
             return field;
         }
 
-        private void AddField(string fieldName, JsonFieldType type, object value)
+        public void AddField(string fieldName, JsonFieldType type, object value)
         {
             var field = new JsonField(fieldName, type, value);
             _fields = _fields.AddOrUpdate(fieldName.ToLower(), field);
@@ -659,6 +659,35 @@ namespace Jamiras.IO.Serialization
 
                 return null;
             }
+        }
+
+        public static JsonFieldType GetFieldType(Type t)
+        {
+            if (t == typeof(int) || t == typeof(int?))
+                return JsonFieldType.Integer;
+
+            if (t == typeof(string))
+                return JsonFieldType.String;
+
+            if (t == typeof(double) || t == typeof(double?) || t == typeof(float) || t == typeof(float?))
+                return JsonFieldType.Double;
+
+            if (t == typeof(bool))
+                return JsonFieldType.Boolean;
+
+            if (t == typeof(int[]))
+                return JsonFieldType.IntegerArray;
+
+            if (t == typeof(Date))
+                return JsonFieldType.Date;
+
+            if (t == typeof(DateTime) || t == typeof(DateTime?))
+                return JsonFieldType.DateTime;
+
+            if (t.IsEnum)
+                return JsonFieldType.Integer;
+
+            throw new NotSupportedException("No JSON type mapping for " + t.Name);
         }
     }
 
