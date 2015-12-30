@@ -338,11 +338,9 @@ namespace Jamiras.DataModels
                 if (!Commit(collection, collectionMetadata.ModelMetadata))
                     return false;
             }
-            else
-            {
-                if (!Commit(dataModel, metadata))
-                    return false;
-            }
+
+            if (!Commit(dataModel, metadata))
+                return false;
 
             dataModel.AcceptChanges();
             return true;

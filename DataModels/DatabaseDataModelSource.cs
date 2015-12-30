@@ -125,6 +125,8 @@ namespace Jamiras.DataModels
                 {
                     if (model.IsModified && !Commit(model, itemMetadata))
                         return false;
+
+                    model.AcceptChanges();
                 }
             }
             else
