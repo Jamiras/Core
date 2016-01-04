@@ -65,6 +65,9 @@ namespace Jamiras.ViewModels.Grid
 
         internal void UpdateMoveCommands()
         {
+            if (_view.RowViewModels == null)
+                return;
+
             bool isFirst = true;
             var enumerator = _view.RowViewModels.GetEnumerator();
             while (enumerator.MoveNext())

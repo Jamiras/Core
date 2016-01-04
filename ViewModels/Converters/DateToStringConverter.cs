@@ -54,6 +54,12 @@ namespace Jamiras.ViewModels.Converters
             if (sVal == null)
                 throw new ArgumentException(value.GetType().Name + " is not a string", "value");
 
+            if (String.IsNullOrEmpty(sVal))
+            {
+                value = Date.Empty;
+                return null;
+            }
+
             Date date;
             if (Date.TryParse(sVal, out date))
             {
