@@ -88,10 +88,7 @@ namespace Jamiras.IO.Serialization
         /// </example>
         public static GraphQuery Parse(string input)
         {
-            using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(input)))
-            {
-                return Parse(stream);
-            }
+            return Parse(Tokenizer.CreateTokenizer(input));
         }
 
         /// <summary>
@@ -99,11 +96,15 @@ namespace Jamiras.IO.Serialization
         /// </summary>
         public static GraphQuery Parse(Stream input)
         {
-            var tokenizer = new Tokenizer(input);
+            return Parse(Tokenizer.CreateTokenizer(input));
+        }
+
+        private static GraphQuery Parse(Tokenizer tokenizer)
+        {
             tokenizer.SkipWhitespace();
 
             var objectType = tokenizer.ReadIdentifier();
-            var query = new GraphQuery(objectType);
+            var query = new GraphQuery(objectType.ToString());
             ReadFilters(tokenizer, query);
 
             var fields = new List<GraphQueryField>();
@@ -149,7 +150,7 @@ namespace Jamiras.IO.Serialization
                 else if (tokenizer.NextChar != ')')
                     throw new InvalidOperationException("Parse error after " + parameter + " filter, found: " + tokenizer.NextChar);
 
-                query.Filters.Add(parameter, value);
+                query.Filters.Add(parameter.ToString(), value.ToString());
             } while (true);
         }
 
@@ -174,7 +175,7 @@ namespace Jamiras.IO.Serialization
                 var fieldName = tokenizer.ReadIdentifier();
                 tokenizer.SkipWhitespace();
 
-                var field = new GraphQueryField(fieldName);
+                var field = new GraphQueryField(fieldName.ToString());
 
                 if (tokenizer.NextChar == '{')
                 {

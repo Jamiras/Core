@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
-using Jamiras.Commands;
-using Jamiras.Components;
-using System.Text;
 using System.Windows.Media;
+using Jamiras.Components;
 
 namespace Jamiras.Controls
 {
@@ -129,7 +128,7 @@ namespace Jamiras.Controls
             {
                 _formatStack.Push(inlinesToPopulate);
                 _isNewLine = true;
-                _tokenizer = new Tokenizer(input);
+                _tokenizer = Tokenizer.CreateTokenizer(input);
 
                 while (_tokenizer.NextChar != '\0')
                 {

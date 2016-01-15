@@ -13,7 +13,7 @@ namespace Jamiras.Core.Tests.Components
     {
         private Tokenizer CreateTokenizer(string input)
         {
-            return new Tokenizer(new MemoryStream(Encoding.UTF8.GetBytes(input)));
+            return new Tokenizer.StreamTokenizer(new MemoryStream(Encoding.UTF8.GetBytes(input)));
         }
 
         [Test]

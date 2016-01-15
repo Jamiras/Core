@@ -66,6 +66,7 @@
     <Compile Include="Components\BucketTinyDictionary.cs" />
     <Compile Include="Components\EmptyTinyDictionary.cs" />
     <Compile Include="Components\FileLogger.cs" />
+    <Compile Include="Components\Token.cs" />
     <Compile Include="Components\Tokenizer.cs" />
     <Compile Include="Controls\GridUtils.cs" />
     <Compile Include="Controls\TextPattern.cs" />
@@ -200,6 +201,7 @@
     <Compile Include="ViewModels\DialogViewModelBase.cs" />
     <Compile Include="Services\IDialogService.cs" />
     <Compile Include="ViewModels\Fields\AutoCompleteFieldViewModel.cs" />
+    <Compile Include="ViewModels\Fields\LinkFieldViewModel.cs" />
     <Compile Include="ViewModels\Fields\ProgressFieldViewModel.cs" />
     <Compile Include="ViewModels\FileDialogViewModel.cs" />
     <Compile Include="ViewModels\Grid\AutoCompleteColumnDefinition.cs" />
@@ -222,6 +224,10 @@
     <Compile Include="ViewModels\Fields\IntegerFieldViewModel.cs" />
     <Compile Include="ViewModels\Grid\Summarization.cs" />
     <Compile Include="ViewModels\ICompositeViewModel.cs" />
+    <Compile Include="ViewModels\Layout\DisplayTextViewModel.cs" />
+    <Compile Include="ViewModels\Layout\HtmlRenderer.cs" />
+    <Compile Include="ViewModels\Layout\PageViewModel.cs" />
+    <Compile Include="ViewModels\Layout\TableViewModel.cs" />
     <Compile Include="ViewModels\ModelBinding.cs" />
     <Compile Include="ViewModels\ValidatedViewModelBase.cs" />
     <Compile Include="ViewModels\Fields\TextFieldViewModel.cs" />

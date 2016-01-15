@@ -14,13 +14,13 @@ namespace Jamiras.IO.Serialization
         public JsonObject(string json)
             : this()
         {
-            Parse(new Tokenizer(json));
+            Parse(Tokenizer.CreateTokenizer(json));
         }
 
         public JsonObject(Stream stream)
             : this()
         {
-            Parse(new Tokenizer(stream));
+            Parse(Tokenizer.CreateTokenizer(stream));
         }
 
         public JsonObject()
@@ -319,13 +319,13 @@ namespace Jamiras.IO.Serialization
                 tokenizer.Advance();
                 tokenizer.SkipWhitespace();
 
-                string value;
+                Token value;
                 switch (tokenizer.NextChar)
                 {
                     case '{':
                         var nestedObject = new JsonObject();
-                        nestedObject.ParseObject(fieldName, tokenizer);
-                        AddField(fieldName, nestedObject);
+                        nestedObject.ParseObject(fieldName.ToString(), tokenizer);
+                        AddField(fieldName.ToString(), nestedObject);
                         break;
 
                     case '"':
@@ -338,7 +338,7 @@ namespace Jamiras.IO.Serialization
                                 Int32.TryParse(value.Substring(5, 2), out month) &&
                                 Int32.TryParse(value.Substring(8, 2), out day))
                             {
-                                AddField(fieldName, JsonFieldType.Date, value);
+                                AddField(fieldName.ToString(), JsonFieldType.Date, value.ToString());
                                 break;
                             }
                         }
@@ -353,17 +353,17 @@ namespace Jamiras.IO.Serialization
                                 Int32.TryParse(value.Substring(17, 2), out second) &&
                                 Int32.TryParse(value.Substring(20, 3), out millisecond))
                             {
-                                AddField(fieldName, JsonFieldType.DateTime, value);
+                                AddField(fieldName.ToString(), JsonFieldType.DateTime, value.ToString());
                                 break;
                             }
                         }
 
-                        AddField(fieldName, value);
+                        AddField(fieldName.ToString(), value.ToString());
                         break;
 
                     case '[':
-                        var nestedArray = ParseArray(fieldName, tokenizer);
-                        AddField(fieldName, nestedArray);
+                        var nestedArray = ParseArray(fieldName.ToString(), tokenizer);
+                        AddField(fieldName.ToString(), nestedArray);
                         break;
 
                     case '0':
@@ -379,24 +379,24 @@ namespace Jamiras.IO.Serialization
                         value = tokenizer.ReadNumber();
                         if (value.Contains('.'))
                         {
-                            var dVal = Double.Parse(value);
-                            AddField(fieldName, dVal);
+                            var dVal = Double.Parse(value.ToString());
+                            AddField(fieldName.ToString(), dVal);
                         }
                         else
                         {
-                            var iVal = Int32.Parse(value);
-                            AddField(fieldName, iVal);
+                            var iVal = Int32.Parse(value.ToString());
+                            AddField(fieldName.ToString(), iVal);
                         }
                         break;
 
                     default:
                         value = tokenizer.ReadIdentifier();
-                        if (String.Compare(value, "true", StringComparison.InvariantCultureIgnoreCase) == 0)
-                            AddField(fieldName, true);
-                        else if (String.Compare(value, "false", StringComparison.InvariantCultureIgnoreCase) == 0)
-                            AddField(fieldName, false);
-                        else if (String.Compare(value, "null", StringComparison.InvariantCultureIgnoreCase) == 0)
-                            AddField(fieldName, JsonFieldType.Null, null);
+                        if (value.CompareTo("true", StringComparison.InvariantCultureIgnoreCase) == 0)
+                            AddField(fieldName.ToString(), true);
+                        else if (value.CompareTo("false", StringComparison.InvariantCultureIgnoreCase) == 0)
+                            AddField(fieldName.ToString(), false);
+                        else if (value.CompareTo("null", StringComparison.InvariantCultureIgnoreCase) == 0)
+                            AddField(fieldName.ToString(), JsonFieldType.Null, null);
                         else
                             throw new NotSupportedException("Unsupported raw field value: " + value);
                         break;

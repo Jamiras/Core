@@ -1,89 +1,249 @@
 ﻿using System;
-using System.IO;
-using System.Text;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
 
 namespace Jamiras.Components
 {
-    public class Tokenizer
+    public abstract class Tokenizer
     {
-        public Tokenizer(string input)
-            : this(new MemoryStream(Encoding.UTF8.GetBytes(input)))
+        public static Tokenizer CreateTokenizer(string input)
         {
+            return new StringTokenizer(input);
         }
 
-        public Tokenizer(Stream input)
+        internal class StringTokenizer : Tokenizer
         {
-            _stream = input;
-            _bufferedChars = new List<char>();
+            public StringTokenizer(string input)
+            {
+                _input = input;
+                Advance();
+            }
 
-            Advance();
+            private readonly string _input;
+            private int _inputIndex;
+            private int _tokenStart;
+
+            protected override void StartToken()
+            {
+                _tokenStart = _inputIndex - 1;
+            }
+
+            protected override Token EndToken()
+            {
+                return new Token(_input, _tokenStart, _inputIndex - _tokenStart - 1);
+            }
+
+            public override void Advance()
+            {
+                if (_inputIndex < _input.Length)
+                    NextChar = _input[_inputIndex++];
+                else
+                    NextChar = '\0';
+            }
+
+            public override Token ReadQuotedString()
+            {
+                if (NextChar != '"')
+                    throw new InvalidOperationException("expecting quote, found " + NextChar);
+
+                Advance();
+                StartToken();
+                while (NextChar != '"')
+                {
+                    if (NextChar == '\\')
+                    {
+                        // need to process the string, reset to opening quote and let the base class handle it.
+                        _inputIndex = _tokenStart;
+                        NextChar = '\"';
+                        return base.ReadQuotedString();
+                    }
+                    else if (NextChar == 0)
+                    {
+                        throw new InvalidOperationException("closing quote not found for quoted string");
+                    }
+
+                    Advance();
+                }
+
+                var token = EndToken();
+                Advance();
+                return token;
+            }
+
+            public override int MatchSubstring(string token)
+            {
+                int start = _inputIndex - 1;
+                int end = start + token.Length;
+                if (end > _input.Length)
+                    end = _input.Length;
+                int count = end - start;
+
+                for (int i = 0; i < count; i++)
+                {
+                    if (_input[start + i] != token[i])
+                        return i;
+                }
+
+                return count;
+            }
         }
 
-        private readonly Stream _stream;
-        private readonly List<char> _bufferedChars;
+        public static Tokenizer CreateTokenizer(Stream input)
+        {
+            return new StreamTokenizer(input);
+        }
+
+        internal class StreamTokenizer : Tokenizer
+        {
+            public StreamTokenizer(Stream input)
+            {
+                _stream = input;
+                _bufferedChars = new List<char>();
+            }
+
+            private readonly Stream _stream;
+            private readonly List<char> _bufferedChars;
+            private StringBuilder _tokenBuilder;
+
+            protected override void StartToken()
+            {
+                _tokenBuilder = new StringBuilder();
+            }
+
+            protected override Token EndToken()
+            {
+                if (_tokenBuilder == null || _tokenBuilder.Length == 0)
+                    return new Token();
+
+                var str = _tokenBuilder.ToString();
+                var token = new Token(str, 0, str.Length);
+                _tokenBuilder = null;
+                return token;
+            }
+
+            /// <summary>
+            /// Advances to the next character in the stream.
+            /// </summary>
+            public override void Advance()
+            {
+                if (_tokenBuilder != null)
+                    _tokenBuilder.Append(NextChar);
+
+                if (_bufferedChars.Count > 0)
+                {
+                    NextChar = _bufferedChars[0];
+                    _bufferedChars.RemoveAt(0);
+                    return;
+                }
+
+                NextChar = ReadChar();
+            }
+
+            private char ReadChar()
+            {
+                var b = _stream.ReadByte();
+                if (b < 0)
+                    return (char)0x00;
+
+                if (b < 0x80)
+                    return (char)b;
+
+                if (b >= 0xC0)
+                {
+                    if (b < 0xE0)
+                    {
+                        var b2 = _stream.ReadByte();
+                        return (char)((b << 5) | (b2 & 0x1F));
+                    }
+
+                    if (b < 0xF0)
+                    {
+                        var b2 = _stream.ReadByte();
+                        var b3 = _stream.ReadByte();
+                        return (char)((b << 10) | ((b2 & 0x1F) << 5) | (b3 & 0x1F));
+                    }
+                }
+
+                return (char)0xFFFD;
+            }
+
+            /// <summary>
+            /// Attempts to match as much of the provided token as possible.
+            /// </summary>
+            /// <param name="token">token to match</param>
+            /// <returns>number of matching characters. tokenizer is not advanced.</returns>
+            public override int MatchSubstring(string token)
+            {
+                if (token.Length == 0 || NextChar != token[0])
+                    return 0;
+
+                int bufferIndex = 0;
+                int tokenIndex = 1;
+
+                while (bufferIndex < _bufferedChars.Count)
+                {
+                    if (tokenIndex == token.Length)
+                        return tokenIndex;
+
+                    if (_bufferedChars[bufferIndex] != token[tokenIndex])
+                        return tokenIndex;
+
+                    bufferIndex++;
+                    tokenIndex++;
+                }
+
+                while (tokenIndex < token.Length)
+                {
+                    var c = ReadChar();
+                    _bufferedChars.Add(c);
+                    if (token[tokenIndex] != c)
+                        return tokenIndex;
+
+                    tokenIndex++;
+                }
+
+                return tokenIndex;
+            }
+        }
 
         /// <summary>
         /// Gets the next character in the stream.
         /// </summary>
-        public Char NextChar { get; private set; }
+        public Char NextChar { get; protected set; }
 
         /// <summary>
-        /// Advances to the next character in the stream.
+        /// Advances to the next character in the source.
         /// </summary>
-        public void Advance()
+        public abstract void Advance();
+
+        protected abstract void StartToken();
+
+        protected abstract Token EndToken();
+
+        protected static Token CreateToken(StringBuilder builder)
         {
-            if (_bufferedChars.Count > 0)
-            {
-                NextChar = _bufferedChars[0];
-                _bufferedChars.RemoveAt(0);
-                return;
-            }
+            if (builder.Length == 0)
+                return new Token();
 
-            NextChar = ReadChar();
-        }
-
-        private char ReadChar()
-        {
-            var b = _stream.ReadByte();
-            if (b < 0)
-                return (char)0x00;
-
-            if (b < 0x80)
-                return (char)b;
-
-            if (b >= 0xC0)
-            {
-                if (b < 0xE0)
-                {
-                    var b2 = _stream.ReadByte();
-                    return (char)((b << 5) | (b2 & 0x1F));
-                }
-
-                if (b < 0xF0)
-                {
-                    var b2 = _stream.ReadByte();
-                    var b3 = _stream.ReadByte();
-                    return (char)((b << 10) | ((b2 & 0x1F) << 5) | (b3 & 0x1F));
-                }
-            }
-
-            return (char)0xFFFD;
+            var str = builder.ToString();
+            return new Token(str, 0, str.Length);
         }
 
         /// <summary>
-        /// Advances to the next non-whitespace character in the stream.
+        /// Advances to the next non-whitespace character in the source.
         /// </summary>
         public void SkipWhitespace()
         {
             while (Char.IsWhiteSpace(NextChar))
                 Advance();
         }
-
+        
         /// <summary>
         /// Matches a token containing alphanumeric characters and/or underscores, or a quoted string.
         /// </summary>
-        public string ReadValue()
+        public Token ReadValue()
         {
             if (NextChar == '"') 
                 return ReadQuotedString();
@@ -97,55 +257,45 @@ namespace Jamiras.Components
         /// <summary>
         /// Matches a token containing alphanumeric characters and/or underscores.
         /// </summary>
-        public string ReadIdentifier()
+        public Token ReadIdentifier()
         {
-            var builder = new StringBuilder();
-            if (!Char.IsDigit(NextChar))
+            StartToken();
+            if (Char.IsLetter(NextChar) || NextChar == '_')
             {
                 while (Char.IsLetterOrDigit(NextChar) || NextChar == '_')
-                {
-                    builder.Append(NextChar);
                     Advance();
-                }
             }
 
-            return (builder.Length == 0) ? String.Empty : builder.ToString();
+            return EndToken();
         }
 
         /// <summary>
         /// Matches a token containing numeric characters, possibly with a single decimal separator.
         /// </summary>
-        public string ReadNumber()
+        public Token ReadNumber()
         {
             if (!Char.IsDigit(NextChar))
-                return String.Empty;
+                return new Token();
 
-            var builder = new StringBuilder();
+            StartToken();
             while (Char.IsDigit(NextChar))
-            {
-                builder.Append(NextChar);
                 Advance();
-            }
 
             if (NextChar == '.')
             {
-                builder.Append('.');
                 Advance();
 
                 while (Char.IsDigit(NextChar))
-                {
-                    builder.Append(NextChar);
                     Advance();
-                }
             }
 
-            return builder.ToString();
+            return EndToken();
         }
 
         /// <summary>
         /// Matches a quoted string.
         /// </summary>
-        public String ReadQuotedString()
+        public virtual Token ReadQuotedString()
         {
             if (NextChar != '"')
                 throw new InvalidOperationException("expecting quote, found " + NextChar);
@@ -182,7 +332,7 @@ namespace Jamiras.Components
             }
 
             Advance();
-            return (builder.Length == 0) ? String.Empty : builder.ToString();
+            return CreateToken(builder);
         }
 
         /// <summary>
@@ -207,37 +357,66 @@ namespace Jamiras.Components
         /// </summary>
         /// <param name="token">token to match</param>
         /// <returns>number of matching characters. tokenizer is not advanced.</returns>
-        public int MatchSubstring(string token)
+        public abstract int MatchSubstring(string token);
+
+        /// <summary>
+        /// Splits the provided <param name="input"/> string at <paramref name="separator"/> boundaries.
+        /// </summary>
+        public static Token[] Split(string input, params char[] separator)
         {
-            if (token.Length == 0 || NextChar != token[0])
-                return 0;
+            return Split(input, separator, StringSplitOptions.None);
+        }
 
-            int bufferIndex = 0;
-            int tokenIndex = 1;
+        /// <summary>
+        /// Splits the provided <paramref name="input"/> string at <paramref name="separator"/> boundaries.
+        /// </summary>
+        public static Token[] Split(string input, char[] separator, StringSplitOptions options)
+        {
+            var token = new Token(input, 0, input.Length);
+            return token.Split(separator, options);
+        }
 
-            while (bufferIndex < _bufferedChars.Count)
+        /// <summary>
+        /// Gets the <paramref name="count"/> longest words from <paramref name="input"/>
+        /// </summary>
+        public static Token[] GetLongestWords(string input, int count)
+        {
+            var sortedTokens = new Token[count];
+            var tokens = new List<Token>(count);
+
+            string[] ignoreWords = { "a", "an", "in", "it", "of", "on", "or", "the", "to" };
+
+            foreach (var word in Tokenizer.Split(input, new char[] { ' ', '(', ')', ',', '.', '!', ';' }, StringSplitOptions.RemoveEmptyEntries))
             {
-                if (tokenIndex == token.Length)
-                    return tokenIndex;
+                if (word.Length <= 3 && ignoreWords.Any(w => word.CompareTo(w, StringComparison.OrdinalIgnoreCase) == 0))
+                    continue;
 
-                if (_bufferedChars[bufferIndex] != token[tokenIndex])
-                    return tokenIndex;
+                for (int i = 0; i < count; i++)
+                {
+                    if (sortedTokens[i].Length == 0)
+                    {
+                        sortedTokens[i] = word;
+                        tokens.Add(word);
+                        break;
+                    }
+                    else if (sortedTokens[i].Length < word.Length)
+                    {
+                        if (tokens.Count == count)
+                            tokens.Remove(sortedTokens[count - 1]);
 
-                bufferIndex++;
-                tokenIndex++;
+                        Array.Copy(sortedTokens, i, sortedTokens, i + 1, count - i - 1);
+                        sortedTokens[i] = word;
+                        tokens.Add(word);
+                        break;
+                    }
+                    else if (sortedTokens[i].CompareTo(word, StringComparison.OrdinalIgnoreCase) == 0)
+                    {
+                        break;
+                    }
+                }
             }
 
-            while (tokenIndex < token.Length)
-            {
-                var c = ReadChar();
-                _bufferedChars.Add(c);
-                if (token[tokenIndex] != c)
-                    return tokenIndex;
-
-                tokenIndex++;
-            }
-
-            return tokenIndex;
+            return tokens.ToArray();
         }
     }
 }
