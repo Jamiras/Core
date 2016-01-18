@@ -1,4 +1,4 @@
-﻿using Jamiras.Database;
+﻿using Jamiras.ViewModels.Converters;
 
 namespace Jamiras.DataModels.Metadata
 {
@@ -14,6 +14,8 @@ namespace Jamiras.DataModels.Metadata
             : base(fieldName)
         {
             RelatedFieldName = relatedFieldName;
+
+            Converter = ZeroToNullConverter.Instance;
         }
 
         public string RelatedFieldName { get; private set; }

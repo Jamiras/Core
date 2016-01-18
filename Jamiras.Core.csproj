@@ -71,6 +71,8 @@
     <Compile Include="Controls\GridUtils.cs" />
     <Compile Include="Controls\TextPattern.cs" />
     <Compile Include="Database\AliasDefinition.cs" />
+    <Compile Include="Database\DatabaseSchema.cs" />
+    <Compile Include="Database\TableSchema.cs" />
     <Compile Include="DataModels\DataModelSourceBase.cs" />
     <Compile Include="DataModels\Metadata\JsonFieldConverter.cs" />
     <Compile Include="DataModels\Metadata\JsonRelatedFieldConverter.cs" />
@@ -198,6 +200,7 @@
     <Compile Include="ViewModels\Converters\DelegateConverter.cs" />
     <Compile Include="ViewModels\Converters\IConverter.cs" />
     <Compile Include="ViewModels\Converters\IntegerToStringConverter.cs" />
+    <Compile Include="ViewModels\Converters\ZeroToNullConverter.cs" />
     <Compile Include="ViewModels\DialogViewModelBase.cs" />
     <Compile Include="Services\IDialogService.cs" />
     <Compile Include="ViewModels\Fields\AutoCompleteFieldViewModel.cs" />

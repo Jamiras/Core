@@ -57,5 +57,10 @@ namespace Jamiras.Database
         /// <param name="query">The <see cref="QueryBuilder"/> to build the query string from.</param>
         /// <returns>The query string.</returns>
         string BuildQueryString(QueryBuilder query);
+
+        /// <summary>
+        /// Gets the schema for the database.
+        /// </summary>
+        DatabaseSchema Schema { get; }
     }
 }

@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Jamiras.DataModels.Metadata
 {
@@ -10,6 +7,7 @@ namespace Jamiras.DataModels.Metadata
     {
         None = 0,
         PrimaryKey = 0x01,
+        Required = 0x02,
 
         GeneratedByCreate = 0x40,
         RefreshAfterCommit = 0x80,

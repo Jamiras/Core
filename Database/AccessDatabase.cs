@@ -160,5 +160,10 @@ namespace Jamiras.Database
         {
             return AccessDatabaseQuery.BuildQueryString(query);
         }
+
+        /// <summary>
+        /// Gets or sets the schema for the database.
+        /// </summary>
+        public DatabaseSchema Schema { get; set; }
     }
 }

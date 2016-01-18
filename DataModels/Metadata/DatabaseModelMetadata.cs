@@ -79,34 +79,15 @@ namespace Jamiras.DataModels.Metadata
             _queryString = null;
         }
 
-        /// <summary>
-        /// Registers a join between two tables.
-        /// </summary>
-        /// <param name="localKeyFieldName">The key field on the primary table.</param>
-        /// <param name="remoteKeyFieldName">The key field on the remote table.</param>
-        protected void RegisterJoin(string localKeyFieldName, string remoteKeyFieldName)
-        {
-            if (_joins == null)
-                _joins = new List<JoinDefinition>();
-
-            var joinType = JoinType.Inner;
-            if (PrimaryKeyProperty != null)
-            {
-                var fieldMetadata = GetFieldMetadata(PrimaryKeyProperty);
-                var primaryKeyFieldName = fieldMetadata.FieldName;
-                if (localKeyFieldName == primaryKeyFieldName)
-                    joinType = JoinType.Outer;
-            }
-
-            _joins.Add(new JoinDefinition(localKeyFieldName, remoteKeyFieldName, joinType));
-        }
-
-        private string GetJoin(string primaryTableName, string relatedTableName, out ModelProperty joinProperty)
+        private string GetJoin(IDatabase database, string primaryTableName, string relatedTableName, out ModelProperty joinProperty)
         {
             joinProperty = null;
-            string joinFieldName = null;
-            if (relatedTableName != primaryTableName && _joins != null)
+
+            if (relatedTableName != primaryTableName)
             {
+                if (_joins == null)
+                    _joins = DetermineJoins(database);
+
                 foreach (var join in _joins)
                 {
                     if (GetTableName(join.RemoteKeyFieldName) == relatedTableName)
@@ -121,21 +102,68 @@ namespace Jamiras.DataModels.Metadata
                                 if (fieldMetadata.FieldName == join.LocalKeyFieldName)
                                 {
                                     joinProperty = property;
-                                    break;
+                                    return join.RemoteKeyFieldName;
                                 }
                             }
-                        }
-
-                        if (joinProperty != null)
-                        {
-                            joinFieldName = join.RemoteKeyFieldName;
-                            break;
                         }
                     }
                 }
             }
 
-            return joinFieldName;
+            return null;
+        }
+
+        private List<JoinDefinition> DetermineJoins(IDatabase database)
+        {
+            var joins = new List<JoinDefinition>();
+            if (PrimaryKeyProperty == null)
+                return joins;
+
+            var primaryKeyMetadata = GetFieldMetadata(PrimaryKeyProperty);
+            var primaryTableName = GetTableName(primaryKeyMetadata.FieldName);
+            var relatedTables = new List<string>();
+            relatedTables.Add(primaryTableName);
+
+            var primaryTableSchema = database.Schema.GetTableSchema(primaryTableName);
+
+            foreach (var fieldMetadata in AllFieldMetadata.Values)
+            {
+                var relatedTableName = GetTableName(fieldMetadata.FieldName);
+                if (relatedTables.Contains(relatedTableName))
+                    continue;
+
+                bool foundJoin = false;
+                foreach (var join in primaryTableSchema.Joins)
+                {
+                    if (GetTableName(join.RemoteKeyFieldName) == relatedTableName)
+                    {
+                        relatedTables.Add(relatedTableName);
+                        joins.Add(join);
+                        foundJoin = true;
+                        break;
+                    }
+                }
+
+                if (!foundJoin)
+                {
+                    var remoteTable = database.Schema.GetTableSchema(relatedTableName);
+                    foreach (var join in remoteTable.Joins)
+                    {
+                        if (join.RemoteKeyFieldName == primaryKeyMetadata.FieldName)
+                        {
+                            relatedTables.Add(relatedTableName);
+                            joins.Add(new JoinDefinition(join.RemoteKeyFieldName, join.LocalKeyFieldName, join.JoinType));
+                            foundJoin = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!foundJoin)
+                    throw new InvalidOperationException("Cannot determine relationship between " + primaryTableName + " and " + relatedTableName);
+            }
+
+            return joins;
         }
 
         /// <summary>
@@ -207,7 +235,7 @@ namespace Jamiras.DataModels.Metadata
 
         private string BuildQueryString(IDatabase database)
         {
-            var query = BuildQueryExpression();
+            var query = BuildQueryExpression(database);
 
             if (PrimaryKeyProperty != null)
             {
@@ -219,11 +247,14 @@ namespace Jamiras.DataModels.Metadata
         }
 
         // internal for access from DatabaseModelCollectionMetadata
-        internal QueryBuilder BuildQueryExpression()
+        internal QueryBuilder BuildQueryExpression(IDatabase database)
         {
             var query = new QueryBuilder();
             foreach (var metadata in AllFieldMetadata.Values)
                 query.Fields.Add(metadata.FieldName);
+
+            if (_joins == null)
+                _joins = DetermineJoins(database);
 
             if (_joins != null)
             {
@@ -313,6 +344,9 @@ namespace Jamiras.DataModels.Metadata
         /// <returns>Value to store in the model.</returns>
         protected virtual object CoerceValueFromDatabase(ModelProperty property, FieldMetadata fieldMetadata, object databaseValue)
         {
+            if (fieldMetadata.Converter != null)
+                fieldMetadata.Converter.ConvertBack(ref databaseValue);
+
             if (fieldMetadata is ForeignKeyFieldMetadata && databaseValue == null && property.PropertyType == typeof(int))
                 return 0;
 
@@ -343,8 +377,8 @@ namespace Jamiras.DataModels.Metadata
         /// <returns>Value to store in the database.</returns>
         protected virtual object CoerceValueToDatabase(ModelProperty property, FieldMetadata fieldMetadata, object modelValue)
         {
-            if (fieldMetadata is ForeignKeyFieldMetadata && (int)modelValue == 0 && property.PropertyType == typeof(int))
-                return null;
+            if (fieldMetadata.Converter != null)
+                fieldMetadata.Converter.Convert(ref modelValue);
 
             if (property.PropertyType == typeof(Date))
             {
@@ -504,7 +538,7 @@ namespace Jamiras.DataModels.Metadata
                     continue;
 
                 ModelProperty joinProperty;
-                string joinFieldName = GetJoin(primaryTable, kvp.Key, out joinProperty);
+                string joinFieldName = GetJoin(database, primaryTable, kvp.Key, out joinProperty);
 
                 if (!CreateRow(model, database, kvp.Key, kvp.Value, joinProperty, joinFieldName))
                     return false;
@@ -714,7 +748,7 @@ namespace Jamiras.DataModels.Metadata
                 else
                 {
                     ModelProperty joinProperty;
-                    string joinFieldName = GetJoin(primaryTable, kvp.Key, out joinProperty);
+                    string joinFieldName = GetJoin(database, primaryTable, kvp.Key, out joinProperty);
                     if (joinFieldName == null)
                         throw new InvalidOperationException("Cannot determine relationship between " + primaryTable + " and " + kvp.Key);
 

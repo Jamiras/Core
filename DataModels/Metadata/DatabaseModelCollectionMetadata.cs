@@ -185,7 +185,7 @@ namespace Jamiras.DataModels.Metadata
 
         private string BuildQueryString(IDatabase database)
         {
-            var queryExpression = RelatedMetadata.BuildQueryExpression();
+            var queryExpression = RelatedMetadata.BuildQueryExpression(database);
 
             _primaryKeyIndex = -1;
             if (RelatedMetadata.PrimaryKeyProperty != null)
