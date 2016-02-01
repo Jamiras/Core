@@ -29,7 +29,7 @@ namespace Jamiras.Database
 
         public override string ToString()
         {
-            return AccessDatabaseQuery.BuildQueryString(this);
+            return AccessDatabaseQuery.BuildQueryString(this, null);
         }
 
         /// <summary>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using Jamiras.Components;
 
 namespace Jamiras.Database
 {
@@ -184,15 +185,18 @@ namespace Jamiras.Database
 
         #region BuildQueryString
 
-        public static string BuildQueryString(QueryBuilder query)
+        public static string BuildQueryString(QueryBuilder query, DatabaseSchema schema)
         {
+            if (schema == null)
+                schema = ServiceRepository.Instance.FindService<IDatabase>().Schema;
+
             var tables = GetTables(query);
 
             var builder = new StringBuilder();
             builder.Append("SELECT ");
             AppendQueryFields(builder, query);
             builder.Append(" FROM ");
-            AppendJoinTree(builder, query, tables);
+            AppendJoinTree(builder, query, tables, schema);
             builder.Append(" WHERE ");
 
             bool wherePresent = AppendFilters(builder, query);
@@ -246,7 +250,15 @@ namespace Jamiras.Database
             builder.Length -= 2;
         }
 
-        private static void AppendJoinTree(StringBuilder builder, QueryBuilder query, List<string> tables)
+        private static bool IsFieldForTable(string fieldName, string tableName)
+        {
+            if (String.Compare(fieldName, 0, tableName, 0, tableName.Length, StringComparison.OrdinalIgnoreCase) != 0)
+                return false;
+
+            return (fieldName[tableName.Length] == '.');
+        }
+
+        private static void AppendJoinTree(StringBuilder builder, QueryBuilder query, List<string> tables, DatabaseSchema schema)
         {
             string primaryTable = tables[0];
             if (tables.Count == 1)
@@ -261,7 +273,30 @@ namespace Jamiras.Database
 
             AppendTable(builder, query, primaryTable);
 
-            foreach (var join in query.Joins)
+            var joins = new List<JoinDefinition>(query.Joins);
+            if (schema != null)
+            {
+                for (int i = 0; i < tables.Count; i++)
+                {
+                    var tableName = tables[i];
+
+                    var join = joins.FirstOrDefault(j => IsFieldForTable(j.RemoteKeyFieldName, tableName));
+                    if (join.JoinType == JoinType.None)
+                    {
+                        var alias = query.Aliases.FirstOrDefault(a => a.Alias == tableName);
+                        if (!String.IsNullOrEmpty(alias.TableName))
+                            tableName = alias.TableName;
+
+                        join = schema.GetJoin(primaryTable, tableName);
+                        if (join.JoinType == JoinType.None)
+                            throw new InvalidOperationException("No join defined between " + primaryTable + " and " + tableName);
+
+                        joins.Add(join);
+                    }
+                }
+            }
+
+            foreach (var join in joins)
             {
                 var fieldName = join.RemoteKeyFieldName;
                 int idx = fieldName.IndexOf('.');

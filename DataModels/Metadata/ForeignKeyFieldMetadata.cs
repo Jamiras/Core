@@ -1,4 +1,5 @@
-﻿using Jamiras.ViewModels.Converters;
+﻿using System;
+using Jamiras.ViewModels.Converters;
 
 namespace Jamiras.DataModels.Metadata
 {
@@ -8,16 +9,13 @@ namespace Jamiras.DataModels.Metadata
         /// Constructs a new foreign key field metadata.
         /// </summary>
         /// <param name="fieldName">The foreign key field.</param>
-        /// <param name="relatedFieldName">The field on the related record that matches the foreign key value.</param>
-        /// <param name="cardinality"></param>
-        public ForeignKeyFieldMetadata(string fieldName, string relatedFieldName)
-            : base(fieldName)
+        /// <param name="relatedField">The metadata describing the related field</param>
+        public ForeignKeyFieldMetadata(string fieldName, FieldMetadata relatedField, FieldAttributes attributes = FieldAttributes.None)
+            : base(fieldName, 0, Int32.MaxValue, attributes)
         {
-            RelatedFieldName = relatedFieldName;
-
-            Converter = ZeroToNullConverter.Instance;
+            RelatedField = relatedField;
         }
 
-        public string RelatedFieldName { get; private set; }
+        public FieldMetadata RelatedField { get; private set; }
     }
 }

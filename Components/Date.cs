@@ -131,7 +131,8 @@ namespace Jamiras.Components
 
             var builder = new StringBuilder();
             bool isFullDate = Day > 0 && Month > 0 && Year > 0;
-            bool isOptional = false;
+            int optionalStart = -1;
+            bool optionalPresent = false;
             DateTime? fullDate = null;
             if (isFullDate)
                 fullDate = new DateTime(Year, Month, Day);
@@ -142,27 +143,30 @@ namespace Jamiras.Components
                 switch (dateFormat[index])
                 {
                     case 'd':
-                        index += AppendDay(builder, dateFormat, index, isOptional, fullDate);
+                        index += AppendDay(builder, dateFormat, index, ref optionalPresent, fullDate);
                         break;
                     case 'M':
-                        index += AppendMonth(builder, dateFormat, index, isOptional);
+                        index += AppendMonth(builder, dateFormat, index, ref optionalPresent);
                         break;
                     case 'y':
-                        index += AppendYear(builder, dateFormat, index, isOptional);
+                        index += AppendYear(builder, dateFormat, index, ref optionalPresent);
                         break;
                     case '[':
                         if (dateFormat[index + 1] == '[')
                             goto default;
 
                         index++;
-                        isOptional = true;
+                        optionalStart = builder.Length;
+                        optionalPresent = false;
                         break;
                     case ']':
-                        if (!isOptional)
+                        if (optionalStart == -1)
                             goto default;
 
                         index++;
-                        isOptional = false;
+                        if (!optionalPresent)
+                            builder.Length = optionalStart;
+                        optionalStart = -1;
                         break;
                     case ' ':
                         if (builder.Length > 0 && builder[builder.Length - 1] != ' ')
@@ -185,15 +189,20 @@ namespace Jamiras.Components
             return builder.ToString();
         }
 
-        private int AppendDay(StringBuilder builder, string dateFormat, int index, bool isOptional, DateTime? fullDate)
+        private int AppendDay(StringBuilder builder, string dateFormat, int index, ref bool optionalPresent, DateTime? fullDate)
         {
             if (index + 1 == dateFormat.Length || dateFormat[index + 1] != 'd')
             {
                 // d: day of month
                 if (Day > 0)
+                {
                     builder.Append(Day);
-                else if (!isOptional)
+                    optionalPresent = true;
+                }
+                else
+                {
                     builder.Append('?');
+                }
 
                 return 1;
             }
@@ -203,14 +212,14 @@ namespace Jamiras.Components
                 // dd: 0-padded day of month
                 if (Day == 0)
                 {
-                    if (!isOptional)
-                        builder.Append("??");
+                    builder.Append("??");
                 }
                 else
                 {
                     if (Day < 10)
                         builder.Append('0');
                     builder.Append(Day);
+                    optionalPresent = true;
                 }
 
                 return 2;
@@ -220,23 +229,33 @@ namespace Jamiras.Components
             {
                 // ddd: abbreviate name of day of the week
                 if (fullDate != null)
+                {
                     builder.Append(_dayOfWeeks[(int)fullDate.GetValueOrDefault().DayOfWeek], 0, 3);
-                else if (!isOptional)
+                    optionalPresent = true;
+                }
+                else
+                {
                     builder.Append("???");
+                }
 
                 return 3;
             }
 
             // dddd: full name of the day of the week
             if (fullDate != null)
+            {
                 builder.Append(_dayOfWeeks[(int)fullDate.GetValueOrDefault().DayOfWeek]);
-            else if (!isOptional)
+                optionalPresent = true;
+            }
+            else
+            {
                 builder.Append("???");
+            }
 
             return 4;
         }
 
-        private int AppendMonth(StringBuilder builder, string dateFormat, int index, bool isOptional)
+        private int AppendMonth(StringBuilder builder, string dateFormat, int index, ref bool optionalPresent)
         {
             var month = Month;
 
@@ -244,9 +263,14 @@ namespace Jamiras.Components
             {
                 // M: month
                 if (month != 0)
+                {
                     builder.Append(month);
-                else if (!isOptional)
+                    optionalPresent = true;
+                }
+                else
+                {
                     builder.Append('?');
+                }
 
                 return 1;
             }
@@ -256,14 +280,14 @@ namespace Jamiras.Components
                 // MM: zero-padded month
                 if (month == 0)
                 {
-                    if (!isOptional)
-                        builder.Append("??");
+                    builder.Append("??");
                 }
                 else
                 {
                     if (month < 10)
                         builder.Append('0');
                     builder.Append(month);
+                    optionalPresent = true;
                 }
 
                 return 2;
@@ -273,23 +297,33 @@ namespace Jamiras.Components
             {
                 // MMM: abbreviated name of month
                 if (month > 0)
+                {
                     builder.Append(_months[month], 0, 3);
-                else if (!isOptional)
+                    optionalPresent = true;
+                }
+                else
+                {
                     builder.Append("???");
+                }
 
                 return 3;
             }
 
             // MMMM: name of month
             if (month > 0)
+            {
                 builder.Append(_months[month]);
-            else if (!isOptional)
+                optionalPresent = true;
+            }
+            else
+            {
                 builder.Append("???");
+            }
 
             return 4;
         }
 
-        private int AppendYear(StringBuilder builder, string dateFormat, int index, bool isOptional)
+        private int AppendYear(StringBuilder builder, string dateFormat, int index, ref bool optionalPresent)
         {
             var year = Year;
 
@@ -297,9 +331,14 @@ namespace Jamiras.Components
             {
                 // y: year (0-99)
                 if (year > 0)
+                {
                     builder.Append(year % 10);
-                else if (!isOptional)
+                    optionalPresent = true;
+                }
+                else
+                {
                     builder.Append('?');
+                }
 
                 return 1;
             }
@@ -313,8 +352,9 @@ namespace Jamiras.Components
                     if (year < 10)
                         builder.Append('0');
                     builder.Append(year);
+                    optionalPresent = true;
                 }
-                else if (!isOptional)
+                else
                 {
                     builder.Append("??");                    
                 }
@@ -336,8 +376,9 @@ namespace Jamiras.Components
                     }
                 }
                 builder.Append(year);
+                optionalPresent = true;
             }
-            else if (!isOptional)
+            else
             {
                 builder.Append("????");
             }
@@ -371,6 +412,9 @@ namespace Jamiras.Components
             bool isValid = true;
 
             string[] parts = input.Split('/');
+            if (parts.Length == 1)
+                parts = input.Split('-');
+
             if (parts.Length == 3)
             {
                 if (parts[0].Length == 4 && parts[1].Length == 2 && parts[2].Length == 2)

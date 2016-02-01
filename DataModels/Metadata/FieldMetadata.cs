@@ -8,26 +8,23 @@ namespace Jamiras.DataModels.Metadata
     /// Provides information about a field.
     /// </summary>
     [DebuggerDisplay("{FieldName} {GetType().Name,nq}")] 
-    public class FieldMetadata
+    public abstract class FieldMetadata
     {
         /// <summary>
         /// Constructs a new <see cref="FieldMetadata"/>.
         /// </summary>
         /// <param name="fieldName">Mapped field name.</param>
-        /// <param name="type">Mapped field type.</param>
-        public FieldMetadata(string fieldName, Type type)
+        protected FieldMetadata(string fieldName)
         {
             FieldName = fieldName;
-            Type = type;
         }
 
         /// <summary>
         /// Constructs a new <see cref="FieldMetadata"/>.
         /// </summary>
         /// <param name="fieldName">Mapped field name.</param>
-        /// <param name="type">Mapped field type.</param>
-        public FieldMetadata(string fieldName, Type type, FieldAttributes attributes)
-            : this(fieldName, type)
+        internal FieldMetadata(string fieldName, InternalFieldAttributes attributes)
+            : this(fieldName)
         {
             Attributes = attributes;
         }
@@ -38,28 +35,16 @@ namespace Jamiras.DataModels.Metadata
         public string FieldName { get; private set; }
 
         /// <summary>
-        /// Gets the type of the field.
-        /// </summary>
-        public Type Type { get; private set; }
-
-        /// <summary>
         /// Gets attributes of the field.
         /// </summary>
-        public FieldAttributes Attributes { get; protected set; }
+        internal InternalFieldAttributes Attributes { get; private set; }
 
         /// <summary>
         /// Gets or sets whether the field is required.
         /// </summary>
         public bool IsRequired 
         {
-            get { return (Attributes & FieldAttributes.Required) != 0; }
-            set
-            {
-                if (value)
-                    Attributes |= FieldAttributes.Required;
-                else
-                    Attributes &= ~FieldAttributes.Required;
-            }
+            get { return (Attributes & InternalFieldAttributes.Required) != 0; }
         }
 
         /// <summary>

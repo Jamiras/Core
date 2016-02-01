@@ -1,23 +1,21 @@
-﻿
+﻿using System;
+
 namespace Jamiras.DataModels.Metadata
 {
     public class StringFieldMetadata : FieldMetadata
     {
-        public StringFieldMetadata(string fieldName, int maxLength, FieldAttributes attributes)
-            : this(fieldName, maxLength)
-        {
-            Attributes = attributes;
-        }
-
-        public StringFieldMetadata(string fieldName, int maxLength)
-            : base(fieldName, typeof(string))
+        public StringFieldMetadata(string fieldName, int maxLength, StringFieldAttributes attributes = StringFieldAttributes.None)
+            : base(fieldName, (InternalFieldAttributes)attributes)
         {
             MaxLength = maxLength;
         }
 
         public int MaxLength { get; private set; }
 
-        public bool IsMultiline { get; set; }
+        public bool IsMultiline
+        {
+            get { return (((int)Attributes & (int)StringFieldAttributes.Multiline) != 0); }
+        }
 
         public override string Validate(ModelBase model, object value)
         {
@@ -27,5 +25,13 @@ namespace Jamiras.DataModels.Metadata
 
             return base.Validate(model, value);
         }
+    }
+
+    [Flags]
+    public enum StringFieldAttributes
+    {
+        None = 0,
+        Required = (int)InternalFieldAttributes.Required,
+        Multiline = (int)InternalFieldAttributes.Custom1,
     }
 }

@@ -4,13 +4,13 @@ namespace Jamiras.DataModels.Metadata
 {
     public class IntegerFieldMetadata : FieldMetadata
     {
-        protected IntegerFieldMetadata(string fieldName, FieldAttributes attributes = FieldAttributes.None)
-            : this(fieldName, 0, Int32.MaxValue, attributes)
+        internal IntegerFieldMetadata(string fieldName, InternalFieldAttributes attributes)
+            : this(fieldName, 0, Int32.MaxValue, (FieldAttributes)attributes)
         {
         }
 
         public IntegerFieldMetadata(string fieldName, int minValue, int maxValue, FieldAttributes attributes = FieldAttributes.None)
-            : base(fieldName, typeof(int), attributes)
+            : base(fieldName, (InternalFieldAttributes)attributes)
         {
             MinimumValue = minValue;
             MaximumValue = maxValue;

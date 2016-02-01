@@ -1,10 +1,9 @@
-﻿
-namespace Jamiras.DataModels.Metadata
+﻿namespace Jamiras.DataModels.Metadata
 {
     public class AutoIncrementFieldMetadata : IntegerFieldMetadata
     {
         public AutoIncrementFieldMetadata(string fieldName)
-            : base(fieldName, FieldAttributes.GeneratedByCreate | FieldAttributes.RefreshAfterCommit | FieldAttributes.PrimaryKey)
+            : base(fieldName, InternalFieldAttributes.GeneratedByCreate | InternalFieldAttributes.RefreshAfterCommit | InternalFieldAttributes.PrimaryKey)
         {
         }
     }

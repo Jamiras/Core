@@ -155,7 +155,7 @@ namespace Jamiras.Core.Tests.ViewModels
         private class TestFieldMetadata : FieldMetadata
         {
             public TestFieldMetadata()
-                : base("Text", typeof(string))
+                : base("Text")
             {
             }
 

@@ -120,7 +120,6 @@ namespace Jamiras.Controls
             private bool _isHeading;
             private bool _isLink;
             private bool _isRedirectedLink;
-            private bool _isColor;
             private bool _isNewLine;
             private Tokenizer _tokenizer;
 

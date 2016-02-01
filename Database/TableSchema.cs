@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using Jamiras.DataModels.Metadata;
+using Jamiras.ViewModels.Converters;
 
 namespace Jamiras.Database
 {
@@ -34,12 +35,6 @@ namespace Jamiras.Database
                 _columns = value;
                 _tableName = GetTableName(_columns.First().FieldName);
             }
-        }
-
-        public IEnumerable<JoinDefinition> Joins
-        {
-            get { return _joins; }
-            protected set { _joins = value; }
         }
     }
 }

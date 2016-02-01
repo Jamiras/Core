@@ -158,7 +158,7 @@ namespace Jamiras.Database
         /// <returns>The query string.</returns>
         public string BuildQueryString(QueryBuilder query)
         {
-            return AccessDatabaseQuery.BuildQueryString(query);
+            return AccessDatabaseQuery.BuildQueryString(query, Schema);
         }
 
         /// <summary>

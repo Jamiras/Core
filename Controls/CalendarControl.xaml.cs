@@ -57,10 +57,6 @@ namespace Jamiras.Controls
 
         private static void SelectedMonthChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
         {
-            var calendar = (CalendarControl)sender;
-            if (calendar.SelectedDay > GetDaysInMonth(calendar.SelectedMonth, calendar.SelectedYear))
-                calendar.SelectedDay = GetDaysInMonth(calendar.SelectedMonth, calendar.SelectedYear);
-
             ((CalendarControl)sender).UpdateMonth();
         }
 
@@ -84,6 +80,10 @@ namespace Jamiras.Controls
 
                 if (SelectedDay != 0)
                 {
+                    int daysInMonth = GetDaysInMonth(SelectedMonth, SelectedYear);
+                    if (SelectedDay > daysInMonth)
+                        SelectedDay = daysInMonth;
+
                     date = new DateTime(SelectedYear, SelectedMonth, SelectedDay);
                     var day = days.FirstOrDefault(d => d.Date == date);
                     if (day != null)

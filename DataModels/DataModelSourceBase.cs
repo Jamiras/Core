@@ -435,7 +435,7 @@ namespace Jamiras.DataModels
                     return ModelProperty.GetPropertyForKey(kvp.Key);
 
                 var fkMetadata = kvp.Value as ForeignKeyFieldMetadata;
-                if (fkMetadata != null && fkMetadata.RelatedFieldName == fieldName)
+                if (fkMetadata != null && fkMetadata.RelatedField.FieldName == fieldName)
                     return ModelProperty.GetPropertyForKey(kvp.Key);
             }
 

@@ -18,11 +18,10 @@ namespace Jamiras.DataModels.Metadata
         /// </summary>
         protected DatabaseModelMetadata()
         {
-            _tableMetadata = EmptyTinyDictionary<string, List<int>>.Instance;
+            _tableMetadata = EmptyTinyDictionary<string, ITinyDictionary<ForeignKeyFieldMetadata, List<int>>>.Instance;
         }
 
-        private ITinyDictionary<string, List<int>> _tableMetadata;
-        private List<JoinDefinition> _joins;
+        private ITinyDictionary<string, ITinyDictionary<ForeignKeyFieldMetadata, List<int>>> _tableMetadata;
         private string _queryString;
         private static int _nextKey = -100;
 
@@ -61,20 +60,40 @@ namespace Jamiras.DataModels.Metadata
         /// <param name="metadata">Metadata for the field.</param>
         protected override sealed void RegisterFieldMetadata(ModelProperty property, FieldMetadata metadata)
         {
+            RegisterFieldMetadata(property, metadata, null);
+        }
+
+        /// <summary>
+        /// Registers metadata for a <see cref="ModelProperty"/>.
+        /// </summary>
+        /// <param name="property">Property to register metadata for.</param>
+        /// <param name="metadata">Metadata for the field on the related object.</param>
+        /// <param name="viaForeignKey">Metadata for the ForeignKey column on the primary object that maps to the related object.</param>
+        protected void RegisterFieldMetadata(ModelProperty property, FieldMetadata metadata, ForeignKeyFieldMetadata viaForeignKey)
+        {
             base.RegisterFieldMetadata(property, metadata);
 
-            if ((metadata.Attributes & FieldAttributes.PrimaryKey) != 0 && PrimaryKeyProperty == null)
+            if ((metadata.Attributes & InternalFieldAttributes.PrimaryKey) != 0 && PrimaryKeyProperty == null)
                 PrimaryKeyProperty = property;
 
             var tableName = GetTableName(metadata.FieldName);
 
-            List<int> tableMetadata;
+            ITinyDictionary<ForeignKeyFieldMetadata, List<int>> tableMetadata;
             if (!_tableMetadata.TryGetValue(tableName, out tableMetadata))
             {
-                tableMetadata = new List<int>();
+                tableMetadata = EmptyTinyDictionary<ForeignKeyFieldMetadata, List<int>>.Instance;
                 _tableMetadata = _tableMetadata.AddOrUpdate(tableName, tableMetadata);
             }
-            tableMetadata.Add(property.Key);
+
+            List<int> tableProperties;
+            if (!tableMetadata.TryGetValue(viaForeignKey, out tableProperties))
+            {
+                tableProperties = new List<int>();
+                tableMetadata = tableMetadata.AddOrUpdate(viaForeignKey, tableProperties);
+                _tableMetadata.AddOrUpdate(tableName, tableMetadata);
+            }
+
+            tableProperties.Add(property.Key);
 
             _queryString = null;
         }
@@ -83,87 +102,29 @@ namespace Jamiras.DataModels.Metadata
         {
             joinProperty = null;
 
-            if (relatedTableName != primaryTableName)
-            {
-                if (_joins == null)
-                    _joins = DetermineJoins(database);
+            var join = database.Schema.GetJoin(primaryTableName, relatedTableName);
+            if (join.JoinType == JoinType.None)
+                return null;
 
-                foreach (var join in _joins)
+            ITinyDictionary<ForeignKeyFieldMetadata, List<int>> tableMetadata;
+            if (_tableMetadata.TryGetValue(primaryTableName, out tableMetadata))
+            {
+                foreach (var kvp in tableMetadata)
                 {
-                    if (GetTableName(join.RemoteKeyFieldName) == relatedTableName)
+                    foreach (var propertyKey in kvp.Value)
                     {
-                        List<int> propertyKeys;
-                        if (_tableMetadata.TryGetValue(primaryTableName, out propertyKeys))
+                        var property = ModelProperty.GetPropertyForKey(propertyKey);
+                        var fieldMetadata = GetFieldMetadata(property);
+                        if (fieldMetadata.FieldName == join.LocalKeyFieldName)
                         {
-                            foreach (var propertyKey in propertyKeys)
-                            {
-                                var property = ModelProperty.GetPropertyForKey(propertyKey);
-                                var fieldMetadata = GetFieldMetadata(property);
-                                if (fieldMetadata.FieldName == join.LocalKeyFieldName)
-                                {
-                                    joinProperty = property;
-                                    return join.RemoteKeyFieldName;
-                                }
-                            }
+                            joinProperty = property;
+                            return join.RemoteKeyFieldName;
                         }
                     }
                 }
             }
 
             return null;
-        }
-
-        private List<JoinDefinition> DetermineJoins(IDatabase database)
-        {
-            var joins = new List<JoinDefinition>();
-            if (PrimaryKeyProperty == null)
-                return joins;
-
-            var primaryKeyMetadata = GetFieldMetadata(PrimaryKeyProperty);
-            var primaryTableName = GetTableName(primaryKeyMetadata.FieldName);
-            var relatedTables = new List<string>();
-            relatedTables.Add(primaryTableName);
-
-            var primaryTableSchema = database.Schema.GetTableSchema(primaryTableName);
-
-            foreach (var fieldMetadata in AllFieldMetadata.Values)
-            {
-                var relatedTableName = GetTableName(fieldMetadata.FieldName);
-                if (relatedTables.Contains(relatedTableName))
-                    continue;
-
-                bool foundJoin = false;
-                foreach (var join in primaryTableSchema.Joins)
-                {
-                    if (GetTableName(join.RemoteKeyFieldName) == relatedTableName)
-                    {
-                        relatedTables.Add(relatedTableName);
-                        joins.Add(join);
-                        foundJoin = true;
-                        break;
-                    }
-                }
-
-                if (!foundJoin)
-                {
-                    var remoteTable = database.Schema.GetTableSchema(relatedTableName);
-                    foreach (var join in remoteTable.Joins)
-                    {
-                        if (join.RemoteKeyFieldName == primaryKeyMetadata.FieldName)
-                        {
-                            relatedTables.Add(relatedTableName);
-                            joins.Add(new JoinDefinition(join.RemoteKeyFieldName, join.LocalKeyFieldName, join.JoinType));
-                            foundJoin = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (!foundJoin)
-                    throw new InvalidOperationException("Cannot determine relationship between " + primaryTableName + " and " + relatedTableName);
-            }
-
-            return joins;
         }
 
         /// <summary>
@@ -250,16 +211,48 @@ namespace Jamiras.DataModels.Metadata
         internal QueryBuilder BuildQueryExpression(IDatabase database)
         {
             var query = new QueryBuilder();
-            foreach (var metadata in AllFieldMetadata.Values)
-                query.Fields.Add(metadata.FieldName);
 
-            if (_joins == null)
-                _joins = DetermineJoins(database);
-
-            if (_joins != null)
+            var aliases = new Dictionary<FieldMetadata, string>();
+            foreach (var kvp in _tableMetadata)
             {
-                foreach (var join in _joins)
-                    query.Joins.Add(join);
+                if (kvp.Value.Count == 1 && !kvp.Value.ContainsKey(null))
+                {
+                    // only one relationship to table via a foreign key, no need to alias, just force the join
+                    var relatedField = kvp.Value.Keys.First();
+                    query.Joins.Add(new JoinDefinition(relatedField.FieldName, relatedField.RelatedField.FieldName));
+                }
+                else
+                {
+                    int index = 2;
+                    foreach (var kvp2 in kvp.Value)
+                    {
+                        if (kvp2.Key != null)
+                        {
+                            var tableName = kvp.Key;
+                            var alias = tableName + index;
+                            index++;
+                            query.Aliases.Add(new AliasDefinition(alias, tableName));
+
+                            var aliasedField = alias + kvp2.Key.RelatedField.FieldName.Substring(tableName.Length);
+                            query.Joins.Add(new JoinDefinition(kvp2.Key.FieldName, aliasedField));
+
+                            foreach (var propertyKey in kvp2.Value)
+                            {
+                                var metadata = GetFieldMetadata(ModelProperty.GetPropertyForKey(propertyKey));
+                                aliases[metadata] = alias + metadata.FieldName.Substring(tableName.Length);
+                            }
+                        }
+                    }
+                }
+            }
+
+            foreach (var metadata in AllFieldMetadata.Values)
+            {
+                string fieldName;
+                if (!aliases.TryGetValue(metadata, out fieldName))
+                    fieldName = metadata.FieldName;
+
+                query.Fields.Add(fieldName);
             }
 
             CustomizeQuery(query);
@@ -311,26 +304,26 @@ namespace Jamiras.DataModels.Metadata
             if (fieldMetadata is IntegerFieldMetadata)
                 return query.GetInt32(index);
 
-            if (fieldMetadata is StringFieldMetadata || fieldMetadata.Type == typeof(string))
+            if (fieldMetadata is StringFieldMetadata)
                 return query.GetString(index);
 
-            if (fieldMetadata.Type == typeof(int))
-                return query.GetInt32(index);
-
-            if (fieldMetadata.Type == typeof(double))
+            if (fieldMetadata is DoubleFieldMetadata)
                 return Convert.ToDouble(query.GetFloat(index));
 
-            if (fieldMetadata.Type == typeof(float))
+            if (fieldMetadata is FloatFieldMetadata)
                 return query.GetFloat(index);
 
-            if (fieldMetadata.Type == typeof(DateTime))
+            if (fieldMetadata is DateTimeFieldMetadata)
                 return query.GetDateTime(index);
 
-            if (fieldMetadata.Type == typeof(bool))
+            if (fieldMetadata is BooleanFieldMetadata)
                 return query.GetBool(index);
 
-            if (fieldMetadata.Type == typeof(byte))
-                return query.GetByte(index);
+            if (fieldMetadata.GetType().IsGenericType && fieldMetadata.GetType().GetGenericTypeDefinition() == typeof(EnumFieldMetadata<>))
+                return query.GetInt32(index);
+
+            //if (fieldMetadata.Type == typeof(byte))
+            //    return query.GetByte(index);
 
             throw new NotSupportedException(fieldMetadata.GetType().Name);
         }
@@ -346,9 +339,6 @@ namespace Jamiras.DataModels.Metadata
         {
             if (fieldMetadata.Converter != null)
                 fieldMetadata.Converter.ConvertBack(ref databaseValue);
-
-            if (fieldMetadata is ForeignKeyFieldMetadata && databaseValue == null && property.PropertyType == typeof(int))
-                return 0;
 
             if (property.PropertyType == typeof(Date))
             {
@@ -386,7 +376,7 @@ namespace Jamiras.DataModels.Metadata
                 if (date.IsEmpty)
                     return null;
 
-                if (fieldMetadata.Type == typeof(DateTime))
+                if (fieldMetadata is DateTimeFieldMetadata)
                     return new DateTime(date.Year, date.Month, date.Day);
 
                 return date.ToDataString();
@@ -515,7 +505,9 @@ namespace Jamiras.DataModels.Metadata
             {
                 var enumerator = _tableMetadata.GetEnumerator();
                 enumerator.MoveNext();
-                return CreateRow(model, database, enumerator.Current.Key, enumerator.Current.Value, null, null);
+                var aliases = enumerator.Current.Value;
+                if (aliases.Count == 1)
+                    return CreateRow(model, database, enumerator.Current.Key, aliases.Values.First(), null, null);
             }
 
             string primaryTable = null;
@@ -524,11 +516,15 @@ namespace Jamiras.DataModels.Metadata
                 var fieldMetadata = GetFieldMetadata(PrimaryKeyProperty);
                 primaryTable = GetTableName(fieldMetadata.FieldName);
 
-                List<int> tablePropertyKeys;
-                if (_tableMetadata.TryGetValue(primaryTable, out tablePropertyKeys))
+                ITinyDictionary<ForeignKeyFieldMetadata, List<int>> tableMetadata;
+                if (_tableMetadata.TryGetValue(primaryTable, out tableMetadata))
                 {
-                    if (!CreateRow(model, database, primaryTable, tablePropertyKeys, null, null))
-                        return false;
+                    List<int> tablePropertyKeys;
+                    if (tableMetadata.TryGetValue(null, out tablePropertyKeys))
+                    {
+                        if (!CreateRow(model, database, primaryTable, tablePropertyKeys, null, null))
+                            return false;
+                    }
                 }
             }
 
@@ -540,8 +536,14 @@ namespace Jamiras.DataModels.Metadata
                 ModelProperty joinProperty;
                 string joinFieldName = GetJoin(database, primaryTable, kvp.Key, out joinProperty);
 
-                if (!CreateRow(model, database, kvp.Key, kvp.Value, joinProperty, joinFieldName))
-                    return false;
+                List<int> tablePropertyKeys;
+                if (kvp.Value.TryGetValue(null, out tablePropertyKeys))
+                {
+                    if (!CreateRow(model, database, kvp.Key, tablePropertyKeys, joinProperty, joinFieldName))
+                        return false;
+                }
+
+                // TODO: support updating related tables joined on arbitrary foreign keys
             }
 
             return true;
@@ -556,7 +558,7 @@ namespace Jamiras.DataModels.Metadata
             {
                 var property = ModelProperty.GetPropertyForKey(propertyKey);
                 var fieldMetadata = GetFieldMetadata(property);
-                if ((fieldMetadata.Attributes & FieldAttributes.GeneratedByCreate) == 0)
+                if ((fieldMetadata.Attributes & InternalFieldAttributes.GeneratedByCreate) == 0)
                 {
                     if (onlyDefaults && model.GetValue(property) != property.DefaultValue)
                         onlyDefaults = false;
@@ -564,7 +566,7 @@ namespace Jamiras.DataModels.Metadata
                     properties.Add(property);
                 }
 
-                if ((fieldMetadata.Attributes & FieldAttributes.RefreshAfterCommit) != 0)
+                if ((fieldMetadata.Attributes & InternalFieldAttributes.RefreshAfterCommit) != 0)
                     refreshProperties.Add(property);
             }
 
@@ -678,7 +680,7 @@ namespace Jamiras.DataModels.Metadata
                 {
                     var fieldName = fieldMetadata.FieldName;
                     if (fieldName.Length < tableName.Length + 1 || fieldName[tableName.Length] != '.' || !fieldName.StartsWith(tableName))
-                        fieldName = foreignKeyMetadata.RelatedFieldName;
+                        fieldName = foreignKeyMetadata.RelatedField.FieldName;
 
                     builder.Append(fieldName);
                 }
@@ -735,14 +737,18 @@ namespace Jamiras.DataModels.Metadata
             {
                 if (kvp.Key == primaryTable)
                 {
-                    if (!UpdateRow(model, database, kvp.Key, kvp.Value, PrimaryKeyProperty, primaryKeyFieldName))
+                    List<int> tablePropertyKeys;
+                    if (kvp.Value.TryGetValue(null, out tablePropertyKeys))
                     {
-                        var metadata = GetFieldMetadata(PrimaryKeyProperty);
-                        if (!(metadata is ForeignKeyFieldMetadata))
-                            return false;
+                        if (!UpdateRow(model, database, kvp.Key, tablePropertyKeys, PrimaryKeyProperty, primaryKeyFieldName))
+                        {
+                            var metadata = GetFieldMetadata(PrimaryKeyProperty);
+                            if (!(metadata is ForeignKeyFieldMetadata))
+                                return false;
 
-                        if (!CreateRow(model, database, kvp.Key, kvp.Value, null, null))
-                            return false;
+                            if (!CreateRow(model, database, kvp.Key, tablePropertyKeys, null, null))
+                                return false;
+                        }
                     }
                 }
                 else
@@ -752,11 +758,17 @@ namespace Jamiras.DataModels.Metadata
                     if (joinFieldName == null)
                         throw new InvalidOperationException("Cannot determine relationship between " + primaryTable + " and " + kvp.Key);
 
-                    if (!UpdateRow(model, database, kvp.Key, kvp.Value, joinProperty, joinFieldName) &&
-                        !CreateRow(model, database, kvp.Key, kvp.Value, joinProperty, joinFieldName))
+                    List<int> tablePropertyKeys;
+                    if (kvp.Value.TryGetValue(null, out tablePropertyKeys))
                     {
-                        return false;
+                        if (!UpdateRow(model, database, kvp.Key, tablePropertyKeys, joinProperty, joinFieldName) &&
+                            !CreateRow(model, database, kvp.Key, tablePropertyKeys, joinProperty, joinFieldName))
+                        {
+                            return false;
+                        }
                     }
+
+                    // TODO: support updating related data on arbitrary foreign key joins
                 }
             }
 
@@ -824,7 +836,7 @@ namespace Jamiras.DataModels.Metadata
             {
                 var property = ModelProperty.GetPropertyForKey(propertyKey);
                 var fieldMetadata = GetFieldMetadata(property);
-                if ((fieldMetadata.Attributes & FieldAttributes.RefreshAfterCommit) != 0)
+                if ((fieldMetadata.Attributes & InternalFieldAttributes.RefreshAfterCommit) != 0)
                 {
                     refreshProperties.Add(property);
                     break;

@@ -66,6 +66,10 @@ namespace Jamiras.DataModels
             if (metadata == null)
                 throw new ArgumentException("No metadata registered for " + typeof(T).FullName);
 
+            var collectionMetadata = metadata as IDataModelCollectionMetadata;
+            if (collectionMetadata != null)
+                throw new ArgumentException("Cannot create new collection for " + typeof(T).FullName + ". Use Query<> method.");
+
             _logger.Write("Creating {0}", typeof(T).Name);
 
             var model = new T();
