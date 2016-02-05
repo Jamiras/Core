@@ -108,7 +108,7 @@
                                                               MaxLength="{Binding MaxLength}"
                                                               Suggestions="{Binding Suggestions}"
                                                               SelectedId="{Binding SelectedId}"
-                                                              Text="{Binding Text}" MinWidth="100" />
+                                                              AutoCompleteText="{Binding Text}" MinWidth="100" />
                             </DataTemplate>
 
                             <DataTemplate DataType="{x:Type grid:GridRowCommandsViewModel}">

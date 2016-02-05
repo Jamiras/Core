@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using Jamiras.ViewModels;
@@ -14,6 +13,10 @@ namespace Jamiras.Controls
     /// <summary>
     /// Interaction logic for AutoCompleteTextBox.xaml
     /// </summary>
+    /// <remarks>
+    /// Bind directly to the <see cref="Text"/> property for drop down suggestions.
+    /// Bind to the <see cref="AutoCompleteText"/> property for auto-complete suggestions.
+    /// </remarks>
     public partial class AutoCompleteTextBox : TextBox
     {
         static AutoCompleteTextBox()
@@ -41,15 +44,65 @@ namespace Jamiras.Controls
         }
 
         private ListBox _suggestionsListBox;
+        private LookupItem _autoCompleteItem;
+        private string _remainingText;
+
+        public static readonly DependencyProperty AutoCompleteTextProperty =
+            DependencyProperty.Register("AutoCompleteText", typeof(string), typeof(AutoCompleteTextBox),
+                new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnAutoCompleteTextChanged));
+
+        public string AutoCompleteText
+        {
+            get { return (string)GetValue(AutoCompleteTextProperty); }
+            set { SetValue(AutoCompleteTextProperty, value); }
+        }
+
+        private static void OnAutoCompleteTextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            var textBox = (AutoCompleteTextBox)sender;
+            textBox.Text = (string)e.NewValue;
+        }
 
         protected override void OnTextChanged(TextChangedEventArgs e)
         {
             if (IsTyping)
             {
+                AutoCompleteText = Text;
                 SelectedId = 0;
                 IsTyping = false;
+
+                if (_autoCompleteItem != null)
+                    UpdateAutoCompleteText();
             }
+
             base.OnTextChanged(e);
+        }
+
+        private void UpdateAutoCompleteText()
+        {
+            var text = AutoCompleteText;
+            var textLength = AutoCompleteText.Length;
+            if (_autoCompleteItem.Label.Length > textLength)
+            {
+                if (!_autoCompleteItem.Label.StartsWith(text, StringComparison.OrdinalIgnoreCase))
+                    _autoCompleteItem = Suggestions.FirstOrDefault(s => s.Label.StartsWith(text, StringComparison.OrdinalIgnoreCase));
+
+                if (_autoCompleteItem != null)
+                {
+                    BeginChange();
+                    Text = text + _autoCompleteItem.Label.Substring(textLength);
+                    Select(textLength, _autoCompleteItem.Label.Length - textLength);
+                    EndChange();
+                }
+            }
+        }
+
+        private void ClearAutoCompleteText()
+        {
+            var caretIndex = CaretIndex;
+            _autoCompleteItem = null;
+            Text = AutoCompleteText;
+            CaretIndex = caretIndex;
         }
 
         public static readonly DependencyProperty SelectedIdProperty =
@@ -119,12 +172,30 @@ namespace Jamiras.Controls
         private static void OnSuggestionsChanged(DependencyObject source, DependencyPropertyChangedEventArgs e)
         {
             var textBox = ((AutoCompleteTextBox)source);
+            textBox._autoCompleteItem = null;
+
             if (textBox.IsLoaded)
             {
                 if (e.NewValue != null && ((IEnumerable<LookupItem>)e.NewValue).Any())
                 {
                     textBox.HasSuggestions = true;
-                    textBox.IsPopupOpen = textBox.IsKeyboardFocusWithin;
+
+                    int caretIndex = textBox.CaretIndex;
+                    if (textBox.GetBindingExpression(AutoCompleteTextProperty) == null)
+                    {
+                        // not autocomplete, show suggestions
+                        textBox.IsPopupOpen = textBox.IsKeyboardFocusWithin;
+                    }
+                    else if (textBox._remainingText != textBox.Text)
+                    {
+                        textBox._autoCompleteItem = ((IEnumerable<LookupItem>)e.NewValue).FirstOrDefault(i => i.Label.StartsWith(textBox.Text, StringComparison.OrdinalIgnoreCase));
+                        if (textBox._autoCompleteItem != null)
+                            textBox.UpdateAutoCompleteText();
+                        else
+                            textBox.IsPopupOpen = textBox.IsKeyboardFocusWithin;
+                    }
+
+                    textBox._remainingText = null;
                 }
                 else
                 {
@@ -140,10 +211,21 @@ namespace Jamiras.Controls
             base.OnGotFocus(e);
         }
 
+        protected override void OnLostFocus(RoutedEventArgs e)
+        {
+            IsTyping = false;
+
+            if (_autoCompleteItem != null && SelectionLength > 0)
+            {
+                SelectedId = _autoCompleteItem.Id;
+                _autoCompleteItem = null;
+            }
+
+            base.OnLostFocus(e);
+        }
+
         protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
-            IsTyping = true;
-
             if (_suggestionsListBox.IsKeyboardFocusWithin)
             {
                 switch (e.Key)
@@ -169,16 +251,28 @@ namespace Jamiras.Controls
                             e.Handled = true;
                         }
                         break;
+
+                    case Key.Up:
+                        if (_suggestionsListBox.SelectedIndex == 0)
+                            goto case Key.Escape;
+                        break;
                 }
             }
             else
             {
+                IsTyping = true;
+
                 switch (e.Key)
                 {
                     case Key.Escape:
                         if (IsPopupOpen)
                         {
                             IsPopupOpen = false;
+                            e.Handled = true;
+                        }
+                        else if (_autoCompleteItem != null)
+                        {
+                            ClearAutoCompleteText();
                             e.Handled = true;
                         }
                         break;
@@ -198,8 +292,32 @@ namespace Jamiras.Controls
                         }
                         else
                         {
+                            if (_autoCompleteItem != null)
+                                ClearAutoCompleteText();
+
                             IsPopupOpen = true;
                         }
+                        break;
+
+                    case Key.Back:
+                        // default behavior is to only delete the selection. since the selection 
+                        // indicates the potential auto-complete target, it's not actually part
+                        // of the text yet. modify the selection to include one extra character
+                        // so deleting the selection also deletes the last "real" character. also
+                        // clear the _autoCompleteItem so we don't automatically repopulate from it.
+                        if (_autoCompleteItem != null && SelectionStart > 0 && SelectionLength > 0)
+                        {
+                            Select(SelectionStart - 1, SelectionLength + 1);
+                            _autoCompleteItem = null;
+                            _remainingText = Text.Substring(0, SelectionStart) + Text.Substring(SelectionStart + SelectionLength);
+                        }
+                        break;
+
+                    case Key.Delete:
+                        // just disable autocomplete - the base class will clear out the selected
+                        // portion, leaving the non-autocomplete part of the input
+                        _autoCompleteItem = null;
+                        _remainingText = Text.Substring(0, SelectionStart) + Text.Substring(SelectionStart + SelectionLength);
                         break;
                 }
             }
@@ -229,7 +347,7 @@ namespace Jamiras.Controls
                 if (textFieldViewModel != null)
                     textFieldViewModel.SetText(item.Label);
                 else
-                    Text = item.Label;
+                    AutoCompleteText = item.Label;
 
                 SelectAll();
 

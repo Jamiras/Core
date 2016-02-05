@@ -376,6 +376,8 @@ namespace Jamiras.Components
             return token.Split(separator, options);
         }
 
+        public static char[] WordSeparators = new[] { ' ', '(', ')', ',', '.', '!', ';', '[', ']' };
+
         /// <summary>
         /// Gets the <paramref name="count"/> longest words from <paramref name="input"/>
         /// </summary>
@@ -386,7 +388,7 @@ namespace Jamiras.Components
 
             string[] ignoreWords = { "a", "an", "in", "it", "of", "on", "or", "the", "to" };
 
-            foreach (var word in Tokenizer.Split(input, new char[] { ' ', '(', ')', ',', '.', '!', ';' }, StringSplitOptions.RemoveEmptyEntries))
+            foreach (var word in Tokenizer.Split(input, WordSeparators, StringSplitOptions.RemoveEmptyEntries))
             {
                 if (word.Length <= 3 && ignoreWords.Any(w => word.CompareTo(w, StringComparison.OrdinalIgnoreCase) == 0))
                     continue;

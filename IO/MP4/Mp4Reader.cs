@@ -102,27 +102,56 @@ namespace Jamiras.IO.MP4
                 remaining -= size;
             }
 
-            block = _blocks.Find(b => b.Tag == "moov.udta.Xtra");
-            reader.BaseStream.Seek(block.Address + 8, SeekOrigin.Begin);
-            remaining = block.Size - 8;
-            while (remaining > 0)
+            block = _blocks.Find(b => b.Tag == "moov.udta.tags.meta");
+            if (block.Size > 0)
             {
-                var tagsize = ReadUInt32(reader);
-                var keysize = ReadUInt32(reader);
-                var buffer = new byte[keysize];
-                reader.Read(buffer, 0, (int)keysize);
-                var key = Encoding.UTF8.GetString(buffer);
-                var tag = GetWMTag(key);
+                reader.BaseStream.Seek(block.Address + 8, SeekOrigin.Begin);
+                var count = ReadUInt32(reader);
+                while (count-- > 0)
+                {
+                    reader.ReadByte(); // flag?
+                    var keysize = (reader.ReadByte() << 8) | reader.ReadByte();
+                    var buffer = new byte[keysize];
+                    reader.Read(buffer, 0, keysize);
+                    var key = Encoding.UTF8.GetString(buffer);
+                    var tag = GetExtendedTag(key);
 
-                reader.BaseStream.Seek(10, SeekOrigin.Current); // skip flags
-                buffer = new byte[tagsize - keysize - 8 - 10];
-                reader.Read(buffer, 0, buffer.Length);
-                var value = Encoding.Unicode.GetString(buffer, 0, buffer.Length - 2); // expect null terminated
+                    reader.ReadByte(); // flag?
+                    reader.ReadByte(); // flag?
+                    var valuesize = ReadUInt32(reader);
+                    buffer = new byte[valuesize];
+                    reader.Read(buffer, 0, buffer.Length);
+                    var value = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
 
-                if (tag != Mp4Tag.None)
-                    _tags.Add(tag, value);
+                    if (tag != Mp4Tag.None)
+                        _tags[tag] = value;
+                }
+            }
 
-                remaining -= tagsize;
+            block = _blocks.Find(b => b.Tag == "moov.udta.Xtra");
+            if (block.Size > 0)
+            {
+                reader.BaseStream.Seek(block.Address + 8, SeekOrigin.Begin);
+                remaining = block.Size - 8;
+                while (remaining > 0)
+                {
+                    var tagsize = ReadUInt32(reader);
+                    var keysize = ReadUInt32(reader);
+                    var buffer = new byte[keysize];
+                    reader.Read(buffer, 0, (int)keysize);
+                    var key = Encoding.UTF8.GetString(buffer);
+                    var tag = GetWMTag(key);
+
+                    reader.BaseStream.Seek(10, SeekOrigin.Current); // skip flags
+                    buffer = new byte[tagsize - keysize - 8 - 10];
+                    reader.Read(buffer, 0, buffer.Length);
+                    var value = Encoding.Unicode.GetString(buffer, 0, buffer.Length - 2); // expect null terminated
+
+                    if (tag != Mp4Tag.None)
+                        _tags[tag] = value;
+
+                    remaining -= tagsize;
+                }
             }
         }
 
@@ -158,6 +187,30 @@ namespace Jamiras.IO.MP4
 
                 default:
                     throw new NotImplementedException("No mapping for " + type);
+            }
+        }
+
+        private static Mp4Tag GetExtendedTag(string key)
+        {
+            foreach (Mp4Tag tag in Enum.GetValues(typeof(Mp4Tag)))
+            {
+                if (GetExtendedTag(tag) == key)
+                    return tag;
+            }
+
+            return Mp4Tag.None;
+        }
+
+        internal static string GetExtendedTag(Mp4Tag type)
+        {
+            switch (type)
+            {
+                case Mp4Tag.TvEpisode:
+                    return "tvepisode";
+                case Mp4Tag.TvSeason:
+                    return "tvseason";
+                default: 
+                    return null;
             }
         }
 

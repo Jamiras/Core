@@ -25,12 +25,46 @@ namespace Jamiras.ViewModels.Fields
         private string _searchText;
         private bool _searchDisabled, _searchPending;
 
+        private static System.Timers.Timer _searchTimer;
+        private static Action _searchTimerCallback;
+
         protected override void OnModelPropertyChanged(ModelPropertyChangedEventArgs e)
         {
             if (e.Property == TextFieldViewModel.TextProperty && !_searchDisabled)
+            {
+                if (!_searchPending && IsTextBindingDelayed)
+                {
+                    lock (typeof(TextFieldViewModel))
+                    {
+                        if (_searchTimer == null)
+                        {
+                            _searchTimer = new System.Timers.Timer(300);
+                            _searchTimer.AutoReset = false;
+                            _searchTimer.Elapsed += SearchTimerElapsed;
+                        }
+                        _searchTimerCallback = PerformSearch;
+                        _searchTimer.Start();
+                    }
+                }
+
                 _searchPending = true;
+            }
 
             base.OnModelPropertyChanged(e);
+        }
+
+        private static void SearchTimerElapsed(object sender, EventArgs e)
+        {
+            Action callback = null;
+
+            lock (typeof(TextFieldViewModel))
+            {
+                callback = _searchTimerCallback;
+                _searchTimerCallback = null;
+            }
+
+            if (callback != null)
+                callback();
         }
 
         private void OnTextChanged(object sender, ModelPropertyChangedEventArgs e)

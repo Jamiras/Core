@@ -8,12 +8,13 @@
     <BooleanToVisibilityConverter x:Key="boolToVisConverter" />
 
     <DataTemplate x:Key="errorIconTemplate">
-        <Grid SnapsToDevicePixels="True" Margin="0,0,-8,0">
+        <Grid SnapsToDevicePixels="True" Margin="0,0,-8,0" Visibility="{Binding ElementName=placeHolder, Path=AdornedElement.Visiblity}">
             <Image Source="/Jamiras.Core;component/Resources/error10.png" 
                    RenderOptions.BitmapScalingMode="NearestNeighbor"
                    ToolTip="{Binding Path=(componentModel:IDataErrorInfo.Error)}"
                    HorizontalAlignment="Right" VerticalAlignment="Center"
                    SnapsToDevicePixels="True" Height="10" Width="10" />
+            <AdornedElementPlaceholder x:Name="placeHolder" />
         </Grid>
     </DataTemplate>
 
@@ -54,7 +55,7 @@
     </Style>
 
     <Style TargetType="{x:Type controls:AutoCompleteTextBox}" x:Key="autoCompleteFieldStyle">
-        <Setter Property="Text" Value="{Binding Text}" />
+        <Setter Property="AutoCompleteText" Value="{Binding Text}" />
         <Setter Property="Margin" Value="2,0,2,2" />
         <Setter Property="AutomationProperties.AutomationId" Value="{Binding Name}" />
         <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />

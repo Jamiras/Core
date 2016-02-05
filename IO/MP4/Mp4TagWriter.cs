@@ -13,6 +13,8 @@ namespace Jamiras.IO.MP4
         private const uint FREE_TAG = 0x66726565;
         private const uint DATA_TAG = 0x64617461;
         private const uint XTRA_TAG = 0x58747261;
+        private const uint META_TAG = 0x6D657461;
+        private const uint TAGS_TAG = 0x74616773;
 
         public Mp4TagWriter(string filePath)
             : base(filePath)
@@ -24,16 +26,22 @@ namespace Jamiras.IO.MP4
                 _originalTags[kvp.Key] = kvp.Value;
         }
 
-        /// <summary>
-        /// Commits any changes made to the Tags collection.
-        /// </summary>
-        public void Commit(Action<int> progressHandler = null)
+        private static bool ContainsNonDigit(string value)
         {
-            if (!TagsModified)
-                return;
+            foreach (var c in value)
+            {
+                if (!Char.IsDigit(c))
+                    return true;
+            }
 
+            return false;
+        }
+
+        private int CalculateSpaceNeeded()
+        {
             int spaceNeeded = 0;
             bool hasWmBlock = _blocks.Find(b => b.Tag == "moov.udta.Xtra").Size > 0;
+            bool hasExBlock = _blocks.Find(b => b.Tag == "moov.udta.tags.meta").Size > 0;
 
             foreach (var kvp in Tags)
             {
@@ -50,25 +58,56 @@ namespace Jamiras.IO.MP4
                 }
                 else
                 {
-                    spaceNeeded += 24;
-                    switch (GetDataType(kvp.Key))
+                    var exTag = GetExtendedTag(kvp.Key);
+                    if (!String.IsNullOrEmpty(exTag) && ContainsNonDigit(kvp.Value))
                     {
-                        case ItemListDataType.Utf8String:
-                            spaceNeeded += Encoding.UTF8.GetByteCount(kvp.Value);
-                            break;
-                        case ItemListDataType.Int32:
-                            spaceNeeded += 4;
-                            break;
-                        case ItemListDataType.Image:
-                            spaceNeeded += kvp.Value.Length * 3 / 4;
-                            break;
+                        if (!hasExBlock)
+                        {
+                            spaceNeeded += 20;
+                            hasExBlock = true;
+                        }
+
+                        spaceNeeded += 3 + Encoding.UTF8.GetByteCount(exTag) + 6 + Encoding.UTF8.GetByteCount(kvp.Value);
+                    }
+                    else
+                    {
+                        spaceNeeded += 24;
+                        switch (GetDataType(kvp.Key))
+                        {
+                            case ItemListDataType.Utf8String:
+                                spaceNeeded += Encoding.UTF8.GetByteCount(kvp.Value);
+                                break;
+                            case ItemListDataType.Int32:
+                                spaceNeeded += 4;
+                                break;
+                            case ItemListDataType.Image:
+                                spaceNeeded += kvp.Value.Length * 3 / 4;
+                                break;
+                        }
                     }
                 }
             }
 
+            return spaceNeeded;
+        }
+
+        /// <summary>
+        /// Commits any changes made to the Tags collection.
+        /// </summary>
+        public void Commit(Action<int> progressHandler = null)
+        {
+            if (!TagsModified)
+                return;
+
+            var spaceNeeded = CalculateSpaceNeeded();
+
             var xtraIndex = FindBlock(_blocks, "moov.udta.Xtra");
             if (xtraIndex >= 0)
                 spaceNeeded -= (int)_blocks[xtraIndex].Size;
+
+            var tagsIndex = FindBlock(_blocks, "moov.udta.tags");
+            if (tagsIndex >= 0)
+                spaceNeeded -= (int)_blocks[tagsIndex].Size;
 
             var ilstIndex = FindBlock(_blocks, "moov.udta.meta.ilst");
             spaceNeeded -= (int)_blocks[ilstIndex].Size;
@@ -76,6 +115,29 @@ namespace Jamiras.IO.MP4
             var freeIndex = ilstIndex + 1;
             while (freeIndex < _blocks.Count && _blocks[freeIndex].Tag.Length > 19)
                 freeIndex++;
+
+            if (freeIndex == tagsIndex)
+            {
+                while (_blocks[freeIndex].Tag.StartsWith("moov.udta.tags"))
+                    freeIndex++;
+
+                if (_blocks[freeIndex].Tag == "free")
+                {
+                    var freeBlock = _blocks[freeIndex];
+                    freeBlock.Address = _blocks[tagsIndex].Address;
+                    freeBlock.Size += _blocks[tagsIndex].Size;
+                    _blocks[freeIndex] = freeBlock;
+
+                    while (freeIndex > tagsIndex)
+                    {
+                        freeIndex--;
+                        _blocks.RemoveAt(freeIndex);
+
+                        if (xtraIndex > freeIndex)
+                            xtraIndex--;
+                    }
+                }
+            }
 
             if (freeIndex == xtraIndex)
             {
@@ -232,7 +294,7 @@ namespace Jamiras.IO.MP4
             }
         }
 
-        private void WriteTags(BinaryWriter writer)
+        private void WriteTags(BinaryWriter writer, IDictionary<string, string> exTags)
         {
             foreach (var kvp in Tags)
             {
@@ -243,14 +305,23 @@ namespace Jamiras.IO.MP4
                 switch (GetDataType(kvp.Key))
                 {
                     case ItemListDataType.Int32:
-                        bytes = new byte[4];
-                        uint intval;
-                        if (UInt32.TryParse(kvp.Value, out intval))
+                        var exTag = GetExtendedTag(kvp.Key);
+                        if (!String.IsNullOrEmpty(exTag) && ContainsNonDigit(kvp.Value))
                         {
-                            bytes[0] = (byte)(intval >> 24);
-                            bytes[1] = (byte)(intval >> 16);
-                            bytes[2] = (byte)(intval >> 8);
-                            bytes[3] = (byte)intval;
+                            exTags[exTag] = kvp.Value;
+                            bytes = new byte[4];
+                        }
+                        else
+                        {
+                            bytes = new byte[4];
+                            uint intval;
+                            if (UInt32.TryParse(kvp.Value, out intval))
+                            {
+                                bytes[0] = (byte)(intval >> 24);
+                                bytes[1] = (byte)(intval >> 16);
+                                bytes[2] = (byte)(intval >> 8);
+                                bytes[3] = (byte)intval;
+                            }
                         }
                         break;
 
@@ -322,15 +393,68 @@ namespace Jamiras.IO.MP4
             }
         }
 
+        private void CopyTagToExTags(Mp4Tag tag, string exTag, IDictionary<string, string> exTags)
+        {
+            string value;
+            if (!exTags.ContainsKey(exTag) && Tags.TryGetValue(tag, out value) && !String.IsNullOrEmpty(value))
+                exTags[exTag] = value;
+        }
+
+        private void WriteExTags(BinaryWriter writer, IDictionary<string, string> exTags)
+        {
+            if (exTags.Count == 0)
+                return;
+
+            CopyTagToExTags(Mp4Tag.Title, "title", exTags);
+            CopyTagToExTags(Mp4Tag.TvShowName, "tvshow", exTags);
+            CopyTagToExTags(Mp4Tag.TvSeason, "tvseason", exTags);
+            CopyTagToExTags(Mp4Tag.TvEpisode, "tvepisode", exTags);
+            CopyTagToExTags(Mp4Tag.ReleaseDate, "year", exTags);
+
+            long headerStart = writer.BaseStream.Position;
+            WriteUInt32(writer, 0);
+            WriteUInt32(writer, TAGS_TAG);
+            WriteUInt32(writer, 0);
+            WriteUInt32(writer, META_TAG);
+
+            WriteUInt32(writer, (uint)exTags.Count);
+            foreach (var kvp in exTags)
+            {
+                var bytes = Encoding.UTF8.GetBytes(kvp.Key);
+                writer.Write((byte)0x80);
+                writer.Write((byte)(bytes.Length >> 8));
+                writer.Write((byte)bytes.Length);
+                writer.Write(bytes);
+
+                bytes = Encoding.UTF8.GetBytes(kvp.Value);
+                writer.Write((byte)0);
+                writer.Write((byte)1);
+                WriteUInt32(writer, (uint)bytes.Length);
+                writer.Write(bytes);
+            }
+
+            uint metaSize = (uint)(writer.BaseStream.Position - headerStart - 8);
+
+           //writer.Write(new byte[] { 0, 0, 0, 20, 0x74, 0x73, 0x65, 0x67, 0, 0, 0, 12, 0x74, 0x73, 0x68, 0x64, 0, 0, 0, 0 });
+
+            uint blockSize = (uint)(writer.BaseStream.Position - headerStart);
+            writer.BaseStream.Position = headerStart;
+            WriteUInt32(writer, blockSize);
+            WriteUInt32(writer, TAGS_TAG);
+            WriteUInt32(writer, metaSize);
+            writer.BaseStream.Position = headerStart + blockSize;
+        }
+
         private void UpdateMetadataInPlace(int ilstIndex, int freeIndex)
         {
             using (var stream = File.Open(_path, FileMode.Open, FileAccess.ReadWrite))
             {
                 var writer = new BinaryWriter(stream);
+                var exTags = new TinyDictionary<string, string>();
 
                 // update the tags
                 stream.Seek(_blocks[ilstIndex].Address + 8, SeekOrigin.Begin);
-                WriteTags(writer);
+                WriteTags(writer, exTags);
 
                 // update the meta pointers
                 var writerPosition = stream.Position;
@@ -340,6 +464,9 @@ namespace Jamiras.IO.MP4
                 // update the WM tags
                 stream.Position = writerPosition;
                 WriteWmTags(writer);
+
+                // update the ex tags
+                WriteExTags(writer, exTags);
 
                 writerPosition = stream.Position;
 
@@ -410,12 +537,13 @@ namespace Jamiras.IO.MP4
                 using (var writeStream = File.Open(copyPath, FileMode.Create, FileAccess.ReadWrite))
                 {
                     var writer = new BinaryWriter(writeStream);
+                    var exTags = new TinyDictionary<string, string>();
 
                     // copy everything up to the ilist block header
                     Copy(reader, writer, _blocks[ilstIndex].Address + 8, progressHandler);
 
                     // generate a new ilist block
-                    WriteTags(writer);
+                    WriteTags(writer, exTags);
 
                     // update all the meta pointers
                     var writePosition = writeStream.Position;
@@ -425,6 +553,9 @@ namespace Jamiras.IO.MP4
                     // update the WM tags
                     writeStream.Position = writePosition;
                     WriteWmTags(writer);
+
+                    // update the ex tags
+                    WriteExTags(writer, exTags);
 
                     // update the outer container pointers
                     writePosition = writeStream.Position;

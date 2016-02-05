@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Jamiras.Database;
+using Jamiras.Components;
 
 namespace Jamiras.DataModels.Metadata
 {
@@ -57,21 +58,41 @@ namespace Jamiras.DataModels.Metadata
             if (models.Count < maxResults && primaryKeyString.IndexOf(' ') != -1)
             {
                 // second pass: replace whitespace with wildcards
-                var wildcardPrimaryKeyString = ConvertWhitespaceToWildcards(primaryKeyString);
+                var words = Tokenizer.GetLongestWords(primaryKeyString, 3);
+                if (words.Length == 0)
+                    return true;
+
+                var builder = new StringBuilder();
+                foreach (var word in words)
+                {
+                    builder.Append(word);
+                    builder.Append('%');
+                }
+                builder.Length--;
+
+                var wildcardPrimaryKeyString = builder.ToString();
                 if (!Query(models, maxResults, wildcardPrimaryKeyString, database))
                     return false;
 
                 if (models.Count < maxResults)
                 {
                     // third pass: search on individual terms in search text
-                    var words = wildcardPrimaryKeyString.Split('%');
-                    if (!Query(models, maxResults, words[0], database))
-                        return false;
-
-                    // always do Contains search for secondary words
-                    for (int i = 1; i < words.Length && models.Count < maxResults; i++)
+                    // if search type is startswith, check first word first
+                    if (words.Length > 1 && (_searchType == SearchType.StartsWith || _searchType == SearchType.StartsWithOrContains))
                     {
-                        var searchText = '%' + words[i] + '%';
+                        var searchText = words[0].ToString() + '%';
+                        if (!base.Query(models, maxResults, searchText, database))
+                            return false;
+                    }
+
+                    // then use contains search for all words, starting with the longest
+                    Array.Sort(words, (l, r) => r.Length - l.Length);
+                    foreach (var word in words)
+                    {
+                        if (maxResults - models.Count <= 0)
+                            break;
+
+                        var searchText = '%' + word.ToString() + '%';
                         if (!base.Query(models, maxResults - models.Count, searchText, database))
                             return false;
                     }
@@ -96,34 +117,6 @@ namespace Jamiras.DataModels.Metadata
             }
 
             return true;
-        }
-
-        private static string ConvertWhitespaceToWildcards(string primaryKeyString)
-        {
-            var builder = new StringBuilder(primaryKeyString.Length + 3);
-            bool atWhitespace = true;
-
-            foreach (var c in primaryKeyString)
-            {
-                if (Char.IsWhiteSpace(c))
-                {
-                    if (!atWhitespace)
-                    {
-                        atWhitespace = true;
-                        builder.Append('%');
-                    }
-                }
-                else
-                {
-                    builder.Append(c);
-                    atWhitespace = false;
-                }
-            }
-
-            if (atWhitespace)
-                builder.Length--;
-
-            return builder.ToString();
         }
 
         private string AddWildcards(string text)
