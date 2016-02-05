@@ -181,7 +181,7 @@ namespace Jamiras.Components
         /// </summary>
         public bool StartsWith(string value)
         {
-            if (value.Length < _length)
+            if (value.Length > _length)
                 return false;
 
             return String.Compare(_source, _start, value, 0, value.Length) == 0;
@@ -192,7 +192,7 @@ namespace Jamiras.Components
         /// </summary>
         public bool StartsWith(string value, StringComparison comparisonType)
         {
-            if (value.Length < _length)
+            if (value.Length > _length)
                 return false;
 
             return String.Compare(_source, _start, value, 0, value.Length, comparisonType) == 0;
@@ -203,7 +203,7 @@ namespace Jamiras.Components
         /// </summary>
         public bool EndsWith(string value)
         {
-            if (value.Length < _length)
+            if (value.Length > _length)
                 return false;
 
             return String.Compare(_source, _start + _length - value.Length, value, 0, value.Length) == 0;
@@ -214,7 +214,7 @@ namespace Jamiras.Components
         /// </summary>
         public bool EndsWith(string value, StringComparison comparisonType)
         {
-            if (value.Length < _length)
+            if (value.Length > _length)
                 return false;
 
             return String.Compare(_source, _start + _length - value.Length, value, 0, value.Length, comparisonType) == 0;
@@ -315,7 +315,7 @@ namespace Jamiras.Components
             if (start < 0 || start > _length)
                 throw new ArgumentOutOfRangeException("start");
 
-            return new Token(_source, _start + start, _length - _start);
+            return new Token(_source, _start + start, _length - start);
         }
 
         /// <summary>
