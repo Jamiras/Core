@@ -209,14 +209,16 @@ namespace Jamiras.IO.Serialization
                                 AppendLine(builder, currentIndent, indent);
                         }
 
-                        builder.Append(' ');
+                        if (indent == 0)
+                            builder.Append(' ');
+
                         nestedObject.AppendObject(builder, currentIndent, indent);
                     }
 
                     if (indent > 0)
                     {
-                        AppendLine(builder, currentIndent, indent);
                         currentIndent -= indent;
+                        AppendLine(builder, currentIndent, indent);
                     }
                     else
                     {

@@ -36,23 +36,23 @@ namespace Jamiras.Services
         None = 0,
 
         /// <summary>
-        /// Detailed logging is enabled.
+        /// Error logging is enabled.
         /// </summary>
-        Verbose = 1,
-
-        /// <summary>
-        /// General logging is enabled.
-        /// </summary>
-        General = 2,
+        Error = 1,
 
         /// <summary>
         /// Warning logging is enabled.
         /// </summary>
-        Warning = 3,
+        Warning = 2,
 
         /// <summary>
-        /// Error logging is enabled.
+        /// General logging is enabled.
         /// </summary>
-        Error = 4,
+        General = 3,
+
+        /// <summary>
+        /// Detailed logging is enabled.
+        /// </summary>
+        Verbose = 4,
     }
 }

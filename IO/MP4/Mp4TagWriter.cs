@@ -151,7 +151,7 @@ namespace Jamiras.IO.MP4
                 freeIndex--;
             }
 
-            if (_blocks[freeIndex].Tag == "free" && _blocks[freeIndex].Size - 8 > spaceNeeded)
+            if (freeIndex < _blocks.Count && _blocks[freeIndex].Tag == "free" && _blocks[freeIndex].Size - 8 > spaceNeeded)
                 UpdateMetadataInPlace(ilstIndex, freeIndex);
             else
                 UpdateMetadataInNewFile(ilstIndex, freeIndex, progressHandler);

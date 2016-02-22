@@ -38,9 +38,14 @@ namespace Jamiras.Components
             public override void Advance()
             {
                 if (_inputIndex < _input.Length)
+                {
                     NextChar = _input[_inputIndex++];
+                }
                 else
+                {
                     NextChar = '\0';
+                    _inputIndex = _input.Length + 1;
+                }
             }
 
             public override Token ReadQuotedString()
@@ -101,6 +106,7 @@ namespace Jamiras.Components
             {
                 _stream = input;
                 _bufferedChars = new List<char>();
+                Advance();
             }
 
             private readonly Stream _stream;

@@ -30,6 +30,9 @@ namespace Jamiras.Components
         /// </summary>
         public override string ToString()
         {
+            if (_length == 0)
+                return String.Empty;
+
             if (_start != 0 || _length != _source.Length)
             {
                 _source = _source.Substring(_start, _length);
@@ -41,7 +44,7 @@ namespace Jamiras.Components
 
         private string DebugString
         {
-            get { return _source.Substring(_start, _length); }
+            get { return (_length > 0) ? _source.Substring(_start, _length) : String.Empty; }
         }
 
         /// <summary>
@@ -156,6 +159,16 @@ namespace Jamiras.Components
 
             return (token.CompareTo(token2) != 0);
         }
+
+        //public override bool Equals(object obj)
+        //{
+        //    if (obj is Token)
+        //        return this == (Token)obj;
+        //    else if (obj is string)
+        //        return this == (string)obj;
+
+        //    return false;
+        //}
 
         public override int GetHashCode()
         {

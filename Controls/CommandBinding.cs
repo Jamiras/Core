@@ -1,6 +1,8 @@
-﻿using System.Windows;
+﻿using System.Linq;
+using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Controls;
 
 namespace Jamiras.Controls
 {
@@ -78,6 +80,47 @@ namespace Jamiras.Controls
                 command.Execute(e);
         }
 
+        public static readonly DependencyProperty DoubleClickCommandProperty =
+            DependencyProperty.RegisterAttached("DoubleClickCommand", typeof(ICommand), typeof(CommandBinding),
+        new FrameworkPropertyMetadata(OnDoubleClickCommandChanged));
+
+        public static ICommand GetDoubleClickCommand(UIElement target)
+        {
+            return (ICommand)target.GetValue(DoubleClickCommandProperty);
+        }
+
+        public static void SetDoubleClickCommand(UIElement target, ICommand value)
+        {
+            target.SetValue(DoubleClickCommandProperty, value);
+        }
+
+        private static void OnDoubleClickCommandChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            var element = (UIElement)sender;
+            if (e.NewValue != null)
+            {
+                element.InputBindings.Add(new InputBinding((ICommand)e.NewValue, new MouseGesture(MouseAction.LeftDoubleClick)));
+            }
+            else
+            {
+                var binding = element.InputBindings.OfType<InputBinding>().FirstOrDefault(b =>
+                {
+                    var gesture = b.Gesture as MouseGesture;
+                    return (gesture != null && gesture.MouseAction == MouseAction.LeftDoubleClick);
+                });
+
+                if (binding != null)
+                    element.InputBindings.Remove(binding);
+            }
+        }
+
+        private static void OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            var command = GetClickCommand((UIElement)sender);
+            if (command != null && command.CanExecute(e))
+                command.Execute(e);
+        }
+
         public static readonly DependencyProperty FocusIfTrueProperty =
             DependencyProperty.RegisterAttached("FocusIfTrue", typeof(bool), typeof(CommandBinding),
                 new FrameworkPropertyMetadata(OnFocusIfTrueChanged));
@@ -132,6 +175,17 @@ namespace Jamiras.Controls
             var command = GetLostFocusCommand((UIElement)sender);
             if (command != null && command.CanExecute(e))
                 command.Execute(e);
+        }
+
+        public static void ForceLostFocusBinding()
+        {
+            var textBox = Keyboard.FocusedElement as TextBox;
+            if (textBox != null)
+            {
+                var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                if (binding != null)
+                    binding.UpdateSource();
+            }
         }
     }
 }

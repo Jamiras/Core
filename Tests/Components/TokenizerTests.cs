@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Text;
 using Jamiras.Components;
 using NUnit.Framework;
@@ -79,7 +76,7 @@ namespace Jamiras.Core.Tests.Components
         {
             var tokenizer = CreateTokenizer("RedSquare2();");
             var token = tokenizer.ReadIdentifier();
-            Assert.That(token, Is.EqualTo("RedSquare2"));
+            Assert.That(token.ToString(), Is.EqualTo("RedSquare2"));
             Assert.That(tokenizer.NextChar, Is.EqualTo('('));
         }
 
@@ -88,7 +85,7 @@ namespace Jamiras.Core.Tests.Components
         {
             var tokenizer = CreateTokenizer("redSquare2();");
             var token = tokenizer.ReadIdentifier();
-            Assert.That(token, Is.EqualTo("redSquare2"));
+            Assert.That(token.ToString(), Is.EqualTo("redSquare2"));
             Assert.That(tokenizer.NextChar, Is.EqualTo('('));
         }
 
@@ -97,7 +94,7 @@ namespace Jamiras.Core.Tests.Components
         {
             var tokenizer = CreateTokenizer("RED_SQUARE2();");
             var token = tokenizer.ReadIdentifier();
-            Assert.That(token, Is.EqualTo("RED_SQUARE2"));
+            Assert.That(token.ToString(), Is.EqualTo("RED_SQUARE2"));
             Assert.That(tokenizer.NextChar, Is.EqualTo('('));
         }
 
@@ -106,7 +103,7 @@ namespace Jamiras.Core.Tests.Components
         {
             var tokenizer = CreateTokenizer("_field = 6;");
             var token = tokenizer.ReadIdentifier();
-            Assert.That(token, Is.EqualTo("_field"));
+            Assert.That(token.ToString(), Is.EqualTo("_field"));
             Assert.That(tokenizer.NextChar, Is.EqualTo(' '));
         }
 
@@ -115,7 +112,7 @@ namespace Jamiras.Core.Tests.Components
         {
             var tokenizer = CreateTokenizer("6");
             var token = tokenizer.ReadIdentifier();
-            Assert.That(token, Is.EqualTo(""));
+            Assert.That(token.ToString(), Is.EqualTo(""));
             Assert.That(tokenizer.NextChar, Is.EqualTo('6'));
         }
 
@@ -124,7 +121,7 @@ namespace Jamiras.Core.Tests.Components
         {
             var tokenizer = CreateTokenizer("16;");
             var token = tokenizer.ReadNumber();
-            Assert.That(token, Is.EqualTo("16"));
+            Assert.That(token.ToString(), Is.EqualTo("16"));
             Assert.That(tokenizer.NextChar, Is.EqualTo(';'));
         }
 
@@ -133,7 +130,7 @@ namespace Jamiras.Core.Tests.Components
         {
             var tokenizer = CreateTokenizer("happy");
             var token = tokenizer.ReadNumber();
-            Assert.That(token, Is.EqualTo(""));
+            Assert.That(token.ToString(), Is.EqualTo(""));
             Assert.That(tokenizer.NextChar, Is.EqualTo('h'));
         }
 
@@ -142,7 +139,7 @@ namespace Jamiras.Core.Tests.Components
         {
             var tokenizer = CreateTokenizer("16.773;");
             var token = tokenizer.ReadNumber();
-            Assert.That(token, Is.EqualTo("16.773"));
+            Assert.That(token.ToString(), Is.EqualTo("16.773"));
             Assert.That(tokenizer.NextChar, Is.EqualTo(';'));
         }
 
@@ -151,7 +148,7 @@ namespace Jamiras.Core.Tests.Components
         {
             var tokenizer = CreateTokenizer("406.555.1234");
             var token = tokenizer.ReadNumber();
-            Assert.That(token, Is.EqualTo("406.555"));
+            Assert.That(token.ToString(), Is.EqualTo("406.555"));
             Assert.That(tokenizer.NextChar, Is.EqualTo('.'));
         }
 
@@ -160,7 +157,7 @@ namespace Jamiras.Core.Tests.Components
         {
             var tokenizer = CreateTokenizer("12/25/2000");
             var token = tokenizer.ReadNumber();
-            Assert.That(token, Is.EqualTo("12"));
+            Assert.That(token.ToString(), Is.EqualTo("12"));
             Assert.That(tokenizer.NextChar, Is.EqualTo('/'));
         }
 
@@ -169,7 +166,7 @@ namespace Jamiras.Core.Tests.Components
         {
             var tokenizer = CreateTokenizer(".6");
             var token = tokenizer.ReadNumber();
-            Assert.That(token, Is.EqualTo(""));
+            Assert.That(token.ToString(), Is.EqualTo(""));
             Assert.That(tokenizer.NextChar, Is.EqualTo('.'));
         }
 
@@ -192,7 +189,7 @@ namespace Jamiras.Core.Tests.Components
         {
             var tokenizer = CreateTokenizer("\"happy\";");
             var token = tokenizer.ReadQuotedString();
-            Assert.That(token, Is.EqualTo("happy"));
+            Assert.That(token.ToString(), Is.EqualTo("happy"));
             Assert.That(tokenizer.NextChar, Is.EqualTo(';'));
         }
 
@@ -201,7 +198,7 @@ namespace Jamiras.Core.Tests.Components
         {
             var tokenizer = CreateTokenizer("\"I am happy.\";");
             var token = tokenizer.ReadQuotedString();
-            Assert.That(token, Is.EqualTo("I am happy."));
+            Assert.That(token.ToString(), Is.EqualTo("I am happy."));
             Assert.That(tokenizer.NextChar, Is.EqualTo(';'));
         }
 
@@ -210,7 +207,7 @@ namespace Jamiras.Core.Tests.Components
         {
             var tokenizer = CreateTokenizer("\"I am \\\"happy\\\".\";");
             var token = tokenizer.ReadQuotedString();
-            Assert.That(token, Is.EqualTo("I am \"happy\"."));
+            Assert.That(token.ToString(), Is.EqualTo("I am \"happy\"."));
             Assert.That(tokenizer.NextChar, Is.EqualTo(';'));
         }
 
@@ -219,7 +216,7 @@ namespace Jamiras.Core.Tests.Components
         {
             var tokenizer = CreateTokenizer("\"I am \\thappy.\";");
             var token = tokenizer.ReadQuotedString();
-            Assert.That(token, Is.EqualTo("I am \thappy."));
+            Assert.That(token.ToString(), Is.EqualTo("I am \thappy."));
             Assert.That(tokenizer.NextChar, Is.EqualTo(';'));
         }
 
@@ -228,7 +225,7 @@ namespace Jamiras.Core.Tests.Components
         {
             var tokenizer = CreateTokenizer("\"I am \\nhappy.\";");
             var token = tokenizer.ReadQuotedString();
-            Assert.That(token, Is.EqualTo("I am \r\nhappy."));
+            Assert.That(token.ToString(), Is.EqualTo("I am \r\nhappy."));
             Assert.That(tokenizer.NextChar, Is.EqualTo(';'));
         }
 
@@ -237,7 +234,7 @@ namespace Jamiras.Core.Tests.Components
         {
             var tokenizer = CreateTokenizer("\"\";");
             var token = tokenizer.ReadQuotedString();
-            Assert.That(token, Is.EqualTo(""));
+            Assert.That(token.ToString(), Is.EqualTo(""));
             Assert.That(tokenizer.NextChar, Is.EqualTo(';'));
         }
 
@@ -246,7 +243,7 @@ namespace Jamiras.Core.Tests.Components
         {
             var tokenizer = CreateTokenizer("6.8;");
             var token = tokenizer.ReadValue();
-            Assert.That(token, Is.EqualTo("6.8"));
+            Assert.That(token.ToString(), Is.EqualTo("6.8"));
             Assert.That(tokenizer.NextChar, Is.EqualTo(';'));
         }
 
@@ -255,7 +252,7 @@ namespace Jamiras.Core.Tests.Components
         {
             var tokenizer = CreateTokenizer("\"happy\";");
             var token = tokenizer.ReadValue();
-            Assert.That(token, Is.EqualTo("happy"));
+            Assert.That(token.ToString(), Is.EqualTo("happy"));
             Assert.That(tokenizer.NextChar, Is.EqualTo(';'));
         }
 
@@ -264,7 +261,7 @@ namespace Jamiras.Core.Tests.Components
         {
             var tokenizer = CreateTokenizer("happy;");
             var token = tokenizer.ReadValue();
-            Assert.That(token, Is.EqualTo("happy"));
+            Assert.That(token.ToString(), Is.EqualTo("happy"));
             Assert.That(tokenizer.NextChar, Is.EqualTo(';'));
         }
 
@@ -273,7 +270,7 @@ namespace Jamiras.Core.Tests.Components
         {
             var tokenizer = CreateTokenizer("_happy;");
             var token = tokenizer.ReadValue();
-            Assert.That(token, Is.EqualTo("_happy"));
+            Assert.That(token.ToString(), Is.EqualTo("_happy"));
             Assert.That(tokenizer.NextChar, Is.EqualTo(';'));
         }
     }

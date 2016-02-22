@@ -1,7 +1,8 @@
-﻿using Jamiras.Components;
+﻿using System;
 using System.Collections.Generic;
-using Jamiras.ViewModels.Converters;
+using Jamiras.Components;
 using Jamiras.IO.Serialization;
+using Jamiras.ViewModels.Converters;
 
 namespace Jamiras.DataModels.Metadata
 {
@@ -18,6 +19,7 @@ namespace Jamiras.DataModels.Metadata
 
         private ITinyDictionary<int, FieldMetadata> _fieldMetadata;
         private readonly List<JsonFieldConverter> _jsonFields;
+        private static int _nextKey = -100;
 
         internal ITinyDictionary<int, FieldMetadata> AllFieldMetadata
         {
@@ -32,6 +34,33 @@ namespace Jamiras.DataModels.Metadata
         protected virtual void RegisterFieldMetadata(ModelProperty property, FieldMetadata metadata)
         {
             _fieldMetadata = _fieldMetadata.AddOrUpdate(property.Key, metadata);
+
+            if ((metadata.Attributes & InternalFieldAttributes.PrimaryKey) != 0 && PrimaryKeyProperty == null)
+                PrimaryKeyProperty = property;
+        }
+
+        /// <summary>
+        /// Gets the property for the primary key of the record.
+        /// </summary>
+        public ModelProperty PrimaryKeyProperty { get; protected set; }
+
+        /// <summary>
+        /// Gets the primary key value of a model.
+        /// </summary>
+        /// <param name="model">The model to get the primary key for.</param>
+        /// <returns>The primary key of the model.</returns>
+        public virtual int GetKey(ModelBase model)
+        {
+            if (PrimaryKeyProperty == null)
+                throw new InvalidOperationException("Could not determine primary key for " + GetType().Name);
+
+            return (int)model.GetValue(PrimaryKeyProperty);
+        }
+
+        internal void InitializePrimaryKey(ModelBase model)
+        {
+            if (PrimaryKeyProperty != null)
+                model.SetValue(PrimaryKeyProperty, _nextKey--);
         }
 
         /// <summary>

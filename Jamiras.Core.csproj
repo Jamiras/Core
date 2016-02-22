@@ -74,6 +74,7 @@
     <Compile Include="Database\DatabaseSchema.cs" />
     <Compile Include="Database\TableSchema.cs" />
     <Compile Include="DataModels\DataModelSourceBase.cs" />
+    <Compile Include="DataModels\MemoryDataModelSource.cs" />
     <Compile Include="DataModels\Metadata\ExtensionKeyFieldMetadata.cs" />
     <Compile Include="DataModels\Metadata\FloatFieldMetadata.cs" />
     <Compile Include="DataModels\Metadata\JsonFieldConverter.cs" />
@@ -165,6 +166,7 @@
     <Compile Include="IO\BitReader.cs" />
     <Compile Include="IO\BitWriter.cs" />
     <Compile Include="IO\FileBundleFileSystemService.cs" />
+    <Compile Include="IO\IniFile.cs" />
     <Compile Include="IO\MP4\Mp4Reader.cs" />
     <Compile Include="IO\MP4\Mp4TagWriter.cs" />
     <Compile Include="IO\Serialization\GraphQuery.cs" />

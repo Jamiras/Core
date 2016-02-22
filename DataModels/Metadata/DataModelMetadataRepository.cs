@@ -4,7 +4,7 @@ using Jamiras.Components;
 namespace Jamiras.DataModels.Metadata
 {
     [Export(typeof(IDataModelMetadataRepository))]
-    internal class DataModelMetadataRepository : IDataModelMetadataRepository
+    public class DataModelMetadataRepository : IDataModelMetadataRepository
     {
         public DataModelMetadataRepository()
         {

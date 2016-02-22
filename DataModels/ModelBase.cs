@@ -147,6 +147,14 @@ namespace Jamiras.DataModels
         }
 
         /// <summary>
+        /// Gets the list of unique identifiers of properties that are set for the record.
+        /// </summary>
+        internal IEnumerable<int> PropertyKeys
+        {
+            get { return _values.Keys; }
+        }
+
+        /// <summary>
         /// Registers a callback to call when a specified property changes.
         /// </summary>
         /// <param name="property">The property to monitor.</param>

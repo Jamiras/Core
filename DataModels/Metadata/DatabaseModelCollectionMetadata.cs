@@ -19,6 +19,7 @@ namespace Jamiras.DataModels.Metadata
         {
             var metadataRepository = ServiceRepository.Instance.FindService<IDataModelMetadataRepository>();
             RelatedMetadata = (DatabaseModelMetadata)metadataRepository.GetModelMetadata(typeof(TModel));
+            PrimaryKeyProperty = CollectionFilterKeyProperty;
         }
 
         private string _queryString;

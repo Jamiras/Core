@@ -163,7 +163,7 @@ namespace Jamiras.Components
 
         private bool IsEnabledForLevel(LogLevel level)
         {
-            return (level >= _owner.Level && _owner.Loggers.Count > 0);
+            return (level <= _owner.Level && _owner.Loggers.Count > 0);
         }
     }
 }

@@ -3,20 +3,23 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Jamiras.Components;
 using Jamiras.DataModels.Metadata;
 
 namespace Jamiras.DataModels
 {
     public abstract class DataModelSourceBase : IDataModelSource
     {
-        protected DataModelSourceBase(IDataModelMetadataRepository metadataRepository)
+        protected DataModelSourceBase(IDataModelMetadataRepository metadataRepository, ILogger logger)
         {
             _items = new Dictionary<Type, DataModelCache>();
             _metadataRepository = metadataRepository;
+            _logger = logger;
         }
 
         private readonly Dictionary<Type, DataModelCache> _items;
         private readonly IDataModelMetadataRepository _metadataRepository;
+        private readonly ILogger _logger;
 
         [DebuggerTypeProxy(typeof(DataModelCacheDebugView))]
         private class DataModelCache
@@ -72,6 +75,16 @@ namespace Jamiras.DataModels
                 }
             }
 
+            public IEnumerable<int> GetKeys()
+            {
+                foreach (var item in _cache)
+                {
+                    var model = item.Value.Target as DataModelBase;
+                    if (model != null && item.Value.IsAlive)
+                        yield return item.Key;
+                }
+            }
+
             public DataModelBase TryGet(int id)
             {
                 lock (_cache)
@@ -92,6 +105,21 @@ namespace Jamiras.DataModels
 
                     _cache.Insert(idx, new KeyValuePair<int, WeakReference>(id, new WeakReference(model)));
                     return model;
+                }
+            }
+
+            public void Cache(int id, DataModelBase model)
+            {
+                lock (_cache)
+                {
+                    var entry = new KeyValuePair<int, WeakReference>(id, new WeakReference(model));
+
+                    int idx;
+                    DataModelBase cached = Find(id, out idx);
+                    if (cached != null)
+                        _cache[idx] = entry;
+                    else
+                        _cache.Insert(idx, entry);
                 }
             }
 
@@ -236,6 +264,28 @@ namespace Jamiras.DataModels
             return (T)cache.TryCache(id, item);
         }
 
+        protected void Cache<T>(int id, T item)
+            where T : DataModelBase
+        {
+            DataModelCache cache;
+            if (!_items.TryGetValue(typeof(T), out cache))
+            {
+                cache = new DataModelCache();
+                _items[typeof(T)] = cache;
+            }
+
+            cache.Cache(id, item);
+        }
+
+        protected IEnumerable<int> GetCacheKeys<T>()
+        {
+            DataModelCache cache;
+            if (!_items.TryGetValue(typeof(T), out cache))
+                return new int[0];
+
+            return cache.GetKeys();
+        }
+
         /// <summary>
         /// Gets a non-shared instance of a data model.
         /// </summary>
@@ -257,12 +307,21 @@ namespace Jamiras.DataModels
         public T Query<T>(object searchData)
             where T : DataModelBase, new()
         {
+            T result;
             var metadata = GetModelMetadata(typeof(T));
+
+            _logger.Write("Querying {0}({1})", typeof(T).Name, searchData);
+
             var collectionMetadata = metadata as IDataModelCollectionMetadata;
             if (collectionMetadata != null)
-                return Query<T>(searchData, Int32.MaxValue, collectionMetadata);
+                result = Query<T>(searchData, Int32.MaxValue, collectionMetadata);
+            else
+                result = Query<T>(searchData, metadata);
 
-            return Query<T>(searchData, metadata);
+            if (result == null)
+                _logger.WriteVerbose("{0}({1}) not found", typeof(T).Name, searchData);
+
+            return result;
         }
 
         protected abstract T Query<T>(object searchData, ModelMetadata metadata) where T : DataModelBase, new(); 
@@ -281,7 +340,20 @@ namespace Jamiras.DataModels
             if (collectionMetadata == null)
                 throw new ArgumentException(typeof(T).FullName + " is not registered to a collection metadata");
 
-            return Query<T>(searchData, maxResults, collectionMetadata);
+            _logger.Write("Querying {0}({1}) limit {2}", typeof(T).Name, searchData, maxResults);
+            var result = Query<T>(searchData, maxResults, collectionMetadata);
+            if (result == null)
+            {
+                _logger.WriteVerbose("{0}({1}) not found", typeof(T).Name, searchData);
+            }
+            else
+            {
+                var collection = result as IDataModelCollection;
+                if (collection != null)
+                    _logger.Write("Returning {0} {1}", collection.Count, typeof(T).Name);
+            }
+
+            return result;
         }
 
         internal virtual T Query<T>(object searchData, int maxResults, IDataModelCollectionMetadata collectionMetadata)
@@ -315,7 +387,31 @@ namespace Jamiras.DataModels
         /// </summary>
         /// <typeparam name="T">Type of data model to create.</typeparam>
         /// <returns>New instance initialized with default values.</returns>
-        public abstract T Create<T>() where T : DataModelBase, new();
+        public T Create<T>() 
+            where T : DataModelBase, new()
+        {
+            var metadata = GetModelMetadata(typeof(T));
+            if (metadata == null)
+                throw new ArgumentException("No metadata registered for " + typeof(T).FullName);
+
+            var collectionMetadata = metadata as IDataModelCollectionMetadata;
+            if (collectionMetadata != null)
+                throw new ArgumentException("Cannot create new collection for " + typeof(T).FullName + ". Use Query<> method.");
+
+            _logger.Write("Creating {0}", typeof(T).Name);
+
+            var model = new T();
+            InitializeNewRecord(model, metadata);
+            int id = metadata.GetKey(model);
+            if (id != 0)
+                model = TryCache(id, model);
+            return model;
+        }
+
+        protected virtual void InitializeNewRecord(DataModelBase model, ModelMetadata metadata)
+        {
+            metadata.InitializePrimaryKey(model);
+        }
 
         /// <summary>
         /// Commits changes made to a data model. The shared model and any future copies will contain committed changes.
@@ -339,8 +435,25 @@ namespace Jamiras.DataModels
                     return false;
             }
 
+            var key = metadata.GetKey(dataModel);
+            _logger.Write("Committing {0}({1})", dataModel.GetType().Name, key);
+
             if (!Commit(dataModel, metadata))
+            {
+                _logger.WriteWarning("Commit failed {0}({1})", dataModel.GetType().Name, key);
                 return false;
+            }
+
+            var newKey = metadata.GetKey(dataModel);
+            if (key != newKey)
+            {
+                _logger.WriteVerbose("New key for {0}:{1}", dataModel.GetType().Name, newKey);
+
+                ExpireCollections(dataModel.GetType());
+
+                var fieldMetadata = metadata.GetFieldMetadata(metadata.PrimaryKeyProperty);
+                UpdateKeys(fieldMetadata, key, newKey);
+            }
 
             dataModel.AcceptChanges();
             return true;
@@ -354,7 +467,7 @@ namespace Jamiras.DataModels
         /// <summary>
         /// Commits a collection of models.
         /// </summary>
-        protected virtual bool Commit(IEnumerable collection, ModelMetadata itemMetadata)
+        private bool Commit(IEnumerable collection, ModelMetadata itemMetadata)
         {
             foreach (DataModelBase model in collection)
             {

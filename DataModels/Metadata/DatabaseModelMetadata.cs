@@ -23,7 +23,6 @@ namespace Jamiras.DataModels.Metadata
 
         private ITinyDictionary<string, ITinyDictionary<ForeignKeyFieldMetadata, List<int>>> _tableMetadata;
         private string _queryString;
-        private static int _nextKey = -100;
 
         /// <summary>
         /// Gets the token to use when setting a filter value to the query key.
@@ -31,27 +30,9 @@ namespace Jamiras.DataModels.Metadata
         protected const string FilterValueToken = "@filterValue";
 
         /// <summary>
-        /// Gets the property for the primary key of the record.
-        /// </summary>
-        public ModelProperty PrimaryKeyProperty { get; protected set; }
-
-        /// <summary>
         /// Gets or sets whether a new model should be created by Query() if existing data is not found (instead of returning false).
         /// </summary>
         protected bool CreateNewModelIfQueryFails { get; set; }
-
-        /// <summary>
-        /// Gets the primary key value of a model.
-        /// </summary>
-        /// <param name="model">The model to get the primary key for.</param>
-        /// <returns>The primary key of the model.</returns>
-        public virtual int GetKey(ModelBase model)
-        {
-            if (PrimaryKeyProperty == null)
-                throw new InvalidOperationException("Could not determine primary key for " + GetType().Name);
-
-            return (int)model.GetValue(PrimaryKeyProperty);
-        }
 
         /// <summary>
         /// Registers metadata for a <see cref="ModelProperty"/>.
@@ -72,9 +53,6 @@ namespace Jamiras.DataModels.Metadata
         protected void RegisterFieldMetadata(ModelProperty property, FieldMetadata metadata, ForeignKeyFieldMetadata viaForeignKey)
         {
             base.RegisterFieldMetadata(property, metadata);
-
-            if ((metadata.Attributes & InternalFieldAttributes.PrimaryKey) != 0 && PrimaryKeyProperty == null)
-                PrimaryKeyProperty = property;
 
             var tableName = GetTableName(metadata.FieldName);
 
@@ -134,8 +112,7 @@ namespace Jamiras.DataModels.Metadata
         /// <param name="database">The database to populate from.</param>
         void IDatabaseModelMetadata.InitializeNewRecord(ModelBase model, IDatabase database)
         {
-            if (PrimaryKeyProperty != null)
-                model.SetValue(PrimaryKeyProperty, _nextKey--);
+            InitializePrimaryKey(model);
 
             InitializeNewRecord(model, database);
         }
@@ -533,17 +510,7 @@ namespace Jamiras.DataModels.Metadata
                 if (kvp.Key == primaryTable)
                     continue;
 
-                ModelProperty joinProperty;
-                string joinFieldName = GetJoin(database, primaryTable, kvp.Key, out joinProperty);
-
-                List<int> tablePropertyKeys;
-                if (kvp.Value.TryGetValue(null, out tablePropertyKeys))
-                {
-                    if (!CreateRow(model, database, kvp.Key, tablePropertyKeys, joinProperty, joinFieldName))
-                        return false;
-                }
-
-                // TODO: support updating related tables joined on arbitrary foreign keys
+                UpsertRelatedTable(model, database, primaryTable, kvp.Key, kvp.Value);
             }
 
             return true;
@@ -753,24 +720,31 @@ namespace Jamiras.DataModels.Metadata
                 }
                 else
                 {
-                    ModelProperty joinProperty;
-                    string joinFieldName = GetJoin(database, primaryTable, kvp.Key, out joinProperty);
-                    if (joinFieldName == null)
-                        throw new InvalidOperationException("Cannot determine relationship between " + primaryTable + " and " + kvp.Key);
-
-                    List<int> tablePropertyKeys;
-                    if (kvp.Value.TryGetValue(null, out tablePropertyKeys))
-                    {
-                        if (!UpdateRow(model, database, kvp.Key, tablePropertyKeys, joinProperty, joinFieldName) &&
-                            !CreateRow(model, database, kvp.Key, tablePropertyKeys, joinProperty, joinFieldName))
-                        {
-                            return false;
-                        }
-                    }
-
-                    // TODO: support updating related data on arbitrary foreign key joins
+                    UpsertRelatedTable(model, database, primaryTable, kvp.Key, kvp.Value);
                 }
             }
+
+            return true;
+        }
+
+        private bool UpsertRelatedTable(ModelBase model, IDatabase database, string primaryTable, string relatedTable, ITinyDictionary<ForeignKeyFieldMetadata, List<int>> tableForeignKeyMetadatas)
+        {
+            ModelProperty joinProperty;
+            string joinFieldName = GetJoin(database, primaryTable, relatedTable, out joinProperty);
+            if (joinFieldName == null)
+                throw new InvalidOperationException("Cannot determine relationship between " + primaryTable + " and " + relatedTable);
+
+            List<int> tablePropertyKeys;
+            if (tableForeignKeyMetadatas.TryGetValue(null, out tablePropertyKeys))
+            {
+                if (!UpdateRow(model, database, relatedTable, tablePropertyKeys, joinProperty, joinFieldName) &&
+                    !CreateRow(model, database, relatedTable, tablePropertyKeys, joinProperty, joinFieldName))
+                {
+                    return false;
+                }
+            }
+
+            // TODO: support updating related data on arbitrary foreign key join
 
             return true;
         }

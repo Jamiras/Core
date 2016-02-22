@@ -45,6 +45,11 @@ namespace Jamiras.DataModels
         /// <param name="value">The new value for the <see cref="ModelProperty"/>.</param>
         public override sealed void SetValue(ModelProperty property, object value)
         {
+            if (property == null)
+                throw new ArgumentNullException("property");
+            if (property.DefaultValue is ModelProperty.UnitializedValue)
+                throw new ArgumentException("Cannot assign value to derived property: " + property.FullName);
+
             object currentValue;
 
             lock (_lockObject)
