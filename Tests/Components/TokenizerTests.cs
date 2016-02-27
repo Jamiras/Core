@@ -273,5 +273,38 @@ namespace Jamiras.Core.Tests.Components
             Assert.That(token.ToString(), Is.EqualTo("_happy"));
             Assert.That(tokenizer.NextChar, Is.EqualTo(';'));
         }
+
+        [Test]
+        public void TestSplit()
+        {
+            var input = "This is a test.";
+            var tokens = Tokenizer.Split(input, ' ');
+            Assert.That(tokens.Length, Is.EqualTo(4));
+            Assert.That(tokens[0].ToString(), Is.EqualTo("This"));
+            Assert.That(tokens[1].ToString(), Is.EqualTo("is"));
+            Assert.That(tokens[2].ToString(), Is.EqualTo("a"));
+            Assert.That(tokens[3].ToString(), Is.EqualTo("test."));
+        }
+
+        [Test]
+        public void TestGetLongestWordsIgnoresPunctuation()
+        {
+            var input = "This [(is)] a test.";
+            var tokens = Tokenizer.GetLongestWords(input, 2);
+            Assert.That(tokens.Length, Is.EqualTo(2));
+            Assert.That(tokens[0].ToString(), Is.EqualTo("This"));
+            Assert.That(tokens[1].ToString(), Is.EqualTo("test"));
+        }
+
+        [Test]
+        public void TestGetLongestWordsIgnoresCommonWords()
+        {
+            var input = "The Barber of Seville";
+            var tokens = Tokenizer.GetLongestWords(input, 4);
+            Assert.That(tokens.Length, Is.EqualTo(2));
+            // NOTE: order is maintained, even though Seville is longer than Barber
+            Assert.That(tokens[0].ToString(), Is.EqualTo("Barber"));
+            Assert.That(tokens[1].ToString(), Is.EqualTo("Seville"));
+        }
     }
 }

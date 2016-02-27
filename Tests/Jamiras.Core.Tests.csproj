@@ -97,6 +97,7 @@
     <Compile Include="Components\SortFunctionsTests.cs" />
     <Compile Include="Components\TokenizerTests.cs" />
     <Compile Include="Components\TestPropertyChangedObject.cs" />
+    <Compile Include="Components\TokenTests.cs" />
     <Compile Include="Components\WeakActionTests.cs" />
     <Compile Include="Components\WeakEventHandlerTests.cs" />
     <Compile Include="Controls\CalendarControlTests.cs" />

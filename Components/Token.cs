@@ -42,7 +42,8 @@ namespace Jamiras.Components
             return _source;
         }
 
-        private string DebugString
+        // internal for unit tests
+        internal string DebugString
         {
             get { return (_length > 0) ? _source.Substring(_start, _length) : String.Empty; }
         }
@@ -85,8 +86,14 @@ namespace Jamiras.Components
         /// </summary>
         public int CompareTo(string value)
         {
-            int longer = Math.Max(_length, value.Length);
-            return String.Compare(_source, _start, value, 0, longer);
+            // can only compare the part of the string that is contained in the token
+            var result = String.Compare(_source, _start, value, 0, _length);
+
+            // if it's an exact match and value is longer, need to return -1
+            if (result == 0 && value.Length > _length)
+                result = -1;
+
+            return result;
         }
 
         /// <summary>
@@ -94,8 +101,14 @@ namespace Jamiras.Components
         /// </summary>
         public int CompareTo(string value, StringComparison comparisonType)
         {
-            int longer = Math.Max(_length, value.Length);
-            return String.Compare(_source, _start, value, 0, longer, comparisonType);
+            // can only compare the part of the string that is contained in the token
+            var result = String.Compare(_source, _start, value, 0, _length, comparisonType);
+
+            // if it's an exact match and value is longer, need to return -1
+            if (result == 0 && value.Length > _length)
+                result = -1;
+
+            return result;
         }
 
         /// <summary>
@@ -103,8 +116,20 @@ namespace Jamiras.Components
         /// </summary>
         public int CompareTo(Token value)
         {
-            int longer = Math.Max(_length, value.Length);
-            return String.Compare(_source, _start, value._source, value._start, longer);
+            // can only compare the parts of the string that are contained in the tokens
+            int shorter = Math.Min(_length, value.Length);
+            var result = String.Compare(_source, _start, value._source, value._start, shorter);
+
+            // if it's an exact match and one is longer, need to return size difference
+            if (result == 0)
+            {
+                if (_length < value.Length)
+                    result = -1;
+                else if (_length > value.Length)
+                    result = 1;
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -112,8 +137,20 @@ namespace Jamiras.Components
         /// </summary>
         public int CompareTo(Token value, StringComparison comparisonType)
         {
-            int longer = Math.Max(_length, value.Length);
-            return String.Compare(_source, _start, value._source, value._start, longer, comparisonType);
+            // can only compare the parts of the string that are contained in the tokens
+            int shorter = Math.Min(_length, value.Length);
+            var result = String.Compare(_source, _start, value._source, value._start, shorter, comparisonType);
+
+            // if it's an exact match and one is longer, need to return size difference
+            if (result == 0)
+            {
+                if (_length < value.Length)
+                    result = -1;
+                else if (_length > value.Length)
+                    result = 1;
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -160,19 +197,21 @@ namespace Jamiras.Components
             return (token.CompareTo(token2) != 0);
         }
 
-        //public override bool Equals(object obj)
-        //{
-        //    if (obj is Token)
-        //        return this == (Token)obj;
-        //    else if (obj is string)
-        //        return this == (string)obj;
+        public override bool Equals(object obj)
+        {
+            if (obj is Token)
+                return this == (Token)obj;
+            else if (obj is string)
+                return this == (string)obj;
 
-        //    return false;
-        //}
+            return false;
+        }
 
         public override int GetHashCode()
         {
-            return _source.GetHashCode() ^ (_start + 1) ^ ((_start + 1) * (_length + 1));
+            // we want the output of GetHashCode to match String.GetHashCode.
+            // unfortunately, this means we have to generate the String.
+            return ToString().GetHashCode();
         }
 
         /// <summary>
@@ -250,7 +289,7 @@ namespace Jamiras.Components
             if (startIndex < 0 || startIndex > _length)
                 throw new ArgumentOutOfRangeException("startIndex");
 
-            int index = _source.IndexOf(value, _start + startIndex, _length);
+            int index = _source.IndexOf(value, _start + startIndex, _length - startIndex);
             return (index >= 0) ? (index - _start) : -1;
         }
 
@@ -271,7 +310,7 @@ namespace Jamiras.Components
             if (startIndex < 0 || startIndex > _length)
                 throw new ArgumentOutOfRangeException("startIndex");
 
-            int index = _source.IndexOf(value, _start + startIndex, _length);
+            int index = _source.IndexOf(value, _start + startIndex, _length - startIndex);
             return (index >= 0) ? (index - _start) : -1;
         }
 
@@ -292,7 +331,7 @@ namespace Jamiras.Components
             if (startIndex < 0 || startIndex > _length)
                 throw new ArgumentOutOfRangeException("startIndex");
 
-            int index = _source.IndexOf(value, _start + startIndex, _length, comparisonType);
+            int index = _source.IndexOf(value, _start + startIndex, _length - startIndex, comparisonType);
             return (index >= 0) ? (index - _start) : -1;
         }
 
@@ -325,7 +364,7 @@ namespace Jamiras.Components
         /// </summary>
         public Token SubToken(int start)
         {
-            if (start < 0 || start > _length)
+            if (start < 0 || start >= _length)
                 throw new ArgumentOutOfRangeException("start");
 
             return new Token(_source, _start + start, _length - start);
@@ -336,7 +375,7 @@ namespace Jamiras.Components
         /// </summary>
         public Token SubToken(int start, int length)
         {
-            if (start < 0 || start > _length)
+            if (start < 0 || start >= _length)
                 throw new ArgumentOutOfRangeException("start");
             if (length < 0 || start + length > _length)
                 throw new ArgumentOutOfRangeException("length");
