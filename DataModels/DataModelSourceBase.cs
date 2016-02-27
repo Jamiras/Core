@@ -431,8 +431,19 @@ namespace Jamiras.DataModels
             if (collection != null)
             {
                 var collectionMetadata = (IDataModelCollectionMetadata)metadata;
-                if (!Commit(collection, collectionMetadata.ModelMetadata))
-                    return false;
+                if (collectionMetadata.CommitItems)
+                {
+                    foreach (DataModelBase model in collection)
+                    {
+                        if (!Commit(model))
+                            return false;
+                    }
+                }
+                else
+                {
+                    foreach (DataModelBase model in collection)
+                        model.AcceptChanges();
+                }
             }
 
             var key = metadata.GetKey(dataModel);
@@ -463,20 +474,6 @@ namespace Jamiras.DataModels
         /// Commits a single model.
         /// </summary>
         protected abstract bool Commit(DataModelBase dataModel, ModelMetadata metadata);
-
-        /// <summary>
-        /// Commits a collection of models.
-        /// </summary>
-        private bool Commit(IEnumerable collection, ModelMetadata itemMetadata)
-        {
-            foreach (DataModelBase model in collection)
-            {
-                if (!Commit(model))
-                    return false;
-            }
-
-            return true;
-        }
 
         /// <summary>
         /// Discards any cached collection containing models of the specified type.

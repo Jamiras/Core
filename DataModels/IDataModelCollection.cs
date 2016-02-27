@@ -26,6 +26,8 @@ namespace Jamiras.DataModels
 
         bool AreResultsReadOnly { get; }
 
+        bool CommitItems { get; }
+
         bool Query(ModelBase model, int maxResults, object primaryKey, IDatabase database);
     }
 }

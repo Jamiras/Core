@@ -447,7 +447,7 @@ namespace Jamiras.DataModels.Metadata
         /// <returns><c>true</c> if the model was committed, <c>false</c> if not.</returns>
         public bool Commit(ModelBase model, IDatabase database)
         {
-            if (!IsNew(model))
+            if (!IsNew(model) && PrimaryKeyProperty != null)
                 return UpdateRows(model, database);
 
             return CreateRows(model, database);

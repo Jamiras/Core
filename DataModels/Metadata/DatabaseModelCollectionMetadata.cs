@@ -20,6 +20,7 @@ namespace Jamiras.DataModels.Metadata
             var metadataRepository = ServiceRepository.Instance.FindService<IDataModelMetadataRepository>();
             RelatedMetadata = (DatabaseModelMetadata)metadataRepository.GetModelMetadata(typeof(TModel));
             PrimaryKeyProperty = CollectionFilterKeyProperty;
+            CommitItems = (RelatedMetadata.PrimaryKeyProperty != null);
         }
 
         private string _queryString;
@@ -44,6 +45,11 @@ namespace Jamiras.DataModels.Metadata
         /// Gets whether or not the collection can be modified and committed after it has been fetched.
         /// </summary>
         public bool AreResultsReadOnly { get; protected set; }
+
+        /// <summary>
+        /// Gets whether or not the individual items in the collection should be committed.
+        /// </summary>
+        public bool CommitItems { get; protected set; }
 
         ModelProperty IDatabaseModelMetadata.PrimaryKeyProperty
         {

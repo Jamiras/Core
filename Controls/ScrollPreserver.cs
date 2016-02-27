@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Threading;
 using Jamiras.DataModels;
 
@@ -24,14 +25,31 @@ namespace Jamiras.Controls
 
         private static void OnPreserveVerticalOffsetChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
         {
-            var scrollViewer = (ScrollViewer)sender;
-            if (!GetPreserveHorizontalOffset(scrollViewer))
+            var scrollViewer = FindScrollViewer(sender);
+            if (scrollViewer != null && !GetPreserveHorizontalOffset(scrollViewer))
             {
                 if ((bool)e.NewValue)
                     AttachObserver(scrollViewer);
                 else
                     DetachObserver(scrollViewer);
             }
+        }
+
+        private static ScrollViewer FindScrollViewer(DependencyObject obj)
+        {
+            var scrollViewer = obj as ScrollViewer;
+            if (scrollViewer != null)
+                return scrollViewer;
+
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
+            {
+                var child = VisualTreeHelper.GetChild(obj, i);
+                scrollViewer = FindScrollViewer(child);
+                if (scrollViewer != null)
+                    return scrollViewer;                
+            }
+
+            return null;
         }
 
         public static readonly DependencyProperty PreserveHorizontalOffsetProperty =
