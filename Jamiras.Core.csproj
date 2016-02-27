@@ -65,9 +65,13 @@
     <Compile Include="Commands\DisabledCommand.cs" />
     <Compile Include="Components\BucketTinyDictionary.cs" />
     <Compile Include="Components\EmptyTinyDictionary.cs" />
+    <Compile Include="Components\EnumerableExtensions.cs" />
     <Compile Include="Components\FileLogger.cs" />
     <Compile Include="Components\Token.cs" />
     <Compile Include="Components\Tokenizer.cs" />
+    <Compile Include="Controls\Gallery.xaml.cs">
+      <DependentUpon>Gallery.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Controls\GridUtils.cs" />
     <Compile Include="Controls\TextPattern.cs" />
     <Compile Include="Database\AliasDefinition.cs" />
@@ -253,6 +257,10 @@
     <Page Include="Controls\AutoCompleteTextBox.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Controls\Gallery.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Controls\GridView.xaml">
       <SubType>Designer</SubType>
