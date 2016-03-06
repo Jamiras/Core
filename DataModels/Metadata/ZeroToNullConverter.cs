@@ -1,5 +1,6 @@
-﻿
-namespace Jamiras.ViewModels.Converters
+﻿using Jamiras.ViewModels.Converters;
+
+namespace Jamiras.DataModels.Metadata
 {
     public class ZeroToNullConverter : IConverter
     {

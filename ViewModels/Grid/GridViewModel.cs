@@ -5,6 +5,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Windows.Input;
 using Jamiras.DataModels;
+using Jamiras.Components;
+using Jamiras.Services;
+using System.Windows;
+using System.Windows.Media;
 
 namespace Jamiras.ViewModels.Grid
 {
@@ -111,6 +115,34 @@ namespace Jamiras.ViewModels.Grid
         {
             foreach (var row in Rows)
                 yield return row;
+        }
+
+        public GridRowViewModel GetFocusedRow()
+        {
+            GridRowViewModel row = null;
+
+            var service = ServiceRepository.Instance.FindService<IBackgroundWorkerService>();
+            service.InvokeOnUiThread(() =>
+            {
+                DependencyObject obj = Keyboard.FocusedElement as DependencyObject;
+                while (obj != null)
+                {
+                    var element = obj as FrameworkElement;
+                    if (element != null)
+                    {
+                        row = element.DataContext as GridRowViewModel;
+                        if (row != null)
+                            break;
+                    }
+
+                    obj = VisualTreeHelper.GetParent(obj);
+                }
+            });
+
+            if (row != null && Rows.Contains(row))
+                return row;
+
+            return null;
         }
     }
 }

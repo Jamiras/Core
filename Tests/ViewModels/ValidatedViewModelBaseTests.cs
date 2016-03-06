@@ -169,7 +169,7 @@ namespace Jamiras.Core.Tests.ViewModels
         {
             public TestModelMetadata()
             {
-                RegisterFieldMetadata(TestModel.IntegerProperty, new TestFieldMetadata());
+                RegisterFieldMetadata(TestModel.IntegerProperty, new TestFieldMetadata(), null);
             }
         }
 

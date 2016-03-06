@@ -272,6 +272,9 @@ namespace Jamiras.Controls
                         _buffer.Length--;
                         FlushInline();
                         ToggleState(ref _isHeading, null);
+
+                        for (int i = 0; i < headingLevel; i++)
+                            _tokenizer.Advance();
                         return true;
                     }
 

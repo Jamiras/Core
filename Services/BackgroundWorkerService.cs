@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Windows.Threading;
 using Jamiras.Components;
 
 namespace Jamiras.Services
@@ -14,6 +15,7 @@ namespace Jamiras.Services
         }
 
         private readonly IExceptionDispatcher _exceptionDispatcher;
+        private Dispatcher _uiThreadDispatcher;
 
         public void RunAsync(Action action)
         {
@@ -25,6 +27,17 @@ namespace Jamiras.Services
                     _exceptionDispatcher.TryHandleException(e.Error);
             });
             worker.RunWorkerAsync();
+        }
+
+        public void InvokeOnUiThread(Action action)
+        {
+            if (_uiThreadDispatcher == null)
+                _uiThreadDispatcher = ServiceRepository.Instance.FindService<IDialogService>().MainWindow.Dispatcher;
+
+            if (_uiThreadDispatcher.CheckAccess())
+                action();
+            else
+                _uiThreadDispatcher.Invoke(action);
         }
     }
 }

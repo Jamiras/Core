@@ -24,13 +24,6 @@ namespace Jamiras.DataModels.Metadata
         void InitializeNewRecord(ModelBase model, IDatabase database);
 
         /// <summary>
-        /// Gets the metadata registered for a <see cref="ModelProperty"/>.
-        /// </summary>
-        /// <param name="property">The property to get the metadata for.</param>
-        /// <returns>Requested metadata, <c>null</c> if not found.</returns>
-        FieldMetadata GetFieldMetadata(ModelProperty property);
-
-        /// <summary>
         /// Populates a model from a database.
         /// </summary>
         /// <param name="model">The uninitialized model to populate.</param>

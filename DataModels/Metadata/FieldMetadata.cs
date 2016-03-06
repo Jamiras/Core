@@ -48,11 +48,6 @@ namespace Jamiras.DataModels.Metadata
         }
 
         /// <summary>
-        /// Gets or sets a converter to use when populating the field.
-        /// </summary>
-        public IConverter Converter { get; set; }
-
-        /// <summary>
         /// Determines whether or not a value is valid for a field.
         /// </summary>
         /// <param name="model">The model that would be affected.</param>

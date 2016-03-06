@@ -30,7 +30,7 @@ namespace Jamiras.ViewModels.Fields
 
         protected override void OnModelPropertyChanged(ModelPropertyChangedEventArgs e)
         {
-            if (e.Property == TextFieldViewModel.TextProperty && !_searchDisabled)
+            if (e.Property == TextFieldViewModel.TextProperty && !_searchDisabled && !IsFixedSelection)
             {
                 if (!_searchPending && IsTextBindingDelayed)
                 {

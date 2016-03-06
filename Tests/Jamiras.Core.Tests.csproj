@@ -107,6 +107,7 @@
     <Compile Include="DataModels\ModelPropertyTests.cs" />
     <Compile Include="IO\BitReaderTests.cs" />
     <Compile Include="IO\BitWriterTests.cs" />
+    <Compile Include="IO\CsvReaderTests.cs" />
     <Compile Include="IO\FileBundleTests.cs" />
     <Compile Include="IO\Serialization\GraphQueryTests.cs" />
     <Compile Include="IO\Serialization\JsonObjectTests.cs" />

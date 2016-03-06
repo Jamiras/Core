@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Jamiras.Components;
 using Jamiras.Database;
+using Jamiras.ViewModels.Converters;
 
 namespace Jamiras.DataModels.Metadata
 {
@@ -39,9 +40,19 @@ namespace Jamiras.DataModels.Metadata
         /// </summary>
         /// <param name="property">Property to register metadata for.</param>
         /// <param name="metadata">Metadata for the field.</param>
-        protected override sealed void RegisterFieldMetadata(ModelProperty property, FieldMetadata metadata)
+        protected void RegisterFieldMetadata(ModelProperty property, FieldMetadata metadata)
         {
-            RegisterFieldMetadata(property, metadata, null);
+            RegisterFieldMetadata(property, metadata, null, null);
+        }
+
+        /// <summary>
+        /// Registers metadata for a <see cref="ModelProperty"/>.
+        /// </summary>
+        /// <param name="property">Property to register metadata for.</param>
+        /// <param name="metadata">Metadata for the field.</param>
+        protected override sealed void RegisterFieldMetadata(ModelProperty property, FieldMetadata metadata, IConverter converter)
+        {
+            RegisterFieldMetadata(property, metadata, null, converter);
         }
 
         /// <summary>
@@ -52,7 +63,12 @@ namespace Jamiras.DataModels.Metadata
         /// <param name="viaForeignKey">Metadata for the ForeignKey column on the primary object that maps to the related object.</param>
         protected void RegisterFieldMetadata(ModelProperty property, FieldMetadata metadata, ForeignKeyFieldMetadata viaForeignKey)
         {
-            base.RegisterFieldMetadata(property, metadata);
+            RegisterFieldMetadata(property, metadata, viaForeignKey, null);
+        }
+        
+        private void RegisterFieldMetadata(ModelProperty property, FieldMetadata metadata, ForeignKeyFieldMetadata viaForeignKey, IConverter converter)
+        {
+            base.RegisterFieldMetadata(property, metadata, converter);
 
             var tableName = GetTableName(metadata.FieldName);
 
@@ -296,11 +312,8 @@ namespace Jamiras.DataModels.Metadata
             if (fieldMetadata is BooleanFieldMetadata)
                 return query.GetBool(index);
 
-            if (fieldMetadata.GetType().IsGenericType && fieldMetadata.GetType().GetGenericTypeDefinition() == typeof(EnumFieldMetadata<>))
-                return query.GetInt32(index);
-
-            //if (fieldMetadata.Type == typeof(byte))
-            //    return query.GetByte(index);
+            if (fieldMetadata is ByteFieldMetadata)
+                return query.GetByte(index);
 
             throw new NotSupportedException(fieldMetadata.GetType().Name);
         }
@@ -314,23 +327,9 @@ namespace Jamiras.DataModels.Metadata
         /// <returns>Value to store in the model.</returns>
         protected virtual object CoerceValueFromDatabase(ModelProperty property, FieldMetadata fieldMetadata, object databaseValue)
         {
-            if (fieldMetadata.Converter != null)
-                fieldMetadata.Converter.ConvertBack(ref databaseValue);
-
-            if (property.PropertyType == typeof(Date))
-            {
-                if (databaseValue is DateTime)
-                {
-                    var dateTime = (DateTime)databaseValue;
-                    return new Date(dateTime.Month, dateTime.Day, dateTime.Year);
-                }
-
-                Date date;
-                if (databaseValue != null && Date.TryParse((string)databaseValue, out date))
-                    return date;
-                
-                return Date.Empty;
-            }
+            var converter = GetConverter(property);
+            if (converter != null)
+                converter.ConvertBack(ref databaseValue);
 
             return databaseValue;
         }
@@ -344,20 +343,9 @@ namespace Jamiras.DataModels.Metadata
         /// <returns>Value to store in the database.</returns>
         protected virtual object CoerceValueToDatabase(ModelProperty property, FieldMetadata fieldMetadata, object modelValue)
         {
-            if (fieldMetadata.Converter != null)
-                fieldMetadata.Converter.Convert(ref modelValue);
-
-            if (property.PropertyType == typeof(Date))
-            {
-                var date = (Date)modelValue;
-                if (date.IsEmpty)
-                    return null;
-
-                if (fieldMetadata is DateTimeFieldMetadata)
-                    return new DateTime(date.Year, date.Month, date.Day);
-
-                return date.ToDataString();
-            }
+            var converter = GetConverter(property);
+            if (converter != null)
+                converter.Convert(ref modelValue);
 
             return modelValue;
         }

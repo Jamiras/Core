@@ -299,6 +299,35 @@ namespace Jamiras.Components
         }
 
         /// <summary>
+        /// Scans the input for the requested characters and creates a token of everything up to the first match.
+        /// </summary>
+        public Token ReadTo(params char[] chars)
+        {
+            StartToken();
+
+            if (chars.Length == 1)
+            {
+                var c = chars[0];
+                while (NextChar != c && NextChar != '\0')
+                    Advance();
+            }
+            else if (chars.Length == 2)
+            {
+                var c1 = chars[0];
+                var c2 = chars[1];
+                while (NextChar != c1 && NextChar != c2 && NextChar != '\0')
+                    Advance();
+            }
+            else
+            {
+                while (!chars.Contains(NextChar) && NextChar != '\0')
+                    Advance();
+            }
+
+            return EndToken();
+        }
+
+        /// <summary>
         /// Matches a quoted string.
         /// </summary>
         public virtual Token ReadQuotedString()
@@ -382,7 +411,7 @@ namespace Jamiras.Components
             return token.Split(separator, options);
         }
 
-        public static char[] WordSeparators = new[] { ' ', '(', ')', ',', '.', '!', ';', '[', ']' };
+        public static char[] WordSeparators = new[] { ' ', '\n', '\t', '\r', '(', ')', ',', '.', '!', ';', '[', ']' };
 
         /// <summary>
         /// Gets the <paramref name="count"/> longest words from <paramref name="input"/>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Jamiras.Components;
 using Jamiras.Database;
+using Jamiras.ViewModels.Converters;
 
 namespace Jamiras.DataModels.Metadata
 {
@@ -75,14 +76,9 @@ namespace Jamiras.DataModels.Metadata
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        protected override sealed void RegisterFieldMetadata(ModelProperty property, FieldMetadata metadata)
+        protected override sealed void RegisterFieldMetadata(ModelProperty property, FieldMetadata metadata, IConverter converter)
         {
             throw new NotSupportedException();
-        }
-
-        FieldMetadata IDatabaseModelMetadata.GetFieldMetadata(ModelProperty property)
-        {
-            return null;
         }
 
         void IDatabaseModelMetadata.InitializeNewRecord(ModelBase model, IDatabase database)

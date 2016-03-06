@@ -14,10 +14,12 @@ namespace Jamiras.DataModels.Metadata
         protected ModelMetadata()
         {
             _fieldMetadata = EmptyTinyDictionary<int, FieldMetadata>.Instance;
+            _fieldConverters = EmptyTinyDictionary<int, IConverter>.Instance;
             _jsonFields = new List<JsonFieldConverter>();
         }
 
         private ITinyDictionary<int, FieldMetadata> _fieldMetadata;
+        private ITinyDictionary<int, IConverter> _fieldConverters;
         private readonly List<JsonFieldConverter> _jsonFields;
         private static int _nextKey = -100;
 
@@ -31,9 +33,12 @@ namespace Jamiras.DataModels.Metadata
         /// </summary>
         /// <param name="property">Property to register metadata for.</param>
         /// <param name="metadata">Metadata for the field.</param>
-        protected virtual void RegisterFieldMetadata(ModelProperty property, FieldMetadata metadata)
+        protected virtual void RegisterFieldMetadata(ModelProperty property, FieldMetadata metadata, IConverter converter)
         {
             _fieldMetadata = _fieldMetadata.AddOrUpdate(property.Key, metadata);
+
+            if (converter != null)
+                _fieldConverters = _fieldConverters.AddOrUpdate(property.Key, converter);
 
             if ((metadata.Attributes & InternalFieldAttributes.PrimaryKey) != 0 && PrimaryKeyProperty == null)
                 PrimaryKeyProperty = property;
@@ -68,11 +73,23 @@ namespace Jamiras.DataModels.Metadata
         /// </summary>
         /// <param name="property">The property to get the metadata for.</param>
         /// <returns>Requested metadata, <c>null</c> if not found.</returns>
-        public FieldMetadata GetFieldMetadata(ModelProperty property)
+        internal FieldMetadata GetFieldMetadata(ModelProperty property)
         {
             FieldMetadata metadata;
             _fieldMetadata.TryGetValue(property.Key, out metadata);
             return metadata;
+        }
+
+        /// <summary>
+        /// Gets the converter registered for a <see cref="ModelProperty"/>.
+        /// </summary>
+        /// <param name="property">The property to get the metadata for.</param>
+        /// <returns>Requested converter, <c>null</c> if not found.</returns>
+        internal IConverter GetConverter(ModelProperty property)
+        {
+            IConverter converter;
+            _fieldConverters.TryGetValue(property.Key, out converter);
+            return converter;
         }
 
         /// <summary>
