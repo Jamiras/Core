@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using Jamiras.Commands;
 using Jamiras.Components;
 using Jamiras.Services;
-using System.Windows.Media;
 
 namespace BundleFileViewer
 {
@@ -18,6 +18,7 @@ namespace BundleFileViewer
             InitializeComponent();
 
             CoreServices.RegisterServices();
+            ServiceRepository.Instance.FindService<IDialogService>().MainWindow = this;
 
             DataContext = MainWindowViewModel.Instance;
             MainWindowViewModel.Instance.ExitCommand = new DelegateCommand(new Action(Close));

@@ -19,7 +19,12 @@ namespace Jamiras.IO
         private int _recentFilesIndex;
 
         public FileBundle(string fileName)
-            : this(fileName, 17, new FileSystemService())
+            : this(fileName, 17)
+        {
+        }
+
+        protected FileBundle(string fileName, int numBuckets)
+            : this(fileName, numBuckets, new FileSystemService())
         {
         }
 
@@ -93,13 +98,13 @@ namespace Jamiras.IO
         }
 
         [DebuggerDisplay("{FileName} {Size}@{Offset}")]
-        private class FileInfo
+        protected class FileInfo
         {
             public string FileName { get; set; }
             public DateTime Modified { get; set; }
             public int Size { get; set; }
             public int Offset { get; set; }
-            public BundleWriteStream Stream { get; set; }
+            internal Stream Stream { get; set; }
 
             public bool IsDirectory
             {
@@ -203,7 +208,7 @@ namespace Jamiras.IO
             }
         }
 
-        private static bool InFolder(FileInfo info, string path)
+        protected static bool InFolder(FileInfo info, string path)
         {
             var index = info.FileName.LastIndexOf('\\');
             if (index == -1)
@@ -212,7 +217,7 @@ namespace Jamiras.IO
             return String.Compare(path, 0, info.FileName, 0, index) == 0;
         }
 
-        private IEnumerable<FileInfo> EnumerateFiles()
+        protected IEnumerable<FileInfo> EnumerateFiles()
         {
             BinaryReader reader = null;
 
@@ -305,13 +310,16 @@ namespace Jamiras.IO
             {
                 if (info != null && ReferenceEquals(info.Stream, stream))
                 {
+                    if (info.Modified == DateTime.MinValue)
+                        info.Modified = DateTime.UtcNow;
+
                     Commit(info);
                     break;
                 }
             }
         }
 
-        private void Commit(FileInfo info)
+        protected virtual void Commit(FileInfo info)
         {
             using (var fileStream = _fileSystem.OpenFile(_fileName, OpenFileMode.ReadWrite))
             {
@@ -340,39 +348,43 @@ namespace Jamiras.IO
                     writer.Write(headerOffset);
                 }
 
-                writer.Seek(headerOffset, SeekOrigin.Begin);
-                writer.Write(0); // no next
-
-                if (info.Stream != null)
-                    info.Size = (int)info.Stream.Position;
-                writer.Write(info.Size);
-
-                info.Modified = DateTime.UtcNow;
-                writer.Write(info.Modified.ToBinary());
-
-                writer.Write((byte)info.FileName.Length);
-                foreach (var c in info.FileName)
-                    writer.Write((byte)c);
-
-                info.Offset = (int)writer.BaseStream.Position;
-
-                if (info.Stream != null)
-                {
-                    var buffer = new byte[8192];
-                    info.Stream.Seek(0, SeekOrigin.Begin);
-                    do
-                    {
-                        int read = info.Stream.Read(buffer, 0, buffer.Length);
-                        if (read == 0)
-                            break;
-
-                        writer.Write(buffer, 0, read);
-                    } while (true);
-
-                    info.Stream = null;
-                }
+                WriteFile(info, headerOffset, writer);
 
                 writer.Flush();
+            }
+        }
+
+        protected static void WriteFile(FileInfo info, int headerOffset, BinaryWriter writer)
+        {
+            writer.Seek(headerOffset, SeekOrigin.Begin);
+            writer.Write(0); // no next
+
+            if (info.Stream != null)
+                info.Size = (int)info.Stream.Position;
+            writer.Write(info.Size);
+
+            writer.Write(info.Modified.ToBinary());
+
+            writer.Write((byte)info.FileName.Length);
+            foreach (var c in info.FileName)
+                writer.Write((byte)c);
+
+            info.Offset = (int)writer.BaseStream.Position;
+
+            if (info.Stream != null)
+            {
+                var buffer = new byte[8192];
+                info.Stream.Seek(0, SeekOrigin.Begin);
+                do
+                {
+                    int read = info.Stream.Read(buffer, 0, buffer.Length);
+                    if (read == 0)
+                        break;
+
+                    writer.Write(buffer, 0, read);
+                } while (true);
+
+                info.Stream = null;
             }
         }
 
@@ -439,7 +451,7 @@ namespace Jamiras.IO
             return bestFitOffset;
         }
 
-        private static int GetBucketOffset(int bucket)
+        protected static int GetBucketOffset(int bucket)
         {
             return bucket * 4 + 8;
         }
@@ -560,13 +572,13 @@ namespace Jamiras.IO
         public bool FileExists(string path)
         {
             var info = GetFileInfo(path);
-            return (info != null && info.Offset != 0);
+            return (info != null && !info.IsDirectory);
         }
 
         public bool DirectoryExists(string path)
         {
             var info = GetFileInfo(path);
-            return (info != null && info.Offset == 0);
+            return (info != null && info.IsDirectory);
         }
 
         public bool CreateDirectory(string path)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Windows.Input;
 using Jamiras.DataModels;
 using Jamiras.ViewModels;
 
@@ -28,5 +29,7 @@ namespace BundleFileViewer
         {
             get { return (int)GetValue(SizeProperty); }
         }
+
+        public ICommand OpenItemCommand { get; set; }
     }
 }

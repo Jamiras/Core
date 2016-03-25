@@ -1,21 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
-using System.Windows.Threading;
 using Jamiras.Commands;
+using Jamiras.Components;
 using Jamiras.DataModels;
 using Jamiras.DataModels.Metadata;
 using Jamiras.IO;
 using Jamiras.Services;
 using Jamiras.ViewModels;
+using Jamiras.ViewModels.Fields;
 using Jamiras.ViewModels.Grid;
 using Microsoft.Win32;
-using System.Diagnostics;
 
 namespace BundleFileViewer
 {
@@ -33,6 +34,7 @@ namespace BundleFileViewer
             OpenBundleCommand = new DelegateCommand(OpenBundle);
             OpenRecentBundleCommand = new DelegateCommand<string>(OpenBundle);
             MergeFileCommand = new DelegateCommand(MergeFile);
+            MergeDirectoryCommand = new DelegateCommand(MergeDirectory);
             RenameFolderCommand = new DelegateCommand<FolderViewModel>(RenameFolder);
             NewFolderCommand = new DelegateCommand<FolderViewModel>(NewFolder);
             OpenItemCommand = new DelegateCommand<FileViewModel>(OpenItem);
@@ -40,10 +42,82 @@ namespace BundleFileViewer
             RecentFiles = new ObservableCollection<string>();
             Folders = new ObservableCollection<FolderViewModel>();
             Items = new ObservableCollection<FileViewModel>();
+
+            Progress = new ProgressFieldViewModel() { IsEnabled = false };
+
+            _backgroundWorkerService = ServiceRepository.Instance.FindService<IBackgroundWorkerService>();
         }
 
-        private FileBundle _bundle;
-        private readonly Dispatcher _dispatcher;
+        private class FileBundleEx : FileBundle
+        {
+            public FileBundleEx(string fileName)
+                : base(fileName)
+            {
+            }
+
+            public FileBundleEx(string fileName, int numBuckets)
+                : base(fileName, numBuckets)
+            {
+            }
+
+            public IEnumerable<FileViewModel> GetFileViewModels(string path)
+            {
+                foreach (var info in EnumerateFiles())
+                {
+                    if (!info.IsDirectory && InFolder(info, path))
+                    {
+                        string file = info.FileName;
+                        int index = file.LastIndexOf('\\');
+                        if (index > 0)
+                            file = file.Substring(index + 1);
+
+                        var vm = new FileViewModel();
+                        vm.SetValue(FileViewModel.NameProperty, file);
+                        vm.SetValue(FileViewModel.SizeProperty, info.Size);
+                        vm.SetValue(FileViewModel.ModifiedProperty, info.Modified);
+                        yield return vm;
+                    }
+                }
+            }
+
+            private Stream _fileStream;
+            private int _nextWrite;
+            private int[] _bucketTail;
+
+            public void BeginWrite()
+            {
+                _fileStream = File.Open(FileName, FileMode.Open, FileAccess.ReadWrite);
+                _nextWrite = (int)_fileStream.Length;
+                _bucketTail = new int[1024];
+            }
+
+            public void EndWrite()
+            {
+                _fileStream.Flush();
+                _fileStream.Close();
+            }
+
+            protected override void Commit(FileInfo info)
+            {
+                var writer = new BinaryWriter(_fileStream);
+
+                var bucket = GetBucket(info.FileName);
+                var offset = _bucketTail[bucket];
+                if (offset == 0)
+                    writer.BaseStream.Seek(GetBucketOffset(bucket), SeekOrigin.Begin);
+                else
+                    writer.BaseStream.Seek(offset, SeekOrigin.Begin);
+
+                writer.Write(_nextWrite);
+                _bucketTail[bucket] = _nextWrite;
+
+                WriteFile(info, _nextWrite, writer);
+                _nextWrite = (int)writer.BaseStream.Position;
+            }
+        }
+
+        private FileBundleEx _bundle;
+        private readonly IBackgroundWorkerService _backgroundWorkerService;
 
         public static readonly ModelProperty TitleProperty = ModelProperty.Register(typeof(MainWindowViewModel), "Title", typeof(string), "Bundle File Viewer");
 
@@ -53,12 +127,18 @@ namespace BundleFileViewer
             private set { SetValue(TitleProperty, value); }
         }
 
-        public static MainWindowViewModel Instance = new MainWindowViewModel();
+        public static MainWindowViewModel Instance 
+        {
+            get { return _instance ?? (_instance = new MainWindowViewModel()); }
+        }
+        private static MainWindowViewModel _instance;
 
         public IEnumerable<GridColumnDefinition> Columns { get; private set; }
 
         public ObservableCollection<FolderViewModel> Folders { get; private set; }
         public IEnumerable<FileViewModel> Items { get; private set; }
+
+        public ProgressFieldViewModel Progress { get; private set; }
 
         public ObservableCollection<string> RecentFiles { get; private set; }
 
@@ -87,7 +167,7 @@ namespace BundleFileViewer
             dlg.Title = "Create File";
             if (dlg.ShowDialog() == true)
             {
-                Bundle = new FileBundle(dlg.FileName);
+                Bundle = new FileBundleEx(dlg.FileName);
                 AddRecentFile(dlg.FileName);
             }
         }
@@ -114,11 +194,11 @@ namespace BundleFileViewer
 
         private void OpenBundle(string fileName)
         {
-            Bundle = new FileBundle(fileName);
+            Bundle = new FileBundleEx(fileName);
             AddRecentFile(fileName);
         }
 
-        private FileBundle Bundle
+        private FileBundleEx Bundle
         {
             get { return _bundle; }
             set
@@ -130,45 +210,53 @@ namespace BundleFileViewer
                 Folders.Clear();
                 Folders.Add(root);
 
-                foreach (var file in _bundle.GetDirectories())
-                {
-                    var path = file.Split('\\');
-                    AddFolder(root, path, 0);
-                }
-
-                int[] buckets = new int[1024];
-                int count = 0;
-                foreach (var file in _bundle.GetFiles())
-                {
-                    buckets[Bundle.GetBucket(file)]++;
-                    count++;
-                }
-
-                int numBuckets = 0;
-                for (int i = buckets.Length - 1; i >= 0; i--)
-                {
-                    if (buckets[i] != 0)
-                    {
-                        numBuckets = i + 1;
-                        break;
-                    }
-                }
-
-                Array.Sort(buckets, 0, numBuckets);
-                int min = buckets[0], max = buckets[numBuckets - 1];
-                int median = buckets[numBuckets / 2];
-
-                Debug.WriteLine("{0} files ({1} buckets: {2} min, {3} max, {4} median fill)", count, numBuckets, min, max, median);
+                _backgroundWorkerService.RunAsync(LoadBundle);
             }
         }
 
-        private static void AddFolder(FolderViewModel parent, string[] path, int pathIndex)
+        private void LoadBundle()
+        {
+            var root = Folders[0];
+            foreach (var file in _bundle.GetDirectories())
+            {
+                var path = file.Split('\\');
+                AddFolder(root, path, 0);
+            }
+
+#if DEBUG
+            int[] buckets = new int[1024];
+            int count = 0;
+            foreach (var file in _bundle.GetFiles())
+            {
+                buckets[Bundle.GetBucket(file)]++;
+                count++;
+            }
+
+            int numBuckets = 0;
+            for (int i = buckets.Length - 1; i >= 0; i--)
+            {
+                if (buckets[i] != 0)
+                {
+                    numBuckets = i + 1;
+                    break;
+                }
+            }
+
+            Array.Sort(buckets, 0, numBuckets);
+            int min = buckets[0], max = buckets[numBuckets - 1];
+            int median = buckets[numBuckets / 2];
+
+            Debug.WriteLine("{0} files ({1} buckets: {2} min, {3} max, {4} median fill)", count, numBuckets, min, max, median);
+#endif
+        }
+
+        private void AddFolder(FolderViewModel parent, string[] path, int pathIndex)
         {
             FolderViewModel child = parent.Children.FirstOrDefault(f => String.Compare(f.Name, path[pathIndex], StringComparison.OrdinalIgnoreCase) == 0);
             if (child == null)
             {
                 child = new FolderViewModel(path[pathIndex], parent);
-                parent.Children.Add(child);
+                _backgroundWorkerService.InvokeOnUiThread(() => parent.Children.Add(child));
             }
 
             pathIndex++;
@@ -187,31 +275,40 @@ namespace BundleFileViewer
 
         private static void OnSelectedFolderChanged(object sender, ModelPropertyChangedEventArgs e)
         {
-            ((MainWindowViewModel)sender).UpdateItems();
+            var viewModel = (MainWindowViewModel)sender;
+            viewModel._backgroundWorkerService.RunAsync(viewModel.UpdateItems);
         }
 
         private void UpdateItems()
         {
             var items = new List<FileViewModel>();
-            foreach (var path in _bundle.GetFiles(GetSelectedFolderPath()))
+            var files = new List<string>(_bundle.GetFiles(GetSelectedFolderPath()));
+
+            Progress.Label = "Reading";
+            Progress.Reset(files.Count);
+            Progress.IsEnabled = true;
+
+            var s = Stopwatch.StartNew();
+
+            foreach (var vm in _bundle.GetFileViewModels(GetSelectedFolderPath()))
             {
-                string file = path;
-                int index = file.LastIndexOf('\\');
-                if (index > 0)
-                    file = path.Substring(index + 1);
-
-                var vm = new FileViewModel();
-                vm.SetValue(FileViewModel.NameProperty, file);
-                vm.SetValue(FileViewModel.SizeProperty, _bundle.GetSize(path));
-                vm.SetValue(FileViewModel.ModifiedProperty, _bundle.GetModified(path));
-
+                var delegateVm = vm;
+                vm.OpenItemCommand = new DelegateCommand(() => OpenItem(delegateVm));
                 items.Add(vm);
+                Progress.Current++;
             }
 
-            items.Sort((l, r) => String.Compare(l.Name, r.Name, StringComparison.OrdinalIgnoreCase));
+            s.Stop();
+            Debug.WriteLine(s.ElapsedMilliseconds + "ms to scan " + items.Count + " files");
 
-            Items = items; 
-            OnPropertyChanged(() => Items);
+            items.Sort((l, r) => SortFunctions.NumericStringCaseInsensitiveCompare(l.Name, r.Name));
+
+            _backgroundWorkerService.InvokeOnUiThread(() =>
+            {
+                Progress.IsEnabled = false;
+                Items = items;
+                OnPropertyChanged(() => Items);
+            });
         }
 
         public CommandBase<FolderViewModel> RenameFolderCommand { get; private set; }
@@ -263,26 +360,52 @@ namespace BundleFileViewer
                         _bundle.DeleteFile(file);
                     }
 
-                    using (Stream outputStream = _bundle.CreateFile(file))
-                    {
-                        _bundle.SetModified(file, info.LastWriteTimeUtc);
-
-                        using (Stream inputStream = File.OpenRead(fileName))
-                        {
-                            byte[] buffer = new byte[8192];
-                            do
-                            {
-                                int read = inputStream.Read(buffer, 0, buffer.Length);
-                                if (read <= 0)
-                                    break;
-
-                                outputStream.Write(buffer, 0, read);
-                            } while (true);
-                        }
-                    }
+                    InjectFile(_bundle, file, fileName, info.LastWriteTimeUtc);
                 }
 
                 UpdateItems();
+            }
+        }
+
+        private static void InjectFile(FileBundle bundle, string file, string fileName, DateTime lastWriteTime)
+        {
+            using (Stream outputStream = bundle.CreateFile(file))
+            {
+                bundle.SetModified(file, lastWriteTime);
+
+                using (Stream inputStream = File.OpenRead(fileName))
+                {
+                    byte[] buffer = new byte[8192];
+                    do
+                    {
+                        int read = inputStream.Read(buffer, 0, buffer.Length);
+                        if (read <= 0)
+                            break;
+
+                        outputStream.Write(buffer, 0, read);
+                    } while (true);
+                }
+            }
+        }
+
+        private static void CopyFile(FileBundle destBundle, FileBundle sourceBundle, string file)
+        {
+            using (Stream outputStream = destBundle.CreateFile(file))
+            {
+                destBundle.SetModified(file, sourceBundle.GetModified(file));
+
+                using (Stream inputStream = sourceBundle.OpenFile(file, OpenFileMode.Read))
+                {
+                    byte[] buffer = new byte[8192];
+                    do
+                    {
+                        int read = inputStream.Read(buffer, 0, buffer.Length);
+                        if (read <= 0)
+                            break;
+
+                        outputStream.Write(buffer, 0, read);
+                    } while (true);
+                }
             }
         }
 
@@ -310,6 +433,99 @@ namespace BundleFileViewer
                 return fileName;
 
             return String.Format("{0}\\{1}", path, fileName);
+        }
+
+        public CommandBase MergeDirectoryCommand { get; private set; }
+
+        private void MergeDirectory()
+        {
+            OpenFileDialog dlg = new OpenFileDialog();
+            dlg.AddExtension = true;
+            dlg.Title = "Merge Folder";
+            if (dlg.ShowDialog() == true)
+            {
+                var path = GetSelectedFolderPath();
+                if (path != null && !_bundle.DirectoryExists(path))
+                    _bundle.CreateDirectory(path);
+
+                var bundleFiles = new List<string>(_bundle.GetFiles());
+
+                var newBundle = new FileBundleEx(_bundle.FileName.Replace(".jbd", ".tmp.jbd"), 719); // TODO: numBuckets = prime_ceil(bundleFiles / 16)
+
+                var folder = Path.GetDirectoryName(dlg.FileNames[0]);
+                var files = Directory.GetFiles(folder);
+
+                Progress.Reset(files.Length + bundleFiles.Count);
+                Progress.Label = "Merging";
+                Progress.IsEnabled = true;
+
+                _backgroundWorkerService.RunAsync(() => Merge(newBundle, _bundle, bundleFiles, files));
+            }
+        }
+
+        private void Merge(FileBundleEx destBundle, FileBundle srcBundle, List<string> bundleFiles, IEnumerable<string> files)
+        {
+            destBundle.BeginWrite();
+
+            var paths = new List<string>();
+            var path = GetSelectedFolderPath();
+            AddPath(destBundle, path);
+            paths.Add(path);
+
+            foreach (var fileName in files)
+            {
+                string file = Path.GetFileName(fileName);
+                if (path != null)
+                    file = String.Format("{0}\\{1}", path, file);
+
+                for (int i = 0; i < bundleFiles.Count; i++)
+                {
+                    if (String.Compare(bundleFiles[i], file, StringComparison.OrdinalIgnoreCase) == 0)
+                    {
+                        bundleFiles.RemoveAt(i);
+                        Progress.Current++;
+                        break;
+                    }
+                }
+
+                FileInfo info = new FileInfo(fileName);
+                InjectFile(destBundle, file, fileName, info.LastWriteTimeUtc);
+
+                Progress.Current++;
+            }
+
+            foreach (var file in bundleFiles)
+            {
+                int index = file.LastIndexOf('\\');
+                if (index > 0)
+                {
+                    path = file.Substring(0, index);
+                    if (!paths.Contains(path))
+                    {
+                        AddPath(destBundle, path);
+                        paths.Add(path);
+                    }
+                }
+
+                CopyFile(destBundle, srcBundle, file);
+                Progress.Current++;
+            }
+
+            destBundle.EndWrite();
+
+            _backgroundWorkerService.InvokeOnUiThread(() =>
+            {
+                Progress.IsEnabled = false;
+            });
+        }
+
+        private static void AddPath(FileBundle bundle, string path)
+        {
+            int index = path.LastIndexOf('\\');
+            if (index > 0)
+                AddPath(bundle, path.Substring(0, index));
+
+            bundle.CreateDirectory(path);
         }
 
         public CommandBase<FileViewModel> OpenItemCommand { get; private set; }

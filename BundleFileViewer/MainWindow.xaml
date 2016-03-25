@@ -3,6 +3,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:jamiras="clr-namespace:Jamiras.Controls;assembly=Jamiras.Core"
         Title="{Binding Title}" Height="480" Width="640">
+    <Window.Resources>
+        <ResourceDictionary>
+            <BooleanToVisibilityConverter x:Key="boolToVisConverter" />
+        </ResourceDictionary>
+    </Window.Resources>
     <DockPanel LastChildFill="True">
         <Menu DockPanel.Dock="Top" x:Name="menu">
             <MenuItem Header="_File">
@@ -24,7 +29,24 @@
                 <MenuItem Header="_File" Command="{Binding MergeFileCommand}" />
             </MenuItem>
         </Menu>
-        <Grid>
+        
+        <Grid DockPanel.Dock="Bottom" DataContext="{Binding Progress}" Margin="4,2,4,4"
+              Visibility="{Binding IsEnabled, Converter={StaticResource boolToVisConverter}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <TextBlock Text="{Binding Label}" />
+            <TextBlock Text="{Binding TimeRemainingString}" HorizontalAlignment="Right" FontSize="10" VerticalAlignment="Bottom" />
+            <ProgressBar Grid.Row="1" Maximum="{Binding Target}" Value="{Binding Current}" Height="16" />
+            <TextBlock Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10" Margin="0,0,0,1">
+                <TextBlock Text="{Binding Percentage}" />
+                <Run Text="%" />
+            </TextBlock>
+        </Grid>
+        
+        <Grid Margin="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" MinWidth="200"/>
                 <ColumnDefinition Width="*" MinWidth="300" />
@@ -90,9 +112,22 @@
             </TreeView>
             <GridSplitter Width="4" />
 
-            <jamiras:GridView Grid.Column="2" HorizontalAlignment="Stretch"
-                              DoubleClickCommand="{Binding OpenItemCommand}"
-                              Columns="{Binding Columns}" Rows="{Binding Items}" />
+            <ListView ItemsSource="{Binding Items}" Grid.Column="2" HorizontalAlignment="Stretch" >
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid jamiras:CommandBinding.DoubleClickCommand="{Binding OpenItemCommand}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150" />
+                                <ColumnDefinition Width="150" />
+                                <ColumnDefinition Width="80" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock FontSize="10" Text="{Binding Name}" />
+                            <TextBlock Grid.Column="1" FontSize="10" Text="{Binding Modified}" HorizontalAlignment="Right" />
+                            <TextBlock Grid.Column="2" FontSize="10" Text="{Binding Size}" HorizontalAlignment="Right" />
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
         </Grid>
     </DockPanel>
 </Window>

@@ -294,6 +294,9 @@ namespace Jamiras.DataModels.Metadata
             if (query.IsColumnNull(index))
                 return null;
 
+            if (fieldMetadata is ByteFieldMetadata)
+                return query.GetByte(index);
+
             if (fieldMetadata is IntegerFieldMetadata)
                 return query.GetInt32(index);
 
@@ -311,9 +314,6 @@ namespace Jamiras.DataModels.Metadata
 
             if (fieldMetadata is BooleanFieldMetadata)
                 return query.GetBool(index);
-
-            if (fieldMetadata is ByteFieldMetadata)
-                return query.GetByte(index);
 
             throw new NotSupportedException(fieldMetadata.GetType().Name);
         }
