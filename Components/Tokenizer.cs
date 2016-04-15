@@ -411,7 +411,7 @@ namespace Jamiras.Components
             return token.Split(separator, options);
         }
 
-        public static char[] WordSeparators = new[] { ' ', '\n', '\t', '\r', '(', ')', ',', '.', '!', ';', '[', ']' };
+        public static char[] WordSeparators = new[] { ' ', '\n', '\t', '\r', '(', ')', ',', '.', '!', ':', ';', '[', ']' };
 
         /// <summary>
         /// Gets the <paramref name="count"/> longest words from <paramref name="input"/>
