@@ -9,12 +9,12 @@ namespace Jamiras.ViewModels
         public LookupItem(int id, string label)
         {
             Id = id;
-            Label = label;
+            _label = label;
         }
 
         public override string ToString()
         {
-            return Label;
+            return _label;
         }
 
         /// <summary>
@@ -23,9 +23,22 @@ namespace Jamiras.ViewModels
         public int Id { get; private set; }
 
         /// <summary>
-        /// Gets the label for the LookupItem
+        /// Gets or sets the label for the LookupItem
         /// </summary>
-        public string Label { get; private set; }
+        public string Label 
+        {
+            get { return _label; }
+            set
+            {
+                if (_label != value)
+                {
+                    _label = value;
+                    OnPropertyChanged(() => Label);
+                }
+            }
+        }
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private string _label;
 
         /// <summary>
         /// Gets or sets whether the LookupItem is selected

@@ -47,6 +47,7 @@
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -176,6 +177,7 @@
     <Compile Include="IO\MP4\Mp4TagWriter.cs" />
     <Compile Include="IO\Serialization\GraphQuery.cs" />
     <Compile Include="IO\Serialization\JsonObject.cs" />
+    <Compile Include="IO\Serialization\XmlParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\BackgroundWorkerService.cs" />
     <Compile Include="Services\DialogService.cs" />

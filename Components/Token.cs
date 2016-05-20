@@ -158,7 +158,7 @@ namespace Jamiras.Components
         /// </summary>
         public static bool operator ==(Token token, string str)
         {
-            if (token._length != str.Length)
+            if (str == null || token._length != str.Length)
                 return false;
 
             return (token.CompareTo(str) == 0);
@@ -169,7 +169,7 @@ namespace Jamiras.Components
         /// </summary>
         public static bool operator !=(Token token, string str)
         {
-            if (token._length != str.Length)
+            if (str == null || token._length != str.Length)
                 return true;
 
             return (token.CompareTo(str) != 0);

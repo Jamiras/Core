@@ -40,5 +40,10 @@ namespace Jamiras.Services
         /// (or the <see cref="IHttpResponse"/> if you don't use the stream) when you're done with them.
         /// </remarks>
         void BeginRequest(IHttpRequest request, Action<IHttpResponse> callback);
+
+        /// <summary>
+        /// Removes HTML tags from a string and converts escaped characters.
+        /// </summary>
+        string HtmlToText(string html);
     }
 }

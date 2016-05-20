@@ -259,6 +259,8 @@ namespace Jamiras.IO.MP4
                 Mp4Block block = new Mp4Block();
                 block.Address = reader.BaseStream.Position;
                 block.Size = ReadUInt32(reader);
+                if (block.Size == 0)
+                    break;
 
                 reader.Read(_buffer, 0, 4);
                 if (_buffer[0] < 'A' || (_buffer[0] > 'z' && _buffer[0] != 0xA9) || 

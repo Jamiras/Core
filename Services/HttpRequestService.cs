@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Net;
 using System.Text;
 using Jamiras.Components;
+using Jamiras.IO.Serialization;
 
 namespace Jamiras.Services
 {
@@ -189,6 +190,28 @@ namespace Jamiras.Services
             } 
 
             return false;
+        }
+
+        /// <summary>
+        /// Removes HTML tags from a string and converts escaped characters.
+        /// </summary>
+        public string HtmlToText(string html)
+        {
+            if (html.IndexOfAny(new char[] {'<', '&'}) == -1)
+                return html;
+
+            var builder = new StringBuilder();
+            var parser = new XmlParser(html);
+
+            while (parser.NextTokenType != XmlTokenType.None)
+            {
+                if (parser.NextTokenType == XmlTokenType.Content)
+                    builder.Append(System.Web.HttpUtility.HtmlDecode(parser.NextToken.ToString()));
+
+                parser.Advance();
+            }
+
+            return builder.ToString();
         }
     }
 }

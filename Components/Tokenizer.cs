@@ -25,12 +25,12 @@ namespace Jamiras.Components
             private int _inputIndex;
             private int _tokenStart;
 
-            protected override void StartToken()
+            internal override void StartToken()
             {
                 _tokenStart = _inputIndex - 1;
             }
 
-            protected override Token EndToken()
+            internal override Token EndToken()
             {
                 return new Token(_input, _tokenStart, _inputIndex - _tokenStart - 1);
             }
@@ -113,12 +113,12 @@ namespace Jamiras.Components
             private readonly List<char> _bufferedChars;
             private StringBuilder _tokenBuilder;
 
-            protected override void StartToken()
+            internal override void StartToken()
             {
                 _tokenBuilder = new StringBuilder();
             }
 
-            protected override Token EndToken()
+            internal override Token EndToken()
             {
                 if (_tokenBuilder == null || _tokenBuilder.Length == 0)
                     return new Token();
@@ -224,9 +224,18 @@ namespace Jamiras.Components
         /// </summary>
         public abstract void Advance();
 
-        protected abstract void StartToken();
+        /// <summary>
+        /// Advances the specified number of characters in the source.
+        /// </summary>
+        public void Advance(int count)
+        {
+            for (int i = 0; i < count; i++)
+                Advance();
+        }
 
-        protected abstract Token EndToken();
+        internal abstract void StartToken();
+
+        internal abstract Token EndToken();
 
         protected static Token CreateToken(StringBuilder builder)
         {
@@ -328,6 +337,31 @@ namespace Jamiras.Components
         }
 
         /// <summary>
+        /// Scans the input for the requested string and creates a token of everything up to the first match.
+        /// </summary>
+        public Token ReadTo(string needle)
+        {
+            StartToken();
+
+            do
+            {
+                while (NextChar != needle[0])
+                {
+                    if (NextChar == '\0')
+                        return EndToken();
+
+                    Advance();
+                }
+
+                int matchingChars = MatchSubstring(needle);
+                if (matchingChars == needle.Length)
+                    return EndToken();
+
+                Advance();
+            } while (true);
+        }
+
+        /// <summary>
         /// Matches a quoted string.
         /// </summary>
         public virtual Token ReadQuotedString()
@@ -355,6 +389,24 @@ namespace Jamiras.Components
                         case 'r':
                             Advance();
                             continue;
+                        case 'u':
+                            Advance();
+
+                            string hex = "";
+                            hex += NextChar;
+                            Advance();
+                            hex += NextChar;
+                            Advance();
+                            hex += NextChar;
+                            Advance();
+                            hex += NextChar;
+                            Advance();
+
+                            int value;
+                            if (Int32.TryParse(hex, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture, out value))
+                                builder.Append((Char)value);
+
+                            continue;
                     }
                 }
                 else if (NextChar == 0)
@@ -381,9 +433,7 @@ namespace Jamiras.Components
             if (matchingChars != token.Length)
                 return false;
 
-            for (int i = 0; i < token.Length; i++)
-                Advance();
-
+            Advance(token.Length);
             return true;
         }
 
@@ -413,6 +463,16 @@ namespace Jamiras.Components
 
         public static char[] WordSeparators = new[] { ' ', '\n', '\t', '\r', '(', ')', ',', '.', '!', ':', ';', '[', ']' };
 
+        private static string[] _ignoreWords = { "a", "an", "in", "it", "of", "on", "or", "the", "to" };
+
+        /// <summary>
+        /// Gets whether the provided word is a common word that has minimal importance.
+        /// </summary>
+        public static bool IsIgnoredWord(Token word)
+        {
+            return (word.Length <= 3 && _ignoreWords.Any(w => word.CompareTo(w, StringComparison.OrdinalIgnoreCase) == 0));
+        }
+
         /// <summary>
         /// Gets the <paramref name="count"/> longest words from <paramref name="input"/>
         /// </summary>
@@ -421,11 +481,10 @@ namespace Jamiras.Components
             var sortedTokens = new Token[count];
             var tokens = new List<Token>(count);
 
-            string[] ignoreWords = { "a", "an", "in", "it", "of", "on", "or", "the", "to" };
 
             foreach (var word in Tokenizer.Split(input, WordSeparators, StringSplitOptions.RemoveEmptyEntries))
             {
-                if (word.Length <= 3 && ignoreWords.Any(w => word.CompareTo(w, StringComparison.OrdinalIgnoreCase) == 0))
+                if (IsIgnoredWord(word))
                     continue;
 
                 for (int i = 0; i < count; i++)
