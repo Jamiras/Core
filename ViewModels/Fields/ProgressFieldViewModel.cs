@@ -8,6 +8,12 @@ namespace Jamiras.ViewModels.Fields
 {
     public class ProgressFieldViewModel : FieldViewModelBase
     {
+        const int SampleCount = 5;
+        private double[] _elapsedSample = new double[SampleCount + 1]; // always include 0ms elapsed for 0 progress when calculating trend line
+        private double[] _progressSample = new double[SampleCount + 1];
+        private int _sampleIndex = 0;
+        private double _estimatedMilliseconds;
+
         private DateTime? _progressStart;
         //private TaskbarItemInfo _taskBarItemInfo;
 
@@ -118,9 +124,20 @@ namespace Jamiras.ViewModels.Fields
 
             var elapsed = DateTime.UtcNow - viewModel._progressStart.GetValueOrDefault();
             var elapsedMilliseconds = elapsed.TotalMilliseconds;
-            var percentComplete = (double)viewModel.Current / (double)viewModel.Target;
-            var percentRemaining = 1 - percentComplete;
-            var remainingMilliseconds = (elapsedMilliseconds / percentComplete) * percentRemaining;
+            lock (viewModel._elapsedSample)
+            {
+                if (elapsedMilliseconds - viewModel._elapsedSample[viewModel._sampleIndex] > (1000 / SampleCount))
+                {
+                    viewModel._elapsedSample[viewModel._sampleIndex] = elapsedMilliseconds;
+                    viewModel._progressSample[viewModel._sampleIndex] = (double)viewModel.Current;
+                    viewModel._sampleIndex = (viewModel._sampleIndex + 1) % SampleCount;
+
+                    var trendline = new Trendline(viewModel._progressSample, viewModel._elapsedSample);
+                    viewModel._estimatedMilliseconds = trendline.GetY(viewModel.Target);
+                }
+            }
+
+            var remainingMilliseconds = viewModel._estimatedMilliseconds - elapsedMilliseconds;
             return TimeSpan.FromMilliseconds(remainingMilliseconds);
         }
 
@@ -154,6 +171,10 @@ namespace Jamiras.ViewModels.Fields
             Current = 0;
             Target = newMaximum;
             _progressStart = null;
+
+            for (int i = 0; i < SampleCount; i++)
+                _progressSample[i] = _elapsedSample[i] = 0;
+            _estimatedMilliseconds = 0.0;
         }
     }
 }

@@ -540,6 +540,19 @@ namespace Jamiras.Components
         }
 
         /// <summary>
+        /// Gets the number of days that have elapsed between two <see cref="Date"/>s.
+        /// </summary>
+        /// <param name="compare">The value to compare against.</param>
+        /// <returns>The number of days that have elapsed between the two <see cref="Date"/>s.</returns>
+        public int GetElapsedDays(Date compare)
+        {
+            var dttm1 = new DateTime(Year, Month, Day, 0, 0, 0, DateTimeKind.Unspecified);
+            var dttm2 = new DateTime(compare.Year, compare.Month, compare.Day, 0, 0, 0, DateTimeKind.Unspecified);
+            var span = dttm1 - dttm2;
+            return (int)span.TotalDays;
+        }
+
+        /// <summary>
         /// Trys to converts the <see cref="Date"/> to a <see cref="DateTime"/>.
         /// </summary>
         /// <param name="dateTime">The <see cref="DateTime"/> to initialize.</param>
