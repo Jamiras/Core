@@ -211,6 +211,7 @@
     <Compile Include="Services\SoundPlayer.cs" />
     <Compile Include="Services\WindowSettingsRepository.cs" />
     <Compile Include="ViewModels\CommandViewModel.cs" />
+    <Compile Include="ViewModels\Converters\FloatToCurrencyConverter.cs" />
     <Compile Include="ViewModels\Converters\DateToDateTimeConverter.cs" />
     <Compile Include="ViewModels\Converters\DateToStringConverter.cs" />
     <Compile Include="ViewModels\Converters\DelegateConverter.cs" />
