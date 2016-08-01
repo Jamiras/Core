@@ -40,6 +40,13 @@ namespace Jamiras.Services
         /// <param name="path">Path to directory.</param>
         /// <returns><c>true</c> if the directory was created, <c>false</c> if not.</returns>
         bool CreateDirectory(string path);
+
+        /// <summary>
+        /// Gets the size of the file
+        /// </summary>
+        /// <param name="path">Path to file.</param>
+        /// <returns>The size of the file (in bytes)</returns>
+        long GetFileSize(string path);
     }
 
     public enum OpenFileMode

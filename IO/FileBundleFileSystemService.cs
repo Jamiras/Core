@@ -72,6 +72,14 @@ namespace Jamiras.IO
             return _fileSystem.CreateDirectory(path);
         }
 
+        public long GetFileSize(string path)
+        {
+            if (_fileSystem.FileExists(path))
+                return _fileSystem.GetFileSize(path);
+
+            return Bundle.GetFileSize(path);
+        }
+
         #endregion
     }
 }

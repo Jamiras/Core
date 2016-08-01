@@ -676,6 +676,15 @@ namespace Jamiras.IO
             return false;
         }
 
+        public long GetFileSize(string path)
+        {
+            var info = GetFileInfo(path);
+            if (info == null)
+                return 0;
+
+            return info.Size;
+        }
+
         #endregion
     }
 }

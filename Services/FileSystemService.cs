@@ -36,6 +36,11 @@ namespace Jamiras.Services
             return (Directory.CreateDirectory(path) != null);
         }
 
+        public long GetFileSize(string path)
+        {
+            return new FileInfo(path).Length;
+        }
+
         #endregion
     }
 }
