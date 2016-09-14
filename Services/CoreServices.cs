@@ -76,6 +76,17 @@ namespace Jamiras.Services
             while (innerException.InnerException != null)
                 innerException = innerException.InnerException;
 
+            try
+            {
+                var logService = ServiceRepository.Instance.FindService<ILogService>();
+                var logger = logService.GetLogger("Jamiras.Core");
+                logger.WriteError(innerException.Message + "\n" + innerException.StackTrace);
+            }
+            catch 
+            {
+                // ignore exception trying to log exception
+            }
+
             if (title.Length > 0)
                 title += " - ";
 

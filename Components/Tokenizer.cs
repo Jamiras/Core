@@ -478,9 +478,17 @@ namespace Jamiras.Components
         /// </summary>
         public static Token[] GetLongestWords(string input, int count)
         {
+            if (count == 1)
+            {
+                var longest = GetLongestWord(input);
+                if (longest.IsEmpty)
+                    return new Token[0];
+
+                return new Token[] { longest };
+            }
+
             var sortedTokens = new Token[count];
             var tokens = new List<Token>(count);
-
 
             foreach (var word in Tokenizer.Split(input, WordSeparators, StringSplitOptions.RemoveEmptyEntries))
             {
@@ -510,6 +518,38 @@ namespace Jamiras.Components
                         break;
                     }
                 }
+            }
+
+            return tokens.ToArray();
+        }
+
+        /// <summary>
+        /// Gets the longest word from <paramref name="input"/>
+        /// </summary>
+        public static Token GetLongestWord(string input)
+        {
+            var longest = new Token();
+
+            foreach (var word in Tokenizer.Split(input, WordSeparators, StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (word.Length > longest.Length && !IsIgnoredWord(word))
+                    longest = word;
+            }
+
+            return longest;
+        }
+
+        /// <summary>
+        /// Gets all of the words from <paramref name="input"/>
+        /// </summary>
+        public static Token[] GetAllWords(string input)
+        {
+            var tokens = new List<Token>();
+
+            foreach (var word in Tokenizer.Split(input, WordSeparators, StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (!IsIgnoredWord(word))
+                    tokens.Add(word);
             }
 
             return tokens.ToArray();
