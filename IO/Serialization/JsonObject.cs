@@ -287,7 +287,7 @@ namespace Jamiras.IO.Serialization
 
             if (tokenizer.NextChar == '[')
             {
-                AddField("items", ParseArray("root", tokenizer));
+                ParseArray("items", tokenizer);
             }
             else
             {
@@ -344,6 +344,19 @@ namespace Jamiras.IO.Serialization
                                 break;
                             }
                         }
+                        else if (value.Length == 17 && value[16] == 'Z' && value[4] == '-' && value[7] == '-' && value[10] == 'T' && value[13] == ':')
+                        {
+                            int year, month, day, hour, minute;
+                            if (Int32.TryParse(value.Substring(0, 4), out year) &&
+                                Int32.TryParse(value.Substring(5, 2), out month) &&
+                                Int32.TryParse(value.Substring(8, 2), out day) &&
+                                Int32.TryParse(value.Substring(11, 2), out hour) &&
+                                Int32.TryParse(value.Substring(14, 2), out minute))
+                            {
+                                AddField(fieldName.ToString(), JsonFieldType.DateTime, value.Substring(0, 16) + ":00.000Z");
+                                break;
+                            }
+                        }
                         else if (value.Length == 24 && value[23] == 'Z' && value[4] == '-' && value[7] == '-' && value[10] == 'T' && value[13] == ':' && value[16] == ':' && value[19] == '.')
                         {
                             int year, month, day, hour, minute, second, millisecond;
@@ -364,8 +377,7 @@ namespace Jamiras.IO.Serialization
                         break;
 
                     case '[':
-                        var nestedArray = ParseArray(fieldName.ToString(), tokenizer);
-                        AddField(fieldName.ToString(), nestedArray);
+                        ParseArray(fieldName.ToString(), tokenizer);
                         break;
 
                     case '0':
@@ -415,7 +427,7 @@ namespace Jamiras.IO.Serialization
             tokenizer.Advance();
         }
 
-        private static IEnumerable<JsonObject> ParseArray(string fieldName, Tokenizer tokenizer)
+        private void ParseArray(string fieldName, Tokenizer tokenizer)
         {
             if (tokenizer.NextChar != '[')
                 throw new InvalidOperationException("Array should start with an opening bracket, found " + tokenizer.NextChar);
@@ -424,6 +436,10 @@ namespace Jamiras.IO.Serialization
             tokenizer.SkipWhitespace();
 
             var items = new List<JsonObject>();
+            var strings = new List<string>();
+            var ints = new List<int>();
+            var dbls = new List<double>();
+
             while (tokenizer.NextChar != ']')
             {
                 if (tokenizer.NextChar == '{')
@@ -432,6 +448,25 @@ namespace Jamiras.IO.Serialization
                     var item = new JsonObject();
                     item.ParseObject(itemName, tokenizer);
                     items.Add(item);
+                }
+                else if (tokenizer.NextChar == '"')
+                {
+                    var str = tokenizer.ReadQuotedString();
+                    strings.Add(str.ToString());
+                }
+                else if (Char.IsDigit(tokenizer.NextChar))
+                {
+                    var value = tokenizer.ReadNumber();
+                    if (value.Contains('.'))
+                    {
+                        var dVal = Double.Parse(value.ToString());
+                        dbls.Add(dVal);
+                    }
+                    else
+                    {
+                        var iVal = Int32.Parse(value.ToString());
+                        ints.Add(iVal);
+                    }
                 }
                 else
                 {
@@ -448,7 +483,15 @@ namespace Jamiras.IO.Serialization
             }
 
             tokenizer.Advance();
-            return items.ToArray();
+
+            if (strings.Count > 0)
+                AddField(fieldName, JsonFieldType.StringArray, strings.ToArray());
+            else if (ints.Count > 0)
+                AddField(fieldName, JsonFieldType.IntegerArray, items.ToArray());
+            else if (dbls.Count > 0)
+                AddField(fieldName, JsonFieldType.DoubleArray, items.ToArray());
+            else
+                AddField(fieldName, JsonFieldType.ObjectArray, items.ToArray());
         }
 
         #endregion
@@ -700,10 +743,12 @@ namespace Jamiras.IO.Serialization
         Object,
         ObjectArray,
         String,
+        StringArray,
         Boolean,
         Integer,
         IntegerArray,
         Double,
+        DoubleArray,
         Date,
         DateTime,
     }

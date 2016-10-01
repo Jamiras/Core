@@ -74,7 +74,26 @@ namespace Jamiras.Services
             webRequest.CookieContainer = new CookieContainer();
 
             if (request.Headers.Count > 0)
-                webRequest.Headers = request.Headers;
+            {
+                foreach (var header in request.Headers.AllKeys)
+                {
+                    switch (header)
+                    {
+                        case "Referer":
+                            webRequest.Referer = request.Headers[header];
+                            break;
+                        case "Accept":
+                            webRequest.Accept = request.Headers[header];
+                            break;
+                        case "User-Agent":
+                            webRequest.UserAgent = request.Headers[header];
+                            break;
+                        default:
+                            webRequest.Headers.Add(header, request.Headers[header]);
+                            break;
+                    }
+                }
+            }
 
             webRequest.ContentType = "application/x-www-form-urlencoded";
 
