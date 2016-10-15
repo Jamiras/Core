@@ -453,10 +453,6 @@ namespace Jamiras.Components
         /// </summary>
         public Token[] Split(char[] separator, StringSplitOptions options)
         {
-            var tokens = new List<Token>();
-            var start = _start;
-            var end = _start + Length;
-            var scan = start;
             Predicate<char> isSeparator;
 
             if (separator.Length == 1)
@@ -472,17 +468,29 @@ namespace Jamiras.Components
             }
             else
             {
-                isSeparator = c =>
-                {
-                    foreach (var s in separator)
-                    {
-                        if (c == s)
-                            return true;
-                    }
+                char[] sorted_separators = new char[separator.Length];
+                Array.Copy(separator, sorted_separators, separator.Length);
+                Array.Sort(sorted_separators);
 
-                    return false;
-                };
+                isSeparator = c => (Array.BinarySearch(sorted_separators, c) >= 0);
             }
+
+            return Split(isSeparator, options);
+        }
+
+        internal Token[] Split(Predicate<char> isSeparator, StringSplitOptions options)
+        {
+            // Estimate the initial capacity of the token array to avoid as much resizing as possible.
+            // Assume the average word length is 3 characters, and one character for whitespace between 
+            // words (division by 4 is also fast because it's a bit shift). The list may still grow if
+            // the input string is mostly small words, or it may be slightly large if the input string
+            // is mostly large words.
+            var capacity = (Length + 7) / 4; // +7 to round up and add 1, ensuring the smallest capacity is 2.
+            var tokens = new List<Token>(capacity);
+
+            var start = _start;
+            var scan = start;
+            var end = _start + Length;
 
             while (scan < end)
             {

@@ -461,23 +461,101 @@ namespace Jamiras.Components
             return token.Split(separator, options);
         }
 
-        public static char[] WordSeparators = new[] { ' ', '\n', '\t', '\r', '(', ')', ',', '.', '!', ':', ';', '[', ']' };
-
-        private static string[] _ignoreWords = { "a", "an", "in", "it", "of", "on", "or", "the", "to" };
-
         /// <summary>
         /// Gets whether the provided word is a common word that has minimal importance.
         /// </summary>
         public static bool IsIgnoredWord(Token word)
         {
-            return (word.Length <= 3 && _ignoreWords.Any(w => word.CompareTo(w, StringComparison.OrdinalIgnoreCase) == 0));
+            switch (word.Length)
+            {
+                case 1:
+                    return (word[0] == 'a' || word[0] == 'A'); // a
+
+                case 2:
+                    switch (word[0])
+                    {
+                        case 'a':
+                        case 'A':
+                            return (word[1] == 'n' || word[1] == 'N'); // an
+
+                        case 'i':
+                        case 'I':
+                            return (word[1] == 'n' || word[1] == 't' || word[1] == 'N' || word[1] == 'T'); // in / it
+
+                        case 'o':
+                        case 'O':
+                            return (word[1] == 'n' || word[1] == 'r' || word[1] == 'f' || word[1] == 'N' || word[1] == 'R' || word[1] == 'F'); // on / or / of
+
+                        case 't':
+                        case 'T':
+                            return (word[1] == 'o' || word[1] == 'O'); // to
+                    }
+                    break;
+                          
+                case 3:
+                    switch (word[0])
+                    {
+                        case 'a':
+                        case 'A':
+                            return (word[1] == 'n' || word[1] == 'N') && (word[2] == 'd' || word[2] == 'D'); // and
+
+                        case 't':
+                        case 'T':
+                            return (word[1] == 'h' || word[1] == 'H') && (word[2] == 'e' || word[2] == 'E'); // the
+                    }
+                    break;
+            }
+
+            return false;
+        }
+
+        private static bool IsWordSeparator(char c)
+        {
+            // Using a switch statement is the most efficient way to identify if a character is in a set of other 
+            // characters. The compiler will most likely turn this into a truth table or jump table, which is much 
+            // faster than iterating (or even bsearching) over a collection.
+            switch (c)
+            {
+                case '\t':
+                case '\n':
+                case '\r':
+                case ' ':
+                case '!':
+                case '#':
+                case '(':
+                case ')':
+                case ',':
+                case '.':
+                case ':':
+                case ';':
+                case '?':
+                case '[':
+                case ']':
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        private static Token[] GetWordTokens(string input)
+        {
+            if (String.IsNullOrEmpty(input))
+                return new Token[0];
+
+            var inputToken = new Token(input, 0, input.Length);
+            return inputToken.Split(IsWordSeparator, StringSplitOptions.RemoveEmptyEntries);
         }
 
         /// <summary>
         /// Gets the <paramref name="count"/> longest words from <paramref name="input"/>
         /// </summary>
+        /// <remarks>Excludes words matched by <see cref="IsIgnoredWord"/></remarks>
         public static Token[] GetLongestWords(string input, int count)
         {
+            if (count < 1)
+                throw new ArgumentException("count must be 1 or greater", "count");
+
             if (count == 1)
             {
                 var longest = GetLongestWord(input);
@@ -490,7 +568,7 @@ namespace Jamiras.Components
             var sortedTokens = new Token[count];
             var tokens = new List<Token>(count);
 
-            foreach (var word in Tokenizer.Split(input, WordSeparators, StringSplitOptions.RemoveEmptyEntries))
+            foreach (var word in GetWordTokens(input))
             {
                 if (IsIgnoredWord(word))
                     continue;
@@ -526,11 +604,12 @@ namespace Jamiras.Components
         /// <summary>
         /// Gets the longest word from <paramref name="input"/>
         /// </summary>
+        /// <remarks>Excludes words matched by <see cref="IsIgnoredWord"/></remarks>
         public static Token GetLongestWord(string input)
         {
             var longest = new Token();
 
-            foreach (var word in Tokenizer.Split(input, WordSeparators, StringSplitOptions.RemoveEmptyEntries))
+            foreach (var word in GetWordTokens(input))
             {
                 if (word.Length > longest.Length && !IsIgnoredWord(word))
                     longest = word;
@@ -542,17 +621,36 @@ namespace Jamiras.Components
         /// <summary>
         /// Gets all of the words from <paramref name="input"/>
         /// </summary>
+        /// <remarks>Excludes words matched by <see cref="IsIgnoredWord"/></remarks>
         public static Token[] GetAllWords(string input)
         {
-            var tokens = new List<Token>();
+            var tokens = GetWordTokens(input);
 
-            foreach (var word in Tokenizer.Split(input, WordSeparators, StringSplitOptions.RemoveEmptyEntries))
+            // if none of the tokens are ignored, we can just return the tokens array
+            int i = tokens.Length - 1;
+            while (i >= 0)
             {
-                if (!IsIgnoredWord(word))
-                    tokens.Add(word);
+                if (IsIgnoredWord(tokens[i]))
+                {
+                    // found an ignored word, create a copy of the tokens array without the ignored word(s)
+                    var filteredTokens = new List<Token>(tokens.Length - 1);
+                    for (int j = 0; j < i; j++)
+                    {
+                        if (!IsIgnoredWord(tokens[j]))
+                            filteredTokens.Add(tokens[j]);
+                    }
+
+                    // we already know everything after [i] is not an ignored word
+                    for (int j = i + 1; j < tokens.Length; j++)
+                        filteredTokens.Add(tokens[j]);
+
+                    return filteredTokens.ToArray();
+                }
+
+                i--;
             }
 
-            return tokens.ToArray();
+            return tokens;
         }
     }
 }
