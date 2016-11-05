@@ -86,37 +86,12 @@ namespace Jamiras.Commands
     /// CanExecute will be re-evaluated any time a bound property changes 
     /// (particularly useful when binding CommandParameters to the command)
     /// </remarks>
-    public abstract class DependencyCommandBase<TParameter> : ICommand
+    public abstract class DependencyCommandBase<TParameter> : CommandBase<TParameter>, ICommand
     {
-        #region ICommand Members
-
-        /// <summary>
-        /// Determines whether or not the command can be executed for a given parameter.
-        /// </summary>
-        /// <param name="parameter">Parameter to evaluate.</param>
-        /// <returns>True if the command can be executed, false if not.</returns>
-        bool ICommand.CanExecute(object parameter)
-        {
-            if (parameter == null && typeof(TParameter).IsValueType)
-                return false;
-
-            return CanExecute((TParameter)parameter);
-        }
-
-        /// <summary>
-        /// Determines whether or not the command can be executed for a given parameter.
-        /// </summary>
-        /// <param name="parameter">Parameter to evaluate.</param>
-        /// <returns>True if the command can be executed, false if not.</returns>
-        public virtual bool CanExecute(TParameter parameter)
-        {
-            return true;
-        }
-
         /// <summary>
         /// Raised when the CanExecute should be re-evaluated.
         /// </summary>
-        public event EventHandler CanExecuteChanged
+        event EventHandler ICommand.CanExecuteChanged
         {
             add { CommandManager.RequerySuggested += value; }
             remove { CommandManager.RequerySuggested -= value; }
@@ -125,9 +100,10 @@ namespace Jamiras.Commands
         /// <summary>
         /// Raises the CanExecuteChanged event.
         /// </summary>
-        protected virtual void OnCanExecuteChanged(EventArgs e)
+        protected override void OnCanExecuteChanged(EventArgs e)
         {
             CommandManager.InvalidateRequerySuggested();
+            base.OnCanExecuteChanged(e);
         }
 
         void ICommand.Execute(object parameter)
@@ -135,12 +111,5 @@ namespace Jamiras.Commands
             DependencyCommandBase.UpdateLastFocusedControl();
             Execute((TParameter)parameter);
         }
-
-        /// <summary>
-        /// Executes the command.
-        /// </summary>
-        public abstract void Execute(TParameter parameter);
-
-        #endregion
     }
 }
