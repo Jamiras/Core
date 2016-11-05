@@ -76,6 +76,7 @@
       <DependentUpon>Gallery.xaml</DependentUpon>
     </Compile>
     <Compile Include="Controls\GridUtils.cs" />
+    <Compile Include="Controls\PopupAnimation.cs" />
     <Compile Include="Controls\TextPattern.cs" />
     <Compile Include="Database\AliasDefinition.cs" />
     <Compile Include="Database\DatabaseSchema.cs" />
