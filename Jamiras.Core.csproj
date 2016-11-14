@@ -224,6 +224,7 @@
     <Compile Include="ViewModels\Fields\AutoCompleteFieldViewModel.cs" />
     <Compile Include="ViewModels\Fields\ProgressFieldViewModel.cs" />
     <Compile Include="ViewModels\FileDialogViewModel.cs" />
+    <Compile Include="Controls\GridViewSort.cs" />
     <Compile Include="ViewModels\Grid\AutoCompleteColumnDefinition.cs" />
     <Compile Include="ViewModels\Grid\DateColumnDefinition.cs" />
     <Compile Include="ViewModels\Grid\TextColumnDefinition.cs" />
