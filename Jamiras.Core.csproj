@@ -246,6 +246,7 @@
     <Compile Include="ViewModels\Grid\Summarization.cs" />
     <Compile Include="ViewModels\ICompositeViewModel.cs" />
     <Compile Include="ViewModels\ModelBinding.cs" />
+    <Compile Include="ViewModels\TabSetViewModel.cs" />
     <Compile Include="ViewModels\ValidatedViewModelBase.cs" />
     <Compile Include="ViewModels\Fields\TextFieldViewModel.cs" />
     <Compile Include="ViewModels\LookupItem.cs" />
@@ -279,6 +280,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Controls\Styles\ClickableContainerButtonStyle.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Controls\Styles\ProgressOverlay.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

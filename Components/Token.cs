@@ -26,6 +26,15 @@ namespace Jamiras.Components
         private readonly int _length;
 
         /// <summary>
+        /// Gets a token representing an empty string.
+        /// </summary>
+        public static Token Empty
+        {
+            get { return _empty; }
+        }
+        private static Token _empty = new Token(String.Empty, 0, 0);
+
+        /// <summary>
         /// Gets the string represented by the token.
         /// </summary>
         public override string ToString()

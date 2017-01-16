@@ -138,7 +138,10 @@ namespace Jamiras.Controls
         private static void OnFocusIfTrueChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
         {
             if ((bool)e.NewValue)
+            {
                 ((IInputElement)sender).Focus();
+                SetFocusIfTrue((UIElement)sender, false);
+            }
         }
 
         public static readonly DependencyProperty LostFocusCommandProperty =

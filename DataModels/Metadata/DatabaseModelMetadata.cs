@@ -331,6 +331,9 @@ namespace Jamiras.DataModels.Metadata
             if (converter != null)
                 converter.ConvertBack(ref databaseValue);
 
+            if (property.PropertyType.IsEnum && databaseValue is int)
+                return Enum.ToObject(property.PropertyType, (int)databaseValue);
+
             return databaseValue;
         }
 
