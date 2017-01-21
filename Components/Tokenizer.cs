@@ -652,5 +652,60 @@ namespace Jamiras.Components
 
             return tokens;
         }
+
+        public static bool Parse(Token token, string pattern, Token[] matches)
+        {
+            if (pattern.Length < 3)
+                return (token == pattern);
+
+            if (pattern[0] != '{' && pattern[0] != token[0])
+                return false;
+
+            if (pattern[pattern.Length - 1] != '}' && pattern[pattern.Length - 1] != token[token.Length - 1])
+                return false;
+
+            var patternFrontIndex = pattern.IndexOf('{');
+            if (patternFrontIndex == -1)
+                return (token == pattern);
+
+            if (patternFrontIndex > 0)
+            {
+                var patternFront = new Token(pattern, 0, patternFrontIndex);
+                if (!token.StartsWith(patternFront))
+                    return false;
+            }
+
+            var patternBackIndex = pattern.LastIndexOf('}');
+            var patternBack = new Token(pattern, patternBackIndex + 1, pattern.Length - patternBackIndex - 1);
+            if (!token.EndsWith(patternBack))
+                return false;
+
+            var tokenFrontIndex = patternFrontIndex;
+            var tokenBackIndex = token.Length - patternBack.Length;
+            do
+            {
+                patternFrontIndex++;
+                var indexEnd = pattern.IndexOf('}', patternFrontIndex);
+                var indexToken = new Token(pattern, patternFrontIndex, indexEnd - patternFrontIndex);
+
+                if (indexEnd == patternBackIndex)
+                {
+                    matches[Int32.Parse(indexToken.ToString())] = token.SubToken(tokenFrontIndex, tokenBackIndex - tokenFrontIndex);
+                    return true;
+                }
+
+                indexEnd++;
+                patternFrontIndex = pattern.IndexOf('{', indexEnd);
+                if (patternFrontIndex == -1)
+                    return false;
+
+                var matchIndex = token.IndexOf(pattern.Substring(indexEnd, patternFrontIndex - indexEnd), tokenFrontIndex);
+                if (matchIndex == -1)
+                    return false;
+
+                matches[Int32.Parse(indexToken.ToString())] = token.SubToken(tokenFrontIndex, matchIndex - tokenFrontIndex);
+                tokenFrontIndex = matchIndex + (patternFrontIndex - indexEnd);
+            } while (true);
+        }
     }
 }

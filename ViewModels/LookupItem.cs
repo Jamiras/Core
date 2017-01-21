@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Jamiras.Components;
+using System.Collections.Generic;
 
 namespace Jamiras.ViewModels
 {
@@ -57,5 +58,37 @@ namespace Jamiras.ViewModels
         }
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private bool _isSelected;
+    }
+
+    public class HierarchicalLookupItem : LookupItem
+    {
+        public HierarchicalLookupItem(int id, string label)
+            : base(id, label)
+        {
+        }
+
+        public HierarchicalLookupItem(int id, string label, IEnumerable<HierarchicalLookupItem> children)
+            : base(id, label)
+        {
+            _children = children;
+        }
+
+        /// <summary>
+        /// Gets or sets the children of the LookupItem
+        /// </summary>
+        public IEnumerable<HierarchicalLookupItem> Children
+        {
+            get { return _children; }
+            set
+            {
+                if (_children != value)
+                {
+                    _children = value;
+                    OnPropertyChanged(() => Children);
+                }
+            }
+        }
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private IEnumerable<HierarchicalLookupItem> _children;
     }
 }

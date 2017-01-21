@@ -21,16 +21,19 @@ namespace Jamiras.DataModels.Metadata
 
         public override string Validate(ModelBase model, object value)
         {
-            int iValue = (int)value;
-            if (iValue < MinimumValue || iValue > MaximumValue)
+            if (value is int)
             {
-                if (MaximumValue == Int32.MaxValue)
-                    return "{0} must be greater than " + MinimumValue + '.';
+                int iValue = (int)value;
+                if (iValue < MinimumValue || iValue > MaximumValue)
+                {
+                    if (MaximumValue == Int32.MaxValue)
+                        return "{0} must be greater than " + MinimumValue + '.';
 
-                if (MinimumValue == 0)
-                    return "{0} must be less than " + MaximumValue + '.';
+                    if (MinimumValue == 0)
+                        return "{0} must be less than " + MaximumValue + '.';
 
-                return "{0} must be between " + MinimumValue + " and " + MaximumValue + '.';
+                    return "{0} must be between " + MinimumValue + " and " + MaximumValue + '.';
+                }
             }
 
             return base.Validate(model, value);

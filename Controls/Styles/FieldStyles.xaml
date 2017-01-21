@@ -130,6 +130,20 @@
         </Grid>
     </DataTemplate>
 
+    <DataTemplate DataType="{x:Type fields:DecimalFieldViewModel}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Label Style="{StaticResource fieldLabelStyle}"
+                   Target="{Binding ElementName=textBox}" />
+            <TextBox Style="{StaticResource textFieldBaseTextBoxStyle}"
+                     Grid.Row="1" Name="textBox"
+                     TextAlignment="Right" />
+        </Grid>
+    </DataTemplate>
+
     <DataTemplate DataType="{x:Type fields:LookupFieldViewModel}">
         <Grid>
             <Grid.RowDefinitions>

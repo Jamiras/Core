@@ -249,6 +249,17 @@ namespace Jamiras.Components
         }
 
         /// <summary>
+        /// Determines if the token starts with a token value.
+        /// </summary>
+        public bool StartsWith(Token value)
+        {
+            if (value.Length > _length)
+                return false;
+
+            return String.Compare(_source, _start, value._source, value._start, value._length) == 0;
+        }
+
+        /// <summary>
         /// Determines if the token starts with a string value.
         /// </summary>
         public bool StartsWith(string value, StringComparison comparisonType)
@@ -268,6 +279,17 @@ namespace Jamiras.Components
                 return false;
 
             return String.Compare(_source, _start + _length - value.Length, value, 0, value.Length) == 0;
+        }
+
+        /// <summary>
+        /// Determines if the token ends with a token value.
+        /// </summary>
+        public bool EndsWith(Token value)
+        {
+            if (value.Length > _length)
+                return false;
+
+            return String.Compare(_source, _start + _length - value.Length, value._source, value._start, value._length) == 0;
         }
 
         /// <summary>

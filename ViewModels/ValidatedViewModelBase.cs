@@ -87,7 +87,16 @@ namespace Jamiras.ViewModels
                     // finally, validate against the field metadata
                     var fieldMetadata = GetFieldMetadata(binding.Source.GetType(), binding.SourceProperty);
                     if (fieldMetadata != null)
-                        errorMessage = fieldMetadata.Validate(binding.Source, value);
+                    {
+                        try
+                        {
+                            errorMessage = fieldMetadata.Validate(binding.Source, value);
+                        }
+                        catch (InvalidCastException ex)
+                        {
+                            // TODO: may need to run database converter
+                        }
+                    }
                 }
             }
 

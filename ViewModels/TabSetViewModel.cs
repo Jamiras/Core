@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using Jamiras.DataModels;
+using Jamiras.Commands;
 
 namespace Jamiras.ViewModels
 {
@@ -39,12 +40,35 @@ namespace Jamiras.ViewModels
             var tab = GetTab(key);
             if (tab == null)
             {
-                tab = new TabViewModel { Key = key, Header = header, Content = createViewModel() };
+                tab = new TabViewModel { Owner = this, Key = key, Header = header, Content = createViewModel() };
                 Tabs.Add(tab);
             }
 
             SelectedTab = tab;
             return tab;
+        }
+
+        /// <summary>
+        /// Closes the tab associate with the specific key.
+        /// </summary>
+        /// <param name="key">Unique identifier of the tab.</param>
+        /// <returns><c>true</c> if the tab was closed, <c>false</c> if not found.</returns>
+        public bool CloseTab(string key)
+        {
+            return CloseTab(GetTab(key));
+        }
+
+        /// <summary>
+        /// Closes the specified tab.
+        /// </summary>
+        /// <param name="tab">Tab to close.</param>
+        /// <returns><c>true</c> if the tab was closed, <c>false</c> if not found.</returns>
+        public bool CloseTab(TabViewModel tab)
+        {
+            if (tab != null)
+                return Tabs.Remove(tab);
+
+            return false;
         }
 
         public ObservableCollection<TabViewModel> Tabs { get; private set; }
@@ -58,6 +82,7 @@ namespace Jamiras.ViewModels
 
         public class TabViewModel : ViewModelBase
         {
+            internal TabSetViewModel Owner { get; set; }
             internal string Key { get; set; }
 
             public static readonly ModelProperty HeaderProperty = ModelProperty.Register(typeof(TabViewModel), "Header", typeof(string), String.Empty);
@@ -72,6 +97,17 @@ namespace Jamiras.ViewModels
             {
                 get { return (ViewModelBase)GetValue(ContentProperty); }
                 set { SetValue(ContentProperty, value); }
+            }
+
+            public CommandBase CloseCommand
+            {
+                get { return new DelegateCommand(Close); }
+            }
+
+            public void Close()
+            {
+                if (Owner != null)
+                    Owner.CloseTab(this);
             }
         }
     }

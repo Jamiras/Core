@@ -222,6 +222,7 @@
     <Compile Include="ViewModels\DialogViewModelBase.cs" />
     <Compile Include="Services\IDialogService.cs" />
     <Compile Include="ViewModels\Fields\AutoCompleteFieldViewModel.cs" />
+    <Compile Include="ViewModels\Fields\DecimalFieldViewModel.cs" />
     <Compile Include="ViewModels\Fields\ProgressFieldViewModel.cs" />
     <Compile Include="ViewModels\FileDialogViewModel.cs" />
     <Compile Include="Controls\GridViewSort.cs" />
