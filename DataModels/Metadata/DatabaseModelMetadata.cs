@@ -564,13 +564,27 @@ namespace Jamiras.DataModels.Metadata
                 builder.Append(", ");
             }
 
+            var values = new TinyDictionary<FieldMetadata, object>();
+
             foreach (var property in properties)
             {
                 var fieldMetadata = GetFieldMetadata(property);
                 var value = model.GetValue(property);
-                value = CoerceValueToDatabase(property, fieldMetadata, value);
-                AppendQueryValue(builder, value, GetFieldMetadata(property), database);
-                builder.Append(", ");
+
+                object previousValue;
+                if (values.TryGetValue(fieldMetadata, out previousValue))
+                {
+                    if (!Object.Equals(value, previousValue))
+                        throw new InvalidOperationException("Cannot set " + fieldMetadata.FieldName + " to '" + previousValue  +"' and '" + value + "'");
+                }
+                else
+                {
+                    value = CoerceValueToDatabase(property, fieldMetadata, value);
+                    values[fieldMetadata] = value;
+
+                    AppendQueryValue(builder, value, fieldMetadata, database);
+                    builder.Append(", ");
+                }
             }
 
             builder.Length -= 2;

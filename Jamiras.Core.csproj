@@ -72,6 +72,7 @@
     <Compile Include="Components\Tokenizer.cs" />
     <Compile Include="Components\Trendline.cs" />
     <Compile Include="Components\WeightedList.cs" />
+    <Compile Include="Controls\TreeUtils.cs" />
     <Compile Include="Controls\Gallery.xaml.cs">
       <DependentUpon>Gallery.xaml</DependentUpon>
     </Compile>

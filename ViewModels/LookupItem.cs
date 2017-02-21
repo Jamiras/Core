@@ -65,6 +65,7 @@ namespace Jamiras.ViewModels
         public HierarchicalLookupItem(int id, string label)
             : base(id, label)
         {
+            _children = _noChildren;
         }
 
         public HierarchicalLookupItem(int id, string label, IEnumerable<HierarchicalLookupItem> children)
@@ -90,5 +91,7 @@ namespace Jamiras.ViewModels
         }
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private IEnumerable<HierarchicalLookupItem> _children;
+
+        private static HierarchicalLookupItem[] _noChildren = new HierarchicalLookupItem[0];
     }
 }
