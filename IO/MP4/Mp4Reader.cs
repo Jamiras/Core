@@ -161,6 +161,7 @@ namespace Jamiras.IO.MP4
             {
                 case Mp4Tag.Album:
                 case Mp4Tag.Artist:
+                case Mp4Tag.Comment:
                 case Mp4Tag.Description:
                 case Mp4Tag.Encoder:
                 case Mp4Tag.LongDescription:
@@ -319,6 +320,7 @@ namespace Jamiras.IO.MP4
         ReleaseDate = 0xA9646179, // day
         DiskNumber = 0x6469736B, // disk
         TrackNumber = 0x74726B6E, // trkn
+        Comment = 0xA9636D74, // cmt
 
         ParentalRating = 0x00000001, // WM/ParentalRating
     }

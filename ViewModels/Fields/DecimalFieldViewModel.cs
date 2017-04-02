@@ -20,6 +20,9 @@ namespace Jamiras.ViewModels.Fields
         public static readonly ModelProperty PrecisionProperty =
             ModelProperty.Register(typeof(DecimalFieldViewModel), "Precision", typeof(int), 2, OnValueChanged);
 
+        /// <summary>
+        /// Gets or sets the number of digits to display after the decimal.
+        /// </summary>
         public int Precision
         {
             get { return (int)GetValue(PrecisionProperty); }

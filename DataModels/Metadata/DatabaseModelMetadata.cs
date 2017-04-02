@@ -600,8 +600,9 @@ namespace Jamiras.DataModels.Metadata
 
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Debug.WriteLine(ex.Message + ": " + builder.ToString());
                 return false;
             }
         }

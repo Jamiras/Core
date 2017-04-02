@@ -267,6 +267,7 @@ namespace Jamiras.IO.MP4
 
                 case Mp4Tag.Album:
                 case Mp4Tag.Artist:
+                case Mp4Tag.Comment:
                 case Mp4Tag.Description:
                 case Mp4Tag.Encoder:
                 case Mp4Tag.Genre:
