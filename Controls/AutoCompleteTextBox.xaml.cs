@@ -81,18 +81,21 @@ namespace Jamiras.Controls
         private void UpdateAutoCompleteText()
         {
             var text = AutoCompleteText;
-            var textLength = AutoCompleteText.Length;
-            if (_autoCompleteItem.Label.Length > textLength)
+            if (text != null)
             {
-                if (!_autoCompleteItem.Label.StartsWith(text, StringComparison.OrdinalIgnoreCase))
-                    _autoCompleteItem = Suggestions.FirstOrDefault(s => s.Label.StartsWith(text, StringComparison.OrdinalIgnoreCase));
-
-                if (_autoCompleteItem != null)
+                var textLength = AutoCompleteText.Length;
+                if (_autoCompleteItem.Label.Length > textLength)
                 {
-                    BeginChange();
-                    Text = text + _autoCompleteItem.Label.Substring(textLength);
-                    Select(textLength, _autoCompleteItem.Label.Length - textLength);
-                    EndChange();
+                    if (!_autoCompleteItem.Label.StartsWith(text, StringComparison.OrdinalIgnoreCase))
+                        _autoCompleteItem = Suggestions.FirstOrDefault(s => s.Label.StartsWith(text, StringComparison.OrdinalIgnoreCase));
+
+                    if (_autoCompleteItem != null)
+                    {
+                        BeginChange();
+                        Text = text + _autoCompleteItem.Label.Substring(textLength);
+                        Select(textLength, _autoCompleteItem.Label.Length - textLength);
+                        EndChange();
+                    }
                 }
             }
         }

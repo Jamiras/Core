@@ -77,5 +77,18 @@ namespace Jamiras.Components
 
             return value;
         }
+
+        /// <summary>
+        /// case insensitive sort that ignores leading words like A, AN, and THE
+        /// </summary>
+        public static int TitleCompare(string left, string right)
+        {
+            if (left == null || right == null)
+                return String.Compare(left, right);
+
+            Token leftToken = Tokenizer.RemoveArticle(new Token(left, 0, left.Length));
+            Token rightToken = Tokenizer.RemoveArticle(new Token(right, 0, right.Length));
+            return leftToken.CompareTo(rightToken, StringComparison.InvariantCultureIgnoreCase);
+        }
     }
 }

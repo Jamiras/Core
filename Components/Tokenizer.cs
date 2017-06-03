@@ -10,18 +10,31 @@ namespace Jamiras.Components
     {
         public static Tokenizer CreateTokenizer(string input)
         {
-            return new StringTokenizer(input);
+            return new StringTokenizer(input, 0, input.Length);
+        }
+
+        public static Tokenizer CreateTokenizer(string input, int start, int length)
+        {
+            return new StringTokenizer(input, start, length);
+        }
+
+        public static Tokenizer CreateTokenizer(Token token)
+        {
+            return new StringTokenizer(token.Source, token.Start, token.Length);
         }
 
         internal class StringTokenizer : Tokenizer
         {
-            public StringTokenizer(string input)
+            public StringTokenizer(string input, int start, int length)
             {
                 _input = input;
+                _inputIndex = start;
+                _stop = start + length;
                 Advance();
             }
 
             private readonly string _input;
+            private readonly int _stop;
             private int _inputIndex;
             private int _tokenStart;
 
@@ -37,14 +50,14 @@ namespace Jamiras.Components
 
             public override void Advance()
             {
-                if (_inputIndex < _input.Length)
+                if (_inputIndex < _stop)
                 {
                     NextChar = _input[_inputIndex++];
                 }
                 else
                 {
                     NextChar = '\0';
-                    _inputIndex = _input.Length + 1;
+                    _inputIndex = _stop + 1;
                 }
             }
 
@@ -81,8 +94,8 @@ namespace Jamiras.Components
             {
                 int start = _inputIndex - 1;
                 int end = start + token.Length;
-                if (end > _input.Length)
-                    end = _input.Length;
+                if (end > _stop)
+                    end = _stop;
                 int count = end - start;
 
                 for (int i = 0; i < count; i++)
@@ -459,6 +472,54 @@ namespace Jamiras.Components
         {
             var token = new Token(input, 0, input.Length);
             return token.Split(separator, options);
+        }
+
+        /// <summary>
+        /// Gets whether the provided word is a definite (the) or indefinite (a,an) article.
+        /// </summary>
+        public static bool IsArticle(Token word)
+        {
+            switch (word.Length)
+            {
+                case 1:
+                    return (word[0] == 'a' || word[0] == 'A'); // a
+
+                case 2:
+                    switch (word[0])
+                    {
+                        case 'a':
+                        case 'A':
+                            return (word[1] == 'n' || word[1] == 'N'); // an
+                    }
+                    break;
+
+                case 3:
+                    switch (word[0])
+                    {
+                        case 't':
+                        case 'T':
+                            return (word[1] == 'h' || word[1] == 'H') && (word[2] == 'e' || word[2] == 'E'); // the
+                    }
+                    break;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Strips an article (a, an, the) from the start of a phrase token.
+        /// </summary>
+        public static Token RemoveArticle(Token phrase)
+        {
+            var index = phrase.IndexOf(' ');
+            if (index == -1)
+                return phrase;
+
+            var firstWord = phrase.SubToken(0, index);
+            if (!IsArticle(firstWord))
+                return phrase;
+
+            return phrase.SubToken(index + 1).TrimLeft();
         }
 
         /// <summary>

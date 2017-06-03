@@ -57,6 +57,16 @@ namespace Jamiras.Components
             get { return (_length > 0) ? _source.Substring(_start, _length) : String.Empty; }
         }
 
+        internal string Source
+        {
+            get { return _source; }
+        }
+
+        internal int Start
+        {
+            get { return _start; }
+        }
+
         /// <summary>
         /// Gets the length of the token.
         /// </summary>

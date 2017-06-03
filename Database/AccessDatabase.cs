@@ -92,6 +92,7 @@ namespace Jamiras.Database
 
         internal static string EscapeString(string value)
         {
+
             int idx = value.IndexOf('\'');
             if (idx == -1)
                 return value;

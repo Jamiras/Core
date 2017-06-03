@@ -21,16 +21,41 @@
                 <Border HorizontalAlignment="Stretch"
                         Grid.Row="2"
                         Background="#F0F0F0">
-                    <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Right">
-                        <Button HorizontalAlignment="Right"
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Button HorizontalAlignment="Left"
+                                AutomationProperties.AutomationId="extraButton"
+                                Content="{Binding ExtraButtonText}"
+                                Command="{Binding ExtraButtonCommand}"
+                                MinWidth="80"
+                                Margin="4,5,5,5">
+                            <Button.Style>
+                                <Style TargetType="{x:Type Button}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ExtraButtonText}"
+                                                     Value="{x:Null}">
+                                            <Setter Property="Visibility"
+                                                    Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <Button Grid.Column="2" HorizontalAlignment="Right"
                                 AutomationProperties.AutomationId="okButton"
                                 Content="{Binding OkButtonText}"
                                 Command="{Binding OkCommand}"
                                 IsDefault="True"
                                 MinWidth="80"
                                 Margin="5,5,4,5" />
-                        <Button HorizontalAlignment="Right"
+                        
+                        <Button Grid.Column="3" HorizontalAlignment="Right"
                                 AutomationProperties.AutomationId="cancelButton"
                                 Content="{Binding CancelButtonText}"
                                 Command="{Binding CancelCommand}"
@@ -49,7 +74,7 @@
                                 </Style>
                             </Button.Style>
                         </Button>
-                    </StackPanel>
+                    </Grid>
                 </Border>
             </Grid>
         </ControlTemplate>
