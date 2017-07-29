@@ -174,14 +174,14 @@ namespace Jamiras.Components
                     if (b < 0xE0)
                     {
                         var b2 = _stream.ReadByte();
-                        return (char)((b << 5) | (b2 & 0x1F));
+                        return (char)(((b & 0x1F) << 6) | (b2 & 0x3F));
                     }
 
                     if (b < 0xF0)
                     {
                         var b2 = _stream.ReadByte();
                         var b3 = _stream.ReadByte();
-                        return (char)((b << 10) | ((b2 & 0x1F) << 5) | (b3 & 0x1F));
+                        return (char)(((b & 0x1F) << 12) | ((b2 & 0x3F) << 6) | (b3 & 0x3F));
                     }
                 }
 
@@ -511,15 +511,29 @@ namespace Jamiras.Components
         /// </summary>
         public static Token RemoveArticle(Token phrase)
         {
-            var index = phrase.IndexOf(' ');
-            if (index == -1)
-                return phrase;
+            switch (phrase.Length)
+            {
+                default:
+                    if (phrase[3] == ' ' && (phrase[2] == 'e' || phrase[2] == 'E') && (phrase[1] == 'h' || phrase[1] == 'H') && (phrase[0] == 't' || phrase[0] == 'T')) // the
+                        return phrase.SubToken(4).TrimLeft();
+                    goto case 3;
 
-            var firstWord = phrase.SubToken(0, index);
-            if (!IsArticle(firstWord))
-                return phrase;
+                case 3:
+                    if (phrase[2] == ' ' && (phrase[1] == 'n' || phrase[1] == 'N') && (phrase[0] == 'a' || phrase[0] == 'A')) // an
+                        return phrase.SubToken(3).TrimLeft();
+                    goto case 2;
 
-            return phrase.SubToken(index + 1).TrimLeft();
+                case 2:
+                    if (phrase[1] == ' ' && (phrase[0] == 'a' || phrase[0] == 'A')) // a
+                        return phrase.SubToken(2).TrimLeft();
+                    break;
+
+                case 1:
+                case 0:
+                    break;
+            }
+
+            return phrase;
         }
 
         /// <summary>

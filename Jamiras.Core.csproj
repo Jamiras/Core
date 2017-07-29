@@ -68,6 +68,7 @@
     <Compile Include="Components\EmptyTinyDictionary.cs" />
     <Compile Include="Components\EnumerableExtensions.cs" />
     <Compile Include="Components\FileLogger.cs" />
+    <Compile Include="Components\PositionalTokenizer.cs" />
     <Compile Include="Components\Token.cs" />
     <Compile Include="Components\Tokenizer.cs" />
     <Compile Include="Components\Trendline.cs" />

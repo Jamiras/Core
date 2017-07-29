@@ -23,6 +23,12 @@ namespace Jamiras.IO.Serialization
             Parse(Tokenizer.CreateTokenizer(stream));
         }
 
+        public JsonObject(Token json)
+            : this()
+        {
+            Parse(Tokenizer.CreateTokenizer(json));
+        }
+
         public JsonObject()
         {
             _fields = EmptyTinyDictionary<string, JsonField>.Instance; 

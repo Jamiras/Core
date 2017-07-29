@@ -334,6 +334,9 @@ namespace Jamiras.DataModels.Metadata
             if (property.PropertyType.IsEnum && databaseValue is int)
                 return Enum.ToObject(property.PropertyType, (int)databaseValue);
 
+            if (property.PropertyType == typeof(Date) && databaseValue is DateTime)
+                return Date.FromDateTime((DateTime)databaseValue);
+
             return databaseValue;
         }
 
@@ -389,6 +392,11 @@ namespace Jamiras.DataModels.Metadata
             {
                 var dttm = (DateTime)value;
                 builder.AppendFormat("#{0}#", dttm);
+            }
+            else if (value is Date)
+            {
+                var date = (Date)value;
+                builder.AppendFormat("#{0}/{1}/{2}#", date.Month, date.Day, date.Year);
             }
             else if (value is bool)
             {
