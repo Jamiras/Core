@@ -32,5 +32,11 @@ namespace Jamiras.ViewModels
         }
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string _message;
+
+        public static void ShowMessage(string message)
+        {
+            var vm = new MessageBoxViewModel(message);
+            vm.ShowDialog();
+        }
     }
 }

@@ -5,7 +5,7 @@ using System.Diagnostics;
 namespace Jamiras.Components
 {
     [DebuggerDisplay("Count = {Count}")]
-    internal class RecencyBuffer<T> : IEnumerable<T>
+    public class RecencyBuffer<T> : IEnumerable<T>
     {
         /// <summary>
         /// Constructs a new RecencyBuffer
