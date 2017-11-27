@@ -92,7 +92,7 @@ namespace Jamiras.ViewModels
                         {
                             errorMessage = fieldMetadata.Validate(binding.Source, value);
                         }
-                        catch (InvalidCastException ex)
+                        catch (InvalidCastException)
                         {
                             // TODO: may need to run database converter
                         }

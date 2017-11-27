@@ -24,7 +24,27 @@ namespace Jamiras.ViewModels.Grid
         /// <summary>
         /// Gets or sets whether reorder arrows should appear for each row.
         /// </summary>
-        public bool CanReorder { get; set; }
+        public bool CanReorder 
+        {
+            get { return _canReorder; }
+            set
+            {
+                if (_canReorder != value)
+                {
+                    _canReorder = value;
+
+                    foreach (var row in Rows)
+                    {
+                        if (row.Commands != null)
+                            row.Commands.UpdateMoveCommands();
+                    }
+
+                    OnPropertyChanged(() => CanReorder);
+                }
+            }
+        }
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private bool _canReorder;
 
         /// <summary>
         /// Gets or sets whether remove icon should appear for each row.

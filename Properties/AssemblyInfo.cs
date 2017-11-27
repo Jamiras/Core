@@ -5,12 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Core")]
-[assembly: AssemblyDescription("")]
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Microsoft")]
-[assembly: AssemblyProduct("Core")]
-[assembly: AssemblyCopyright("Copyright © Microsoft 2012")]
+[assembly: AssemblyTitle("Jamiras.Core.dll")]
+[assembly: AssemblyDescription("Common components for other projects")]
+[assembly: AssemblyCompany("Jamiras")]
+[assembly: AssemblyProduct("https://github.com/Jamiras/Core")]
+[assembly: AssemblyCopyright("Copyright (C) 2017 Brian Weiss")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
