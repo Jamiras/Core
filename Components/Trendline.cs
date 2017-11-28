@@ -2,8 +2,16 @@
 
 namespace Jamiras.Components
 {
+    /// <summary>
+    /// Determines the average slope of a number of points. Can be used to extrapolate points not in the initial data set.
+    /// </summary>
     public class Trendline
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Trendline"/> class.
+        /// </summary>
+        /// <param name="xValues">The x values.</param>
+        /// <param name="yValues">The y values.</param>
         public Trendline(double[] xValues, double[] yValues)
         {
             _xValues = xValues;
@@ -59,6 +67,9 @@ namespace Jamiras.Components
                 Calculate();
         }
 
+        /// <summary>
+        /// Gets the expected y value for a given <paramref name="x"/> value.
+        /// </summary>
         public double GetY(double x)
         {
             EnsureCalculated();
@@ -68,6 +79,9 @@ namespace Jamiras.Components
             return (_slope * x) + _yIntercept;
         }
 
+        /// <summary>
+        /// Gets the expected x value for a given <paramref name="y"/> value.
+        /// </summary>
         public double GetX(double y)
         {
             EnsureCalculated();

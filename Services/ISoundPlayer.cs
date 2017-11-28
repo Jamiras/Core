@@ -2,6 +2,9 @@
 
 namespace Jamiras.Services
 {
+    /// <summary>
+    /// Defines a service for playing a sound file.
+    /// </summary>
     public interface ISoundPlayer
     {
         /// <summary>
@@ -50,8 +53,16 @@ namespace Jamiras.Services
         void SetSoundPosition(int soundId, TimeSpan position);
     }
 
+    /// <summary>
+    /// Information about a sound whose state has changed.
+    /// </summary>
     public class SoundEventArgs : EventArgs
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SoundEventArgs"/> class.
+        /// </summary>
+        /// <param name="soundId">The sound identifier.</param>
+        /// <param name="state">The state.</param>
         public SoundEventArgs(int soundId, SoundState state)
         {
             SoundId = soundId;
@@ -69,8 +80,14 @@ namespace Jamiras.Services
         public SoundState State { get; private set; }
     }
 
+    /// <summary>
+    /// The current state of a sound.
+    /// </summary>
     public enum SoundState
     {
+        /// <summary>
+        /// Unspecified.
+        /// </summary>
         None = 0,
 
         /// <summary>

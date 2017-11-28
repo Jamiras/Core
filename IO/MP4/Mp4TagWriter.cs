@@ -6,6 +6,9 @@ using Jamiras.Components;
 
 namespace Jamiras.IO.MP4
 {
+    /// <summary>
+    /// A class for updating metadata content in an MP4 file.
+    /// </summary>
     public class Mp4TagWriter : Mp4Reader
     {
         private readonly IDictionary<Mp4Tag, string> _originalTags;
@@ -16,6 +19,10 @@ namespace Jamiras.IO.MP4
         private const uint META_TAG = 0x6D657461;
         private const uint TAGS_TAG = 0x74616773;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Mp4TagWriter"/> class.
+        /// </summary>
+        /// <param name="filePath">The path to the MP4 file.</param>
         public Mp4TagWriter(string filePath)
             : base(filePath)
         {

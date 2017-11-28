@@ -7,11 +7,21 @@ using Jamiras.Components;
 
 namespace Jamiras.IO.MP4
 {
+    /// <summary>
+    /// A class for reading metadata content from an MP4 file.
+    /// </summary>
     public class Mp4Reader
     {
         const int CONTAINER_IDENTIFIER = 0x66747970;  // ftyp
         const int BRAND_MP42 = 0x6D703432; // mp42
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Mp4Reader"/> class.
+        /// </summary>
+        /// <param name="filePath">The path to the MP4 file.</param>
+        /// <exception cref="ArgumentException">
+        /// The file at <paramref name="filePath"/> is not a valid MP4 file or not a supported MP4 version.
+        /// </exception>
         public Mp4Reader(string filePath)
         {
             using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read))
@@ -297,31 +307,124 @@ namespace Jamiras.IO.MP4
         }
     }
 
+    /// <summary>
+    /// Defines a block within the MP4 file.
+    /// </summary>
     public enum Mp4Tag : uint
     {
+        /// <summary>
+        /// Unspecified
+        /// </summary>
         None = 0,
+
+        /// <summary>
+        /// The title of the content.
+        /// </summary>
         Title = 0xA96E616D, // nam
+
+        /// <summary>
+        /// A modified form of the title used for sorting. Typically the Title value without any leading articles (A/AN/THE).
+        /// </summary>
         SortTitle = 0x736F6E6D, // sonm
+
+        /// <summary>
+        /// A description of the content.
+        /// </summary>
         Description = 0x64657363, // desc (limited to 255 bytes)
+
+        /// <summary>
+        /// A long description of the content.
+        /// </summary>
         LongDescription = 0x6C646573, // ldes (not limited to 255 bytes)
+
+        /// <summary>
+        /// The genre of the content.
+        /// </summary>
         Genre = 0x676E7265, // gnre
+
+        /// <summary>
+        /// An image to show to help identify the content.
+        /// </summary>
         CoverArt = 0x636F7672, // covr
+
+        /// <summary>
+        /// The name of the television show associated to the content.
+        /// </summary>
         TvShowName = 0x74767368, // tvsh
+
+        /// <summary>
+        /// A modified form of the TvShowName used for sorting.
+        /// </summary>
         SortTvShowName = 0x736F736E, // sosn
+
+        /// <summary>
+        /// The season of the television show associated to the content in which the episode aired.
+        /// </summary>
         TvSeason = 0x7476736E, // tvsn
+
+        /// <summary>
+        /// The index of the episode within the season in which the episode aired.
+        /// </summary>
         TvEpisode = 0x74766573, // tves
+
+        /// <summary>
+        /// The network on which the television episode aired.
+        /// </summary>
         TvNetwork = 0x74766E6E, // tvnn
+
+        /// <summary>
+        /// The rating of the content.
+        /// </summary>
         Rating = 0x72746E67, // rtng
+
+        /// <summary>
+        /// What was used to generate the content.
+        /// </summary>
         Encoder = 0xA9746F6F, // too
+
+        /// <summary>
+        /// The artist associated to the content.
+        /// </summary>
         Artist = 0xA9415254, // ART
+
+        /// <summary>
+        /// A modified form of the artist name used for sorting.
+        /// </summary>
         SortArtist = 0x736F6172, // soar
+
+        /// <summary>
+        /// The album associated to the content.
+        /// </summary>
         Album = 0xA9616C62, // alb
+
+        /// <summary>
+        /// A modified form of the album name used for sorting.
+        /// </summary>
         SortAlbum = 0x736F616C, // soal
+
+        /// <summary>
+        /// The date the associated content was released.
+        /// </summary>
         ReleaseDate = 0xA9646179, // day
+
+        /// <summary>
+        /// The index of the media associated to the content within the release if released on multiple media (i.e. multiple CDs)
+        /// </summary>
         DiskNumber = 0x6469736B, // disk
+
+        /// <summary>
+        /// The track within the media the content was released on.
+        /// </summary>
         TrackNumber = 0x74726B6E, // trkn
+
+        /// <summary>
+        /// A comment about the content
+        /// </summary>
         Comment = 0xA9636D74, // cmt
 
+        /// <summary>
+        /// The parental rating of the content (Windows Media extension - not part of MP4 spec)
+        /// </summary>
         ParentalRating = 0x00000001, // WM/ParentalRating
     }
 }

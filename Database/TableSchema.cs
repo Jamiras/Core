@@ -1,11 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using Jamiras.DataModels.Metadata;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Jamiras.DataModels.Metadata;
-using Jamiras.ViewModels.Converters;
 
 namespace Jamiras.Database
 {
+    /// <summary>
+    /// Base class for defining a database table.
+    /// </summary>
     [DebuggerDisplay("{TableName} Schema")]
     public abstract class TableSchema
     {
@@ -22,11 +24,17 @@ namespace Jamiras.Database
             return tableFieldName;
         }
 
+        /// <summary>
+        /// Gets the name of the table.
+        /// </summary>
         public string TableName
         {
             get { return _tableName; }
         }
 
+        /// <summary>
+        /// Gets the columns in the table.
+        /// </summary>
         public IEnumerable<FieldMetadata> Columns
         {
             get { return _columns; }

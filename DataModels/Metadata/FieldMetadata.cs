@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using Jamiras.ViewModels.Converters;
 
 namespace Jamiras.DataModels.Metadata
 {
@@ -23,6 +22,7 @@ namespace Jamiras.DataModels.Metadata
         /// Constructs a new <see cref="FieldMetadata"/>.
         /// </summary>
         /// <param name="fieldName">Mapped field name.</param>
+        /// <param name="attributes">Attributes about the field.</param>
         internal FieldMetadata(string fieldName, InternalFieldAttributes attributes)
             : this(fieldName)
         {

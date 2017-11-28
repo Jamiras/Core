@@ -4,16 +4,31 @@ using System.Windows.Documents;
 
 namespace Jamiras.Controls
 {
+    /// <summary>
+    /// Attached properties for displaying an indicator on an invalid field.
+    /// </summary>
     public class Validation
     {
+        /// <summary>
+        /// The template to display when an error is present.
+        /// </summary>
+        /// <remarks>
+        /// The template is responsible for binding to the error message. The <see cref="Validation"/> helper class only shows or hides the template.
+        /// </remarks>
         public static readonly DependencyProperty ErrorTemplateProperty =
             DependencyProperty.RegisterAttached("ErrorTemplate", typeof(DataTemplate), typeof(Validation), new FrameworkPropertyMetadata(OnErrorTemplateChanged));
 
+        /// <summary>
+        /// Gets the error template for the specified <see cref="FrameworkElement"/>.
+        /// </summary>
         public static DataTemplate GetErrorTemplate(FrameworkElement target)
         {
             return (DataTemplate)target.GetValue(ErrorTemplateProperty);
         }
 
+        /// <summary>
+        /// Sets the error template for the specified <see cref="FrameworkElement"/>.
+        /// </summary>
         public static void SetErrorTemplate(FrameworkElement target, DataTemplate value)
         {
             target.SetValue(ErrorTemplateProperty, value);
@@ -40,15 +55,27 @@ namespace Jamiras.Controls
             target.SetValue(AdornerProperty, value);
         }
 
+        /// <summary>
+        /// Binds a value indicating whether or not the attached field is valid.
+        /// </summary>
+        /// <remarks>
+        /// If <c>false</c>, the error adorner is shown.
+        /// </remarks>
         public static readonly DependencyProperty IsValidProperty =
             DependencyProperty.RegisterAttached("IsValid", typeof(bool), typeof(Validation),
                 new FrameworkPropertyMetadata(true, OnIsValidChanged));
 
+        /// <summary>
+        /// Gets whether the attached field is valid.
+        /// </summary>
         public static bool GetIsValid(FrameworkElement target)
         {
             return (bool)target.GetValue(IsValidProperty);
         }
 
+        /// <summary>
+        /// Sets whether the attached field is valid.
+        /// </summary>
         public static void SetIsValid(FrameworkElement target, bool value)
         {
             target.SetValue(IsValidProperty, value);

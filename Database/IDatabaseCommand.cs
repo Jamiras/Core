@@ -1,10 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Jamiras.Database
 {
+    /// <summary>
+    /// Defines a command to be executed against a database. See <see cref="IDatabase.PrepareCommand(string)"/>
+    /// </summary>
     public interface IDatabaseCommand : IDisposable
     {
         /// <summary>

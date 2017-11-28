@@ -2,6 +2,9 @@
 
 namespace Jamiras.DataModels
 {
+    /// <summary>
+    /// Helper functions for tracking changes to data models.
+    /// </summary>
     public static class DataModelChangeTracker
     {
         /// <summary>

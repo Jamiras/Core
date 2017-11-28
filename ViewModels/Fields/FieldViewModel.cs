@@ -1,13 +1,19 @@
-﻿using System;
+﻿using Jamiras.DataModels;
+using System;
 using System.Diagnostics;
 using System.Text;
-using Jamiras.DataModels;
 
 namespace Jamiras.ViewModels.Fields
 {
+    /// <summary>
+    /// Base class for templated field controls.
+    /// </summary>
     [DebuggerDisplay("{LabelWithoutAccelerators} {GetType().Name,nq}")]
     public abstract class FieldViewModelBase : ValidatedViewModelBase
     {
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="IsRequired"/>
+        /// </summary>
         public static readonly ModelProperty IsRequiredProperty =
             ModelProperty.Register(typeof(FieldViewModelBase), "IsRequired", typeof(bool), false);
 
@@ -20,6 +26,9 @@ namespace Jamiras.ViewModels.Fields
             set { SetValue(IsRequiredProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="IsEnabled"/>
+        /// </summary>
         public static readonly ModelProperty IsEnabledProperty =
             ModelProperty.Register(typeof(FieldViewModelBase), "IsEnabled", typeof(bool), true);
 
@@ -32,6 +41,9 @@ namespace Jamiras.ViewModels.Fields
             set { SetValue(IsEnabledProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="Label"/>
+        /// </summary>
         public static readonly ModelProperty LabelProperty =
             ModelProperty.Register(typeof(FieldViewModelBase), "Label", typeof(string), "Value");
 
@@ -50,6 +62,9 @@ namespace Jamiras.ViewModels.Fields
         private static readonly ModelProperty CustomNameProperty =
             ModelProperty.Register(typeof(FieldViewModelBase), null, typeof(string), null);
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="Name"/>
+        /// </summary>
         public static readonly ModelProperty NameProperty =
             ModelProperty.RegisterDependant(typeof(FieldViewModelBase), "Name", typeof(string),
                 new ModelProperty[] { LabelProperty, CustomNameProperty }, GetName);
@@ -116,6 +131,9 @@ namespace Jamiras.ViewModels.Fields
             return builder.ToString();
         }
 
+        /// <summary>
+        /// Formats an error message.
+        /// </summary>
         protected override string FormatErrorMessage(string errorMessage)
         {
             return String.Format(errorMessage, LabelWithoutAccelerators);

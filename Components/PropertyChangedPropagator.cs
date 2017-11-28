@@ -12,6 +12,11 @@ namespace Jamiras.Components
     public class PropertyChangedPropagator<TSource>
         where TSource : class, INotifyPropertyChanged
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PropertyChangedPropagator{TSource}"/> class.
+        /// </summary>
+        /// <param name="source">The source object.</param>
+        /// <param name="handler">The method to call when the <paramref name="source"/> object raises a monitored PropertyChanged event.</param>
         public PropertyChangedPropagator(TSource source, Action<PropertyChangedEventArgs> handler)
         {
             _handler = handler;

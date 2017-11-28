@@ -5,8 +5,14 @@ using Jamiras.Components;
 
 namespace Jamiras.IO
 {
+    /// <summary>
+    /// Class for reading an .ini file.
+    /// </summary>
     public class IniFile
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IniFile"/> class using a file next to the executable.
+        /// </summary>
         public IniFile()
             : this(GetDefaultIniPath())
         {
@@ -21,6 +27,9 @@ namespace Jamiras.IO
             return iniFile;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IniFile"/> class with the specified file.
+        /// </summary>
         public IniFile(string iniPath)
         {
             _iniPath = iniPath;
@@ -28,6 +37,11 @@ namespace Jamiras.IO
 
         private static string _iniPath;
 
+        /// <summary>
+        /// Reads this ini file.
+        /// </summary>
+        /// <returns>Dictionary of key/value pairs for entries read from the .ini file.</returns>
+        /// <exception cref="FileNotFoundException">The specified file was not found.</exception>
         public IDictionary<string, string> Read()
         {
             if (!File.Exists(_iniPath))

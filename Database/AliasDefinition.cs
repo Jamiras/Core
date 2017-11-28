@@ -2,9 +2,17 @@
 
 namespace Jamiras.Database
 {
+    /// <summary>
+    /// Defines an alias for a table in a query.
+    /// </summary>
     [DebuggerDisplay("{TableName} as {Alias}")]
     public struct AliasDefinition
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AliasDefinition"/> struct.
+        /// </summary>
+        /// <param name="alias">The alias for the table.</param>
+        /// <param name="tableName">The actual name of the table.</param>
         public AliasDefinition(string alias, string tableName)
         {
             _alias = alias;

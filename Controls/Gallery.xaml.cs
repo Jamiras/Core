@@ -1,9 +1,9 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
-using System;
 
 namespace Jamiras.Controls
 {
@@ -12,6 +12,9 @@ namespace Jamiras.Controls
     /// </summary>
     public partial class Gallery : UserControl
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Gallery"/> class.
+        /// </summary>
         public Gallery()
         {
             InitializeComponent();
@@ -22,16 +25,28 @@ namespace Jamiras.Controls
             public object[] Items { get; set; }
         }
 
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="ItemTemplate"/>
+        /// </summary>
         public static DependencyProperty ItemTemplateProperty = DependencyProperty.Register("ItemTemplate", typeof(DataTemplate), typeof(Gallery));
 
+        /// <summary>
+        /// Gets or sets the item template.
+        /// </summary>
         public DataTemplate ItemTemplate
         {
             get { return (DataTemplate)GetValue(ItemTemplateProperty); }
             set { SetValue(ItemTemplateProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="ItemWidth"/>
+        /// </summary>
         public static DependencyProperty ItemWidthProperty = DependencyProperty.Register("ItemWidth", typeof(double), typeof(Gallery), new FrameworkPropertyMetadata(OnItemWidthChanged));
 
+        /// <summary>
+        /// Gets or sets the width for each item.
+        /// </summary>
         public double ItemWidth
         {
             get { return (double)GetValue(ItemWidthProperty); }
@@ -43,8 +58,14 @@ namespace Jamiras.Controls
             ((Gallery)sender).UpdatePerRow();
         }
 
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="ItemsSource"/>
+        /// </summary>
         public static DependencyProperty ItemsSourceProperty = DependencyProperty.Register("ItemsSource", typeof(IEnumerable), typeof(Gallery), new FrameworkPropertyMetadata(OnItemsSourceChanged));
 
+        /// <summary>
+        /// Gets or sets the items source.
+        /// </summary>
         public IEnumerable ItemsSource
         {
             get { return (IEnumerable)GetValue(ItemsSourceProperty); }
@@ -87,8 +108,14 @@ namespace Jamiras.Controls
             }
         }
 
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="PerRow"/>
+        /// </summary>
         public static DependencyProperty PerRowProperty = DependencyProperty.Register("PerRow", typeof(int), typeof(Gallery), new FrameworkPropertyMetadata(OnPerRowChanged));
 
+        /// <summary>
+        /// Gets or sets the number of items to display in each row.
+        /// </summary>
         public int PerRow
         {
             get { return (int)GetValue(PerRowProperty); }

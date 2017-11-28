@@ -4,9 +4,22 @@ using System.Diagnostics;
 
 namespace Jamiras.Components
 {
+    /// <summary>
+    /// Represents a section of a larger <see cref="string"/> without creating a new <see cref="string"/> instance.
+    /// </summary>
     [DebuggerDisplay("{DebugString}")]
     public struct Token
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Token"/> struct.
+        /// </summary>
+        /// <param name="source">The source string.</param>
+        /// <param name="start">The index of the first character of the Token within the source string.</param>
+        /// <param name="length">The length of the Token.</param>
+        /// <exception cref="ArgumentNullException">source</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// <paramref name="start"/> or <paramref name="length"/> do not evaluate to valid positions within the source string.
+        /// </exception>
         public Token(string source, int start, int length)
         {
             if (source == null)
@@ -216,6 +229,9 @@ namespace Jamiras.Components
             return (token.CompareTo(token2) != 0);
         }
 
+        /// <summary>
+        /// Determines whether the specified <see cref="System.Object" />, is equal to this instance.
+        /// </summary>
         public override bool Equals(object obj)
         {
             if (obj is Token)
@@ -226,6 +242,9 @@ namespace Jamiras.Components
             return false;
         }
 
+        /// <summary>
+        /// Returns a hash code for this instance.
+        /// </summary>
         public override int GetHashCode()
         {
             // we want the output of GetHashCode to match String.GetHashCode.

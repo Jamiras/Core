@@ -4,6 +4,9 @@ using Jamiras.ViewModels;
 
 namespace Jamiras.Services
 {
+    /// <summary>
+    /// Service for showing dialog windows.
+    /// </summary>
     public interface IDialogService
     {
         /// <summary>

@@ -4,6 +4,9 @@ using System.Diagnostics;
 
 namespace Jamiras.Components
 {
+    /// <summary>
+    /// A collection of items where order implies recency.
+    /// </summary>
     [DebuggerDisplay("Count = {Count}")]
     public class RecencyBuffer<T> : IEnumerable<T>
     {

@@ -16,6 +16,9 @@ namespace Jamiras.DataModels.Metadata
         where TCollection : DataModelBase
         where TModel : TCollection, new()
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DatabaseModelCollectionMetadata{TCollection, TModel}"/> class.
+        /// </summary>
         public DatabaseModelCollectionMetadata()
         {
             var metadataRepository = ServiceRepository.Instance.FindService<IDataModelMetadataRepository>();
@@ -75,6 +78,12 @@ namespace Jamiras.DataModels.Metadata
             return (int)model.GetValue(CollectionFilterKeyProperty);
         }
 
+        /// <summary>
+        /// Registers metadata for a <see cref="ModelProperty" />.
+        /// </summary>
+        /// <param name="property">Property to register metadata for.</param>
+        /// <param name="metadata">Metadata for the field.</param>
+        /// <param name="converter">Converter to use when transfering data from the source field to the model property.</param>
         [EditorBrowsable(EditorBrowsableState.Never)]
         protected override sealed void RegisterFieldMetadata(ModelProperty property, FieldMetadata metadata, IConverter converter)
         {
@@ -249,6 +258,10 @@ namespace Jamiras.DataModels.Metadata
         }
     }
 
+    /// <summary>
+    /// Metadata for a collection of database-based models.
+    /// </summary>
+    /// <typeparam name="T">The type of models in the collection.</typeparam>
     public class DatabaseModelCollectionMetadata<T> : DatabaseModelCollectionMetadata<T, T>
         where T : DataModelBase, new()
     {

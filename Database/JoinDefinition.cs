@@ -2,14 +2,28 @@
 
 namespace Jamiras.Database
 {
+    /// <summary>
+    /// Defines a relationship between two database tables.
+    /// </summary>
     [DebuggerDisplay("{LocalKeyFieldName} => {RemoteKeyFieldName}")]
     public struct JoinDefinition
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JoinDefinition"/> struct with a <see cref="JoinType"/> of <see cref="JoinType.Inner"/>.
+        /// </summary>
+        /// <param name="localKeyFieldName">table.column of the local key field.</param>
+        /// <param name="remoteKeyFieldName">table.column of the remote key field.</param>
         public JoinDefinition(string localKeyFieldName, string remoteKeyFieldName)
             : this(localKeyFieldName, remoteKeyFieldName, JoinType.Inner)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JoinDefinition"/> struct.
+        /// </summary>
+        /// <param name="localKeyFieldName">Table.Name of the local key field.</param>
+        /// <param name="remoteKeyFieldName">Table.Name of the remote key field.</param>
+        /// <param name="joinType">Defines the relationship between the tables.</param>
         public JoinDefinition(string localKeyFieldName, string remoteKeyFieldName, JoinType joinType)
         {
             _localKeyFieldName = localKeyFieldName;
@@ -46,6 +60,9 @@ namespace Jamiras.Database
         }
     }
 
+    /// <summary>
+    /// Defines the relationship between two database tables.
+    /// </summary>
     public enum JoinType
     {
         /// <summary>

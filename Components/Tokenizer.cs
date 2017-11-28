@@ -6,18 +6,30 @@ using System.Text;
 
 namespace Jamiras.Components
 {
+    /// <summary>
+    /// A class for parsing text data.
+    /// </summary>
     public abstract class Tokenizer
     {
+        /// <summary>
+        /// Creates a tokenizer from a <see cref="string"/>.
+        /// </summary>
         public static Tokenizer CreateTokenizer(string input)
         {
             return new StringTokenizer(input, 0, input.Length);
         }
 
+        /// <summary>
+        /// Creates a tokenizer from part of a <see cref="string"/>.
+        /// </summary>
         public static Tokenizer CreateTokenizer(string input, int start, int length)
         {
             return new StringTokenizer(input, start, length);
         }
 
+        /// <summary>
+        /// Creates a tokenizer from a <see cref="Token"/>.
+        /// </summary>
         public static Tokenizer CreateTokenizer(Token token)
         {
             return new StringTokenizer(token.Source, token.Start, token.Length);
@@ -108,6 +120,9 @@ namespace Jamiras.Components
             }
         }
 
+        /// <summary>
+        /// Creates a tokenizer from a <see cref="Stream"/>.
+        /// </summary>
         public static Tokenizer CreateTokenizer(Stream input)
         {
             return new StreamTokenizer(input);
@@ -250,6 +265,9 @@ namespace Jamiras.Components
 
         internal abstract Token EndToken();
 
+        /// <summary>
+        /// Creates a <see cref="Token"/> from a <see cref="StringBuilder"/>.
+        /// </summary>
         protected static Token CreateToken(StringBuilder builder)
         {
             if (builder.Length == 0)
@@ -453,12 +471,14 @@ namespace Jamiras.Components
         /// <summary>
         /// Attempts to match as much of the provided token as possible.
         /// </summary>
-        /// <param name="token">token to match</param>
-        /// <returns>number of matching characters. tokenizer is not advanced.</returns>
+        /// <param name="token">The token to match</param>
+        /// <returns>
+        /// The number of matching characters. The Tokenizer is not advanced.
+        /// </returns>
         public abstract int MatchSubstring(string token);
 
         /// <summary>
-        /// Splits the provided <param name="input"/> string at <paramref name="separator"/> boundaries.
+        /// Splits the provided <paramref name="input"/> string at <paramref name="separator"/> boundaries.
         /// </summary>
         public static Token[] Split(string input, params char[] separator)
         {
@@ -728,6 +748,20 @@ namespace Jamiras.Components
             return tokens;
         }
 
+        /// <summary>
+        /// Populates <paramref name="matches"/> from placeholders in <paramref name="pattern"/> if <paramref name="pattern"/> matches <paramref name="token"/>.
+        /// </summary>
+        /// <returns><c>true</c> if the pattern was matched. <c>false</c> if not.</returns>
+        /// <example>
+        /// var input = "Carl has 3 apples.";
+        /// var tokens = new Token[3];
+        /// if (Tokenizer.Parse(new Token(input, 0, input.Length), "{0} has {1} {2}.", tokens) {
+        ///     var name = tokens[0].ToString();               // tokens[0] = "Carl"
+        ///     var count = Int32.Parse(tokens[1].ToString()); // tokens[1] = "3"
+        ///     var item = tokens[2].ToString();               // tokens[2] = "apples"
+        ///     AddInventory(name, item, count);
+        /// }
+        /// </example>
         public static bool Parse(Token token, string pattern, Token[] matches)
         {
             if (pattern.Length < 3)

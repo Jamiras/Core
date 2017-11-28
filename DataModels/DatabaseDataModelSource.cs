@@ -5,8 +5,16 @@ using Jamiras.DataModels.Metadata;
 
 namespace Jamiras.DataModels
 {
+    /// <summary>
+    /// <see cref="IDataModelSource"/> for models stored in a database.
+    /// </summary>
     public class DatabaseDataModelSource : DataModelSourceBase
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DatabaseDataModelSource"/> class.
+        /// </summary>
+        /// <param name="metadataRepository">The repository containing metadata describing the models.</param>
+        /// <param name="database">The database where the models are stored.</param>
         public DatabaseDataModelSource(IDataModelMetadataRepository metadataRepository, IDatabase database)
             : base(metadataRepository, Logger.GetLogger("DatabaseDataModelSource"))
         {
@@ -14,7 +22,17 @@ namespace Jamiras.DataModels
         }
 
         private readonly IDatabase _database;
-        
+
+        /// <summary>
+        /// Gets a non-shared instance of a data model.
+        /// </summary>
+        /// <typeparam name="T">Type of data model to retrieve.</typeparam>
+        /// <param name="searchData">Filter data used to populate the data model.</param>
+        /// <param name="metadata">Metadata about the model.</param>
+        /// <returns>
+        /// Populated data model, <c>null</c> if not found.
+        /// </returns>
+        /// <exception cref="ArgumentException">Metadata registered for " + typeof(T).FullName + " does not implement IDatabaseModelMetadata</exception>
         protected override T Query<T>(object searchData, ModelMetadata metadata)
         {
             var databaseModelMetadata = metadata as IDatabaseModelMetadata;
@@ -37,6 +55,11 @@ namespace Jamiras.DataModels
             return model;
         }
 
+        /// <summary>
+        /// Initializes a new record.
+        /// </summary>
+        /// <param name="model">The newly created model object.</param>
+        /// <param name="metadata">Metadata about the model.</param>
         protected override void InitializeNewRecord(DataModelBase model, ModelMetadata metadata)
         {
             base.InitializeNewRecord(model, metadata);

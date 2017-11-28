@@ -1,14 +1,18 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.Text;
-using Jamiras.Components;
-using Jamiras.Services;
-using Microsoft.Win32;
 
 namespace Jamiras.ViewModels
 {
+    /// <summary>
+    /// ViewModel for selecting files to read or write.
+    /// </summary>
     public class FileDialogViewModel : DialogViewModelBase
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FileDialogViewModel"/> class.
+        /// </summary>
         public FileDialogViewModel()
         {
             Filters = new Dictionary<string, string>();

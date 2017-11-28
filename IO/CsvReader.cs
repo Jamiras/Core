@@ -5,8 +5,14 @@ using Jamiras.Components;
 
 namespace Jamiras.IO
 {
+    /// <summary>
+    /// Parser for comma separated value data.
+    /// </summary>
     public class CsvReader
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CsvReader"/> class.
+        /// </summary>
         public CsvReader(Stream stream)
         {
             _tokenizer = Tokenizer.CreateTokenizer(stream);

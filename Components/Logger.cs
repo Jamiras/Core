@@ -4,6 +4,12 @@ using Jamiras.Services;
 
 namespace Jamiras.Components
 {
+    /// <summary>
+    /// Default implementation of the <see cref="ILogger"/> interface.
+    /// </summary>
+    /// <remarks>
+    /// Cannot be directly instantiated. Call <see cref="Logger.GetLogger"/> to get the <see cref="ILogger"/> associated to a key.
+    /// </remarks>
     public class Logger : ILogger
     {
         private Logger()

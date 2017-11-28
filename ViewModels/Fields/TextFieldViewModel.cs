@@ -1,22 +1,37 @@
-﻿using System;
-using Jamiras.DataModels;
+﻿using Jamiras.DataModels;
 using Jamiras.DataModels.Metadata;
 
 namespace Jamiras.ViewModels.Fields
 {
+    /// <summary>
+    /// ViewModel for string input.
+    /// </summary>
     public class TextFieldViewModel : TextFieldViewModelBase
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TextFieldViewModel"/> class.
+        /// </summary>
+        /// <param name="label">The field label.</param>
+        /// <param name="metadata">Information about the field.</param>
         public TextFieldViewModel(string label, StringFieldMetadata metadata)
             : base(label, metadata.MaxLength)
         {
             IsMultiline = metadata.IsMultiline;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TextFieldViewModel"/> class.
+        /// </summary>
+        /// <param name="label">The field label.</param>
+        /// <param name="maxLength">The maximum length of the field.</param>
         public TextFieldViewModel(string label, int maxLength)
             : base(label, maxLength)
         {
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="IsMultiline"/>
+        /// </summary>
         public static readonly ModelProperty IsMultilineProperty =
             ModelProperty.Register(typeof(TextFieldViewModel), "IsMultiline", typeof(bool), false);
 
@@ -29,6 +44,9 @@ namespace Jamiras.ViewModels.Fields
             set { SetValue(IsMultilineProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="IsRightAligned"/>
+        /// </summary>
         public static readonly ModelProperty IsRightAlignedProperty =
             ModelProperty.Register(typeof(TextFieldViewModel), "IsRightAligned", typeof(bool), false);
 
@@ -41,6 +59,9 @@ namespace Jamiras.ViewModels.Fields
             set { SetValue(IsRightAlignedProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="Pattern"/>
+        /// </summary>
         public static readonly ModelProperty PatternProperty =
             ModelProperty.Register(typeof(TextFieldViewModel), "Pattern", typeof(string), null);
 

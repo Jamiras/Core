@@ -8,8 +8,14 @@ using Jamiras.DataModels.Metadata;
 
 namespace Jamiras.DataModels
 {
+    /// <summary>
+    /// Base class for a repository that manages data models
+    /// </summary>
     public abstract class DataModelSourceBase : IDataModelSource
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DataModelSourceBase"/> class.
+        /// </summary>
         protected DataModelSourceBase(IDataModelMetadataRepository metadataRepository, ILogger logger)
         {
             _items = new Dictionary<Type, DataModelCache>();
@@ -264,6 +270,9 @@ namespace Jamiras.DataModels
             return (T)cache.TryCache(id, item);
         }
 
+        /// <summary>
+        /// Caches the specified item using the provided unique identifier.
+        /// </summary>
         protected void Cache<T>(int id, T item)
             where T : DataModelBase
         {
@@ -277,6 +286,9 @@ namespace Jamiras.DataModels
             cache.Cache(id, item);
         }
 
+        /// <summary>
+        /// Gets the unique identifier of all cached items of the specified type.
+        /// </summary>
         protected IEnumerable<int> GetCacheKeys<T>()
         {
             DataModelCache cache;
@@ -324,6 +336,13 @@ namespace Jamiras.DataModels
             return result;
         }
 
+        /// <summary>
+        /// Gets a non-shared instance of a data model.
+        /// </summary>
+        /// <typeparam name="T">Type of data model to retrieve.</typeparam>
+        /// <param name="searchData">Filter data used to populate the data model.</param>
+        /// <param name="metadata">Metadata about the model.</param>
+        /// <returns>Populated data model, <c>null</c> if not found.</returns>
         protected abstract T Query<T>(object searchData, ModelMetadata metadata) where T : DataModelBase, new(); 
 
         /// <summary>
@@ -377,6 +396,15 @@ namespace Jamiras.DataModels
             return model;
         }
 
+        /// <summary>
+        /// Gets a non-shared instance of a collection of data models.
+        /// </summary>
+        /// <param name="collectionType">Type of the collection.</param>
+        /// <param name="searchData">Filter data used to populate the data model.</param>
+        /// <param name="results">A collection to hold the results.</param>
+        /// <param name="maxResults">The maximum number of results to return.</param>
+        /// <param name="resultType">Type of the result items.</param>
+        /// <returns><c>true</c> if results were found, <c>false</c> if not.</returns>
         protected virtual bool Query(Type collectionType, object searchData, ICollection<DataModelBase> results, int maxResults, Type resultType) 
         {
             return false;
@@ -408,6 +436,11 @@ namespace Jamiras.DataModels
             return model;
         }
 
+        /// <summary>
+        /// Initializes a new record.
+        /// </summary>
+        /// <param name="model">The newly created model object.</param>
+        /// <param name="metadata">Metadata about the model.</param>
         protected virtual void InitializeNewRecord(DataModelBase model, ModelMetadata metadata)
         {
             metadata.InitializePrimaryKey(model);

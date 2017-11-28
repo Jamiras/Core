@@ -1,6 +1,9 @@
 ﻿
 namespace Jamiras.ViewModels.Converters
 {
+    /// <summary>
+    /// Defines a class that can convert objects from one type to another and back.
+    /// </summary>
     public interface IConverter
     {
         /// <summary>

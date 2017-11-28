@@ -2,6 +2,9 @@
 
 namespace Jamiras.Database
 {
+    /// <summary>
+    /// Defines a query to be executed against a database. See <see cref="IDatabase.PrepareQuery(string)"/>
+    /// </summary>
     public interface IDatabaseQuery : IDisposable
     {
         /// <summary>

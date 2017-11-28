@@ -14,7 +14,7 @@ namespace Jamiras.Controls
     /// Interaction logic for AutoCompleteTextBox.xaml
     /// </summary>
     /// <remarks>
-    /// Bind directly to the <see cref="Text"/> property for drop down suggestions.
+    /// Bind directly to the <see cref="TextBox.Text"/> property for drop down suggestions.
     /// Bind to the <see cref="AutoCompleteText"/> property for auto-complete suggestions.
     /// </remarks>
     public partial class AutoCompleteTextBox : TextBox
@@ -29,6 +29,9 @@ namespace Jamiras.Controls
                 System.Windows.Data.UpdateSourceTrigger.PropertyChanged));
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AutoCompleteTextBox"/> class.
+        /// </summary>
         public AutoCompleteTextBox()
         {
             InitializeComponent();
@@ -36,6 +39,9 @@ namespace Jamiras.Controls
             NoMatchesList = new[] { new LookupItem(0, "No Matches") };
         }
 
+        /// <summary>
+        /// Called when the template is applied.
+        /// </summary>
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
@@ -47,10 +53,16 @@ namespace Jamiras.Controls
         private LookupItem _autoCompleteItem;
         private string _remainingText;
 
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="AutoCompleteText"/>
+        /// </summary>
         public static readonly DependencyProperty AutoCompleteTextProperty =
             DependencyProperty.Register("AutoCompleteText", typeof(string), typeof(AutoCompleteTextBox),
                 new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnAutoCompleteTextChanged));
 
+        /// <summary>
+        /// Gets or sets the proposed <see cref="TextBox.Text"/> value. 
+        /// </summary>
         public string AutoCompleteText
         {
             get { return (string)GetValue(AutoCompleteTextProperty); }
@@ -63,6 +75,10 @@ namespace Jamiras.Controls
             textBox.Text = (string)e.NewValue;
         }
 
+        /// <summary>
+        /// Raises the <see cref="E:TextChanged" /> event.
+        /// </summary>
+        /// <param name="e">The <see cref="TextChangedEventArgs"/> instance containing the event data.</param>
         protected override void OnTextChanged(TextChangedEventArgs e)
         {
             if (IsTyping)
@@ -108,12 +124,15 @@ namespace Jamiras.Controls
             CaretIndex = caretIndex;
         }
 
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="SelectedId"/>
+        /// </summary>
         public static readonly DependencyProperty SelectedIdProperty =
             DependencyProperty.Register("SelectedId", typeof(int), typeof(AutoCompleteTextBox),
             new FrameworkPropertyMetadata(0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
 
         /// <summary>
-        /// Gets or sets the unique identifier of the selected item
+        /// Gets or sets the unique identifier of the selected item.
         /// </summary>
         public int SelectedId
         {
@@ -121,21 +140,33 @@ namespace Jamiras.Controls
             set { SetValue(SelectedIdProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="MatchColor"/>
+        /// </summary>
         public static readonly DependencyProperty MatchColorProperty = 
             DependencyProperty.Register("MatchColor", typeof(Brush), typeof(AutoCompleteTextBox),
             new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(0xE0, 0xFF, 0xE0))));
-                
+
+        /// <summary>
+        /// Gets or sets the background color to use when the <see cref="SelectedId"/> is not 0.
+        /// </summary>
+        /// <value>
+        /// The color of the match.
+        /// </value>
         public Brush MatchColor
         {
             get { return (Brush)GetValue(MatchColorProperty); }
             set { SetValue(MatchColorProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="IsPopupOpen"/>
+        /// </summary>
         public static readonly DependencyProperty IsPopupOpenProperty =
             DependencyProperty.Register("IsPopupOpen", typeof(bool), typeof(AutoCompleteTextBox));
 
         /// <summary>
-        /// Gets whether or not the suggestion list is visible
+        /// Gets whether or not the suggestion list is visible.
         /// </summary>
         public bool IsPopupOpen
         {
@@ -146,6 +177,9 @@ namespace Jamiras.Controls
         private static readonly DependencyPropertyKey HasSuggestionsPropertyKey =
             DependencyProperty.RegisterReadOnly("HasSuggestions", typeof(bool), typeof(AutoCompleteTextBox), new PropertyMetadata());
 
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="HasSuggestions"/>
+        /// </summary>
         public static readonly DependencyProperty HasSuggestionsProperty = HasSuggestionsPropertyKey.DependencyProperty;
 
         /// <summary>
@@ -157,6 +191,9 @@ namespace Jamiras.Controls
             private set { SetValue(HasSuggestionsPropertyKey, value); }
         }
 
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="Suggestions"/>
+        /// </summary>
         public static readonly DependencyProperty SuggestionsProperty =
             DependencyProperty.Register("Suggestions", typeof(IEnumerable<LookupItem>), typeof(AutoCompleteTextBox), 
             new FrameworkPropertyMetadata(OnSuggestionsChanged));
@@ -170,6 +207,9 @@ namespace Jamiras.Controls
             set { SetValue(SuggestionsProperty, value); }
         }
 
+        /// <summary>
+        /// Gets the list containing a single item indicating that there wasn't any matches.
+        /// </summary>
         public IEnumerable<LookupItem> NoMatchesList { get; private set; }
 
         private static void OnSuggestionsChanged(DependencyObject source, DependencyPropertyChangedEventArgs e)
@@ -208,12 +248,20 @@ namespace Jamiras.Controls
             }
         }
 
+        /// <summary>
+        /// Raises the <see cref="E:GotFocus" /> event.
+        /// </summary>
+        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         protected override void OnGotFocus(RoutedEventArgs e)
         {
             SelectAll();
             base.OnGotFocus(e);
         }
 
+        /// <summary>
+        /// Raises the <see cref="E:LostFocus" /> event.
+        /// </summary>
+        /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
         protected override void OnLostFocus(RoutedEventArgs e)
         {
             IsTyping = false;
@@ -227,6 +275,10 @@ namespace Jamiras.Controls
             base.OnLostFocus(e);
         }
 
+        /// <summary>
+        /// Raises the <see cref="E:PreviewKeyDown" /> event.
+        /// </summary>
+        /// <param name="e">The <see cref="KeyEventArgs"/> instance containing the event data.</param>
         protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
             if (_suggestionsListBox.IsKeyboardFocusWithin)

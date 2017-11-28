@@ -7,17 +7,29 @@ using Jamiras.DataModels;
 
 namespace Jamiras.Controls
 {
+    /// <summary>
+    /// Attached property for remembering the scroll offset of a <see cref="ScrollViewer"/> when it's not visible.
+    /// </summary>
     public class ScrollPreserver : DependencyObject
     {
+        /// <summary>
+        /// Enables preservation of the vertical scroll offset.
+        /// </summary>
         public static readonly DependencyProperty PreserveVerticalOffsetProperty =
             DependencyProperty.RegisterAttached("PreserveVerticalOffset", typeof(bool), typeof(ScrollPreserver),
                 new FrameworkPropertyMetadata(OnPreserveVerticalOffsetChanged));
 
+        /// <summary>
+        /// Gets whether the vertical scroll offset is preserved for the specified <see cref="ScrollViewer"/>.
+        /// </summary>
         public static bool GetPreserveVerticalOffset(ScrollViewer target)
         {
             return (bool)target.GetValue(PreserveVerticalOffsetProperty);
         }
 
+        /// <summary>
+        /// Sets whether the vertical scroll offset should be preserved for the specified <see cref="ScrollViewer"/>.
+        /// </summary>
         public static void SetPreserveVerticalOffset(ScrollViewer target, bool value)
         {
             target.SetValue(PreserveVerticalOffsetProperty, value);
@@ -52,15 +64,24 @@ namespace Jamiras.Controls
             return null;
         }
 
+        /// <summary>
+        /// Enables preservation of the horizontal scroll offset.
+        /// </summary>
         public static readonly DependencyProperty PreserveHorizontalOffsetProperty =
             DependencyProperty.RegisterAttached("PreserveHorizontalOffset", typeof(bool), typeof(ScrollPreserver),
                 new FrameworkPropertyMetadata(OnPreserveHorizontalOffsetChanged));
 
+        /// <summary>
+        /// Gets whether the horizontal scroll offset is preserved for the specified <see cref="ScrollViewer"/>.
+        /// </summary>
         public static bool GetPreserveHorizontalOffset(ScrollViewer target)
         {
             return (bool)target.GetValue(PreserveHorizontalOffsetProperty);
         }
 
+        /// <summary>
+        /// Sets whether the horizontal scroll offset should be preserved for the specified <see cref="ScrollViewer"/>.
+        /// </summary>
         public static void SetPreserveHorizontalOffset(ScrollViewer target, bool value)
         {
             target.SetValue(PreserveHorizontalOffsetProperty, value);

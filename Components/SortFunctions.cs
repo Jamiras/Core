@@ -3,8 +3,14 @@ using System.Linq;
 
 namespace Jamiras.Components
 {
+    /// <summary>
+    /// Helper functions for common sort algorithms
+    /// </summary>
     public static class SortFunctions
     {
+        /// <summary>
+        /// Case insensitive sort that honors numerical values (11 is not between 1 and 2)
+        /// </summary>
         public static int NumericStringCaseInsensitiveCompare(string left, string right)
         {
             if (left == null || right == null)
@@ -79,7 +85,7 @@ namespace Jamiras.Components
         }
 
         /// <summary>
-        /// case insensitive sort that ignores leading words like A, AN, and THE
+        /// Case insensitive sort that ignores leading words like A, AN, and THE.
         /// </summary>
         public static int TitleCompare(string left, string right)
         {

@@ -6,9 +6,23 @@ using Jamiras.Components;
 
 namespace Jamiras.DataModels.Metadata
 {
+    /// <summary>
+    /// Metadata for a filtered collection of database-based models.
+    /// </summary>
+    /// <typeparam name="T">Type of models in the collection.</typeparam>
     public abstract class DatabaseModelCollectionSearchMetadata<T> : DatabaseModelCollectionMetadata<T>
         where T : DataModelBase, new()
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DatabaseModelCollectionSearchMetadata{T}"/> class.
+        /// </summary>
+        /// <param name="searchProperty">The property to filter on.</param>
+        /// <param name="searchType">How to filter the data.</param>
+        /// <exception cref="ArgumentException">
+        /// <paramref name="searchType"/> is not supported
+        /// or
+        /// <paramref name="searchProperty"/> is not a string property.
+        /// </exception>
         protected DatabaseModelCollectionSearchMetadata(ModelProperty searchProperty, SearchType searchType)
         {
             if (searchType == SearchType.None)
@@ -24,13 +38,39 @@ namespace Jamiras.DataModels.Metadata
             AreResultsReadOnly = true;
         }
 
+        /// <summary>
+        /// Specifies how the collection should be filtered.
+        /// </summary>
         protected enum SearchType
         {
+            /// <summary>
+            /// Unspecified.
+            /// </summary>
             None = 0,
+
+            /// <summary>
+            /// Only exact matches should be returned.
+            /// </summary>
             Exact,
+
+            /// <summary>
+            /// Values that start with the filter should be returned.
+            /// </summary>
             StartsWith,
+
+            /// <summary>
+            /// Values that end with the filter should be returned.
+            /// </summary>
             EndsWith,
+
+            /// <summary>
+            /// Values that contain the filter should be returned.
+            /// </summary>
             Contains,
+
+            /// <summary>
+            /// Values that start with or contain the filter should be returned. Values that start with the filter will be returned first.
+            /// </summary>
             StartsWithOrContains
         }
 

@@ -8,15 +8,24 @@ using Jamiras.DataModels.Metadata;
 
 namespace Jamiras.DataModels
 {
+    /// <summary>
+    /// A collection of DataModels
+    /// </summary>
     [DebuggerDisplay("Count = {Count}")]
     public class DataModelCollection<T> : DataModelBase, ICollection<T>, IDataModelCollection
         where T : DataModelBase
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DataModelCollection{T}"/> class.
+        /// </summary>
         public DataModelCollection()
         {
             _collection = new List<T>();
         }
 
+        /// <summary>
+        /// Gets the underlying collection.
+        /// </summary>
         protected List<T> Collection
         {
             get { return _collection; }
@@ -50,6 +59,9 @@ namespace Jamiras.DataModels
             return 0;
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="Count"/>
+        /// </summary>
         public static readonly ModelProperty CountProperty =
             ModelProperty.Register(typeof(DataModelCollection<T>), "Count", typeof(int), 0);
 
@@ -81,6 +93,9 @@ namespace Jamiras.DataModels
             InsertAtIndex(_collection.Count, item);
         }
 
+        /// <summary>
+        /// Inserts an item at the specified index.
+        /// </summary>
         protected void InsertAtIndex(int index, T item)
         {
             _collection.Insert(index, item);
@@ -267,6 +282,9 @@ namespace Jamiras.DataModels
             }
         }
 
+        /// <summary>
+        /// Gets the enumerator.
+        /// </summary>
         public IEnumerator<T> GetEnumerator()
         {
             return _collection.GetEnumerator();
@@ -277,6 +295,9 @@ namespace Jamiras.DataModels
             return GetEnumerator();
         }
 
+        /// <summary>
+        /// Gets the item at the specified index.
+        /// </summary>
         public T this[int index]
         {
             get { return _collection[index]; }

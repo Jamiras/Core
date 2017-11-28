@@ -1,6 +1,9 @@
 ﻿
 namespace Jamiras.Services
 {
+    /// <summary>
+    /// Defines a service for storing data between sessions.
+    /// </summary>
     public interface IPersistantDataRepository
     {
         /// <summary>

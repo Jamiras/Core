@@ -4,6 +4,9 @@ using Jamiras.ViewModels.Converters;
 
 namespace Jamiras.ViewModels
 {
+    /// <summary>
+    /// Defines the behavior for synchronizing data between two <see cref="ModelProperty"/>s.
+    /// </summary>
     public class ModelBinding
     {
         /// <param name="source">Source object.</param>
@@ -47,6 +50,9 @@ namespace Jamiras.ViewModels
             Converter = converter;
         }
 
+        /// <summary>
+        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// </summary>
         public override string ToString()
         {   
             return String.Format("{0} {1} {2}", SourceProperty.FullName, Mode, Source);
@@ -137,6 +143,9 @@ namespace Jamiras.ViewModels
         }
     }
 
+    /// <summary>
+    /// Specifies how data should be synchronized between two <see cref="ModelProperty"/>s
+    /// </summary>
     public enum ModelBindingMode
     {
         /// <summary>

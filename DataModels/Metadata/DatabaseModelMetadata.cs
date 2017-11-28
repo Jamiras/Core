@@ -46,10 +46,11 @@ namespace Jamiras.DataModels.Metadata
         }
 
         /// <summary>
-        /// Registers metadata for a <see cref="ModelProperty"/>.
+        /// Registers metadata for a <see cref="ModelProperty" />.
         /// </summary>
         /// <param name="property">Property to register metadata for.</param>
         /// <param name="metadata">Metadata for the field.</param>
+        /// <param name="converter">Converter to use when transfering data from the source field to the model property.</param>
         protected override sealed void RegisterFieldMetadata(ModelProperty property, FieldMetadata metadata, IConverter converter)
         {
             RegisterFieldMetadata(property, metadata, null, converter);

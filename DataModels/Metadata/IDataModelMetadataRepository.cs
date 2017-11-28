@@ -25,7 +25,7 @@ namespace Jamiras.DataModels.Metadata
         /// Registers metadata for a model type.
         /// </summary>
         /// <param name="type">Type of model to register metadata for.</param>
-        /// <param name="metadata">Type of metadata to register.</param>
+        /// <param name="metadataType">Type of metadata to register.</param>
         void RegisterModelMetadata(Type type, Type metadataType);
     }
 }

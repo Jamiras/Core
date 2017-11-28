@@ -2,8 +2,16 @@
 
 namespace Jamiras.ViewModels.Converters
 {
+    /// <summary>
+    /// A generic two-way converter where the implementation is local (or anonymous) methods.
+    /// </summary>
     public class DelegateConverter : IConverter
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DelegateConverter"/> class.
+        /// </summary>
+        /// <param name="convert">The method to convert values from the source type to the target type.</param>
+        /// <param name="convertBack">The method to convert values from the target type to the source type.</param>
         public DelegateConverter(Func<object, object> convert, Func<object, object> convertBack)
         {
             _convert = convert;
@@ -13,6 +21,14 @@ namespace Jamiras.ViewModels.Converters
         private readonly Func<object, object> _convert;
         private readonly Func<object, object> _convertBack;
 
+        /// <summary>
+        /// Attempts to convert an object from the source type to the target type.
+        /// </summary>
+        /// <param name="value">Object to convert.</param>
+        /// <returns>
+        ///   <c>null</c> if the conversion succeeded, or and error message indicating why it failed.
+        /// </returns>
+        /// <exception cref="NotSupportedException">No conversion method was supplied.</exception>
         public string Convert(ref object value)
         {
             if (_convert == null)
@@ -29,6 +45,14 @@ namespace Jamiras.ViewModels.Converters
             }
         }
 
+        /// <summary>
+        /// Attempts to convert an object from the target type to the source type.
+        /// </summary>
+        /// <param name="value">Object to convert.</param>
+        /// <returns>
+        ///   <c>null</c> if the conversion succeeded, or and error message indicating why it failed.
+        /// </returns>
+        /// <exception cref="NotSupportedException">No conversion method was supplied.</exception>
         public string ConvertBack(ref object value)
         {
             if (_convertBack == null)

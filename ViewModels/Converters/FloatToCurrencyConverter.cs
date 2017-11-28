@@ -3,8 +3,19 @@ using System.Windows.Data;
 
 namespace Jamiras.ViewModels.Converters
 {
+    /// <summary>
+    /// Converter for formating and parsing currency values.
+    /// </summary>
     public class FloatToCurrencyConverter : IConverter, IValueConverter
     {
+        /// <summary>
+        /// Attempts to convert a numerical value to a currency value.
+        /// </summary>
+        /// <param name="value">Object to convert.</param>
+        /// <returns>
+        ///   <c>null</c> if the conversion succeeded, or and error message indicating why it failed.
+        /// </returns>
+        /// <exception cref="ArgumentException"><paramref name="value"/> is not a numerical value.</exception>
         public string Convert(ref object value)
         {
             double dval = 0.0;
@@ -22,6 +33,14 @@ namespace Jamiras.ViewModels.Converters
             return null;
         }
 
+        /// <summary>
+        /// Attempts to convert a currency value to a double.
+        /// </summary>
+        /// <param name="value">Object to convert.</param>
+        /// <returns>
+        ///   <c>null</c> if the conversion succeeded, or and error message indicating why it failed.
+        /// </returns>
+        /// <exception cref="ArgumentException"><paramref name="value"/>is not a string.</exception>
         public string ConvertBack(ref object value)
         {
             if (value == null)

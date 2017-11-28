@@ -2,6 +2,9 @@
 
 namespace Jamiras.Services
 {
+    /// <summary>
+    /// Service for handling exceptions.
+    /// </summary>
     public interface IExceptionDispatcher
     {
         /// <summary>
@@ -22,8 +25,14 @@ namespace Jamiras.Services
         void SetExceptionHandler(EventHandler<DispatchExceptionEventArgs> handler);
     }
 
+    /// <summary>
+    /// Provides exception information to the exception handler.
+    /// </summary>
     public class DispatchExceptionEventArgs : EventArgs
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DispatchExceptionEventArgs"/> class.
+        /// </summary>
         public DispatchExceptionEventArgs(Exception ex, bool isUnhandled)
         {
             Exception = ex;

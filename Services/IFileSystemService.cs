@@ -1,7 +1,11 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace Jamiras.Services
 {
+    /// <summary>
+    /// Service for interacting with the file system.
+    /// </summary>
     public interface IFileSystemService
     {
         /// <summary>
@@ -47,8 +51,18 @@ namespace Jamiras.Services
         /// <param name="path">Path to file.</param>
         /// <returns>The size of the file (in bytes)</returns>
         long GetFileSize(string path);
+
+        /// <summary>
+        /// Gets the last time a file was modified.
+        /// </summary>
+        /// <param name="path">Path to file.</param>
+        /// <returns>The <see cref="DateTime"/> the file was last modified.</returns>
+        DateTime GetFileLastModified(string path);
     }
 
+    /// <summary>
+    /// Intended use of opened file.
+    /// </summary>
     public enum OpenFileMode
     {
         /// <summary>

@@ -1,11 +1,11 @@
-﻿using System;
+﻿using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Collections;
 
 namespace Jamiras.Components
 {
+    /// <summary>
+    /// Helper extensions for <see cref="IEnumerable{T}"/>
+    /// </summary>
     public static class EnumerableExtensions
     {
         private static bool TryGetCount<T>(IEnumerable<T> items, out int count)
@@ -38,6 +38,7 @@ namespace Jamiras.Components
         /// <summary>
         /// Determine if another collection contains the same elements as the collection.
         /// </summary>
+        /// <param name="source">The enumerable collection being extended.</param>
         /// <param name="compare">Collection to compare.</param>
         /// <returns><c>true</c> if the collection contains the same elements, <c>false</c> if not.</returns>
         public static bool Equivalent<T>(this IEnumerable<T> source, IEnumerable<T> compare)

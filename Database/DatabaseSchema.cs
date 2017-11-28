@@ -5,8 +5,15 @@ using Jamiras.DataModels.Metadata;
 
 namespace Jamiras.Database
 {
+    /// <summary>
+    /// Defines the schema for a database.
+    /// </summary>
     public class DatabaseSchema
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DatabaseSchema"/> class.
+        /// </summary>
+        /// <param name="tables">The tables in the database.</param>
         public DatabaseSchema(IEnumerable<TableSchema> tables)
         {
             var schema = new List<TableSchema>(tables);
@@ -16,6 +23,10 @@ namespace Jamiras.Database
 
         private TableSchema[] _tables;
 
+        /// <summary>
+        /// Gets the schema for the specified table.
+        /// </summary>
+        /// <returns>Requested schema, <c>null</c> if not found.</returns>
         public TableSchema GetTableSchema(string tableName)
         {
             int low = 0;
@@ -44,6 +55,13 @@ namespace Jamiras.Database
             return (idx > 0) ? fieldName.Substring(0, idx).ToLower() : String.Empty;
         }
 
+        /// <summary>
+        /// Gets the relationship between two tables.
+        /// </summary>
+        /// <returns>Requested relationship, empty <see cref="JoinDefinition"/> if not found.</returns>
+        /// <exception cref="ArgumentException">
+        /// <paramref name="sourceTableName"/> or <paramref name="joinedTableName"/> is not a valid table in this schema.
+        /// </exception>
         public JoinDefinition GetJoin(string sourceTableName, string joinedTableName)
         {
             var sourceSchema = GetTableSchema(sourceTableName);

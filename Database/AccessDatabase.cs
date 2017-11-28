@@ -5,6 +5,9 @@ using Jamiras.Components;
 
 namespace Jamiras.Database
 {
+    /// <summary>
+    /// <see cref="IDatabase"/> implementation for Microsoft Access databases.
+    /// </summary>
     [Export(typeof(IDatabase))]
     [DebuggerDisplay("{_connection.DataSource}")]
     public class AccessDatabase : IDatabase

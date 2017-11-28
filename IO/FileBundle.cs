@@ -7,6 +7,12 @@ using Jamiras.Services;
 
 namespace Jamiras.IO
 {
+    /// <summary>
+    /// Manages a file containing multiple files.
+    /// </summary>
+    /// <remarks>
+    /// Implements <see cref="IFileSystemService"/> because it acts like one.
+    /// </remarks>
     public class FileBundle : IFileSystemService
     {
         private const byte Version = 1;
@@ -18,11 +24,20 @@ namespace Jamiras.IO
         private readonly FileInfo[] _recentFiles;
         private int _recentFilesIndex;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FileBundle"/> class.
+        /// </summary>
+        /// <param name="fileName">Name of the file.</param>
         public FileBundle(string fileName)
             : this(fileName, 17)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FileBundle"/> class.
+        /// </summary>
+        /// <param name="fileName">Name of the file.</param>
+        /// <param name="numBuckets">The number buckets to use for hashings paths. Should be a prime number roughly the square root of the expected number of items in the file.</param>
         protected FileBundle(string fileName, int numBuckets)
             : this(fileName, numBuckets, new FileSystemService())
         {
@@ -97,15 +112,40 @@ namespace Jamiras.IO
             stream.Close();
         }
 
+        /// <summary>
+        /// Information about a single file in the bundle.
+        /// </summary>
         [DebuggerDisplay("{FileName} {Size}@{Offset}")]
         protected class FileInfo
         {
+            /// <summary>
+            /// Gets or sets the name of the file.
+            /// </summary>
             public string FileName { get; set; }
+
+            /// <summary>
+            /// Gets or sets the time the file was last modified.
+            /// </summary>
             public DateTime Modified { get; set; }
+
+            /// <summary>
+            /// Gets or sets the size of the file.
+            /// </summary>
             public int Size { get; set; }
+
+            /// <summary>
+            /// Gets or sets the offset of the file within the bundle.
+            /// </summary>
             public int Offset { get; set; }
+
             internal Stream Stream { get; set; }
 
+            /// <summary>
+            /// Gets a value indicating whether this instance is directory.
+            /// </summary>
+            /// <value>
+            ///   <c>true</c> if this instance is directory; otherwise, <c>false</c>.
+            /// </value>
             public bool IsDirectory
             {
                 get { return Modified == DateTime.MinValue; }
@@ -150,6 +190,9 @@ namespace Jamiras.IO
                 _recentFilesIndex = 0;
         }
 
+        /// <summary>
+        /// Gets the bucket that should contain the file specified by <paramref name="path"/>.
+        /// </summary>
         public int GetBucket(string path)
         {
             uint hash = 0x3BAD84E1;
@@ -167,11 +210,17 @@ namespace Jamiras.IO
             return bucket;
         }
 
+        /// <summary>
+        /// Gets the name of the bundle file.
+        /// </summary>
         public string FileName
         {
             get { return _fileName; }
         }
 
+        /// <summary>
+        /// Gets a list of all files in the bundle.
+        /// </summary>
         public IEnumerable<string> GetFiles()
         {
             foreach (var info in EnumerateFiles())
@@ -181,6 +230,9 @@ namespace Jamiras.IO
             }
         }
 
+        /// <summary>
+        /// Gets a list of all files in the bundle under the specified directory.
+        /// </summary>
         public IEnumerable<string> GetFiles(string path)
         {
             foreach (var info in EnumerateFiles())
@@ -190,6 +242,9 @@ namespace Jamiras.IO
             }
         }
 
+        /// <summary>
+        /// Gets a list of all directories in the bundle.
+        /// </summary>
         public IEnumerable<string> GetDirectories()
         {
             foreach (var info in EnumerateFiles())
@@ -199,6 +254,9 @@ namespace Jamiras.IO
             }
         }
 
+        /// <summary>
+        /// Gets a list of all directories in the bundle under the specified directory.
+        /// </summary>
         public IEnumerable<string> GetDirectories(string path)
         {
             foreach (FileInfo info in EnumerateFiles())
@@ -208,6 +266,9 @@ namespace Jamiras.IO
             }
         }
 
+        /// <summary>
+        /// Determines if the file refered to by <paramref name="info"/> is in the specified directory.
+        /// </summary>
         protected static bool InFolder(FileInfo info, string path)
         {
             var index = info.FileName.LastIndexOf('\\');
@@ -217,6 +278,9 @@ namespace Jamiras.IO
             return String.Compare(path, 0, info.FileName, 0, index) == 0;
         }
 
+        /// <summary>
+        /// Enumerates the files in the bundle.
+        /// </summary>
         protected IEnumerable<FileInfo> EnumerateFiles()
         {
             BinaryReader reader = null;
@@ -271,6 +335,14 @@ namespace Jamiras.IO
 
         #region IFileSystemService Members
 
+        /// <summary>
+        /// Creates an empty file at the specified location. Will overwrite any existing file.
+        /// Caller is responsible for closing the <see cref="Stream" />.
+        /// </summary>
+        /// <param name="path">Path to file.</param>
+        /// <returns>
+        /// Stream that can be used to write to the file.
+        /// </returns>
         public Stream CreateFile(string path)
         {
             var info = new FileInfo();
@@ -319,6 +391,9 @@ namespace Jamiras.IO
             }
         }
 
+        /// <summary>
+        /// Updates the bundle file with a modified <see cref="FileInfo"/> object.
+        /// </summary>
         protected virtual void Commit(FileInfo info)
         {
             using (var fileStream = _fileSystem.OpenFile(_fileName, OpenFileMode.ReadWrite))
@@ -354,6 +429,9 @@ namespace Jamiras.IO
             }
         }
 
+        /// <summary>
+        /// Helper method for <see cref="Commit(FileInfo)"/> that writes the <paramref name="info"/> at the specified <paramref name="headerOffset"/>.
+        /// </summary>
         protected static void WriteFile(FileInfo info, int headerOffset, BinaryWriter writer)
         {
             writer.Seek(headerOffset, SeekOrigin.Begin);
@@ -451,17 +529,26 @@ namespace Jamiras.IO
             return bestFitOffset;
         }
 
+        /// <summary>
+        /// Calculates the offset of the bucket pointer within the file.
+        /// </summary>
         protected static int GetBucketOffset(int bucket)
         {
             return bucket * 4 + 8;
         }
 
+        /// <summary>
+        /// Gets the last time a file was modified.
+        /// </summary>
         public DateTime GetModified(string path)
         {
             var info = GetFileInfo(path);
             return (info != null) ? info.Modified.ToLocalTime() : DateTime.MinValue;
         }
-        
+
+        /// <summary>
+        /// Sets the last time a file was modified.
+        /// </summary>
         public void SetModified(string path, DateTime modified)
         {
             var info = GetFileInfo(path);
@@ -469,12 +556,25 @@ namespace Jamiras.IO
                 info.Modified = modified;
         }
 
+        /// <summary>
+        /// Gets the size.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <returns></returns>
         public int GetSize(string path)
         {
             var info = GetFileInfo(path);
             return (info != null) ? info.Size : 0;
         }
 
+        /// <summary>
+        /// Opens the file at the specified location for read or read/write.
+        /// </summary>
+        /// <param name="path">Path to file.</param>
+        /// <param name="mode">Whether to open the file for reading or read/write</param>
+        /// <returns>
+        /// Stream to read/write to the file, null if file not found.
+        /// </returns>
         public Stream OpenFile(string path, OpenFileMode mode)
         {
             var info = GetFileInfo(path);
@@ -569,18 +669,39 @@ namespace Jamiras.IO
             }
         }
 
+        /// <summary>
+        /// Determines whether or not a file exists at the specified location.
+        /// </summary>
+        /// <param name="path">Path to file.</param>
+        /// <returns>
+        ///   <c>true</c> if the file exists, <c>false</c> if not.
+        /// </returns>
         public bool FileExists(string path)
         {
             var info = GetFileInfo(path);
             return (info != null && !info.IsDirectory);
         }
 
+        /// <summary>
+        /// Determines whether or not a directory exists at the specified location.
+        /// </summary>
+        /// <param name="path">Path to directory.</param>
+        /// <returns>
+        ///   <c>true</c> if the file exists, <c>false</c> if not.
+        /// </returns>
         public bool DirectoryExists(string path)
         {
             var info = GetFileInfo(path);
             return (info != null && info.IsDirectory);
         }
 
+        /// <summary>
+        /// Creates a directory exists at the specified location.
+        /// </summary>
+        /// <param name="path">Path to directory.</param>
+        /// <returns>
+        ///   <c>true</c> if the directory was created, <c>false</c> if not.
+        /// </returns>
         public bool CreateDirectory(string path)
         {
             var info = GetFileInfo(path);
@@ -593,6 +714,10 @@ namespace Jamiras.IO
             return true;
         }
 
+        /// <summary>
+        /// Deletes the file.
+        /// </summary>
+        /// <param name="path">The path.</param>
         public bool DeleteFile(string path)
         {
             var info = GetFileInfo(path);
@@ -676,6 +801,13 @@ namespace Jamiras.IO
             return false;
         }
 
+        /// <summary>
+        /// Gets the size of the file
+        /// </summary>
+        /// <param name="path">Path to file.</param>
+        /// <returns>
+        /// The size of the file (in bytes)
+        /// </returns>
         public long GetFileSize(string path)
         {
             var info = GetFileInfo(path);
@@ -683,6 +815,18 @@ namespace Jamiras.IO
                 return 0;
 
             return info.Size;
+        }
+
+        /// <summary>
+        /// Gets the last time a file was modified.
+        /// </summary>
+        /// <param name="path">Path to file.</param>
+        /// <returns>
+        /// The <see cref="DateTime" /> the file was last modified.
+        /// </returns>
+        DateTime IFileSystemService.GetFileLastModified(string path)
+        {
+            return GetModified(path);
         }
 
         #endregion

@@ -2,8 +2,14 @@
 
 namespace Jamiras.IO.Serialization
 {
+    /// <summary>
+    /// Parser for processing XML documents.
+    /// </summary>
     public class XmlParser
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="XmlParser"/> class.
+        /// </summary>
         public XmlParser(string xml)
         {
             _tokenizer = Tokenizer.CreateTokenizer(xml);
@@ -90,11 +96,29 @@ namespace Jamiras.IO.Serialization
         }
     }
 
+    /// <summary>
+    /// The type of the XML token.
+    /// </summary>
     public enum XmlTokenType
     {
+        /// <summary>
+        /// Unspecified.
+        /// </summary>
         None = 0,
+
+        /// <summary>
+        /// An opening tag (i.e. "&lt;a&gt;").
+        /// </summary>
         OpenTag,
+
+        /// <summary>
+        /// A closing tag (i.e. "&lt;/a&gt;").
+        /// </summary>
         CloseTag,
+
+        /// <summary>
+        /// Content between tags.
+        /// </summary>
         Content,
     }
 }

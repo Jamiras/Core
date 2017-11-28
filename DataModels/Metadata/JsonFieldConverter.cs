@@ -1,19 +1,31 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using Jamiras.IO.Serialization;
 using Jamiras.ViewModels.Converters;
-using Jamiras.IO.Serialization;
+using System;
 
 namespace Jamiras.DataModels.Metadata
 {
+    /// <summary>
+    /// Converter for mapping a <see cref="ModelProperty"/> to a JSON field.
+    /// </summary>
     public class JsonFieldConverter
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JsonFieldConverter"/> class.
+        /// </summary>
+        /// <param name="jsonFieldName">Name of the json field.</param>
+        /// <param name="property">The property to map.</param>
         public JsonFieldConverter(string jsonFieldName, ModelProperty property)
             : this(jsonFieldName, property, null, JsonField.GetFieldType(property.PropertyType))
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JsonFieldConverter"/> class.
+        /// </summary>
+        /// <param name="jsonFieldName">Name of the json field.</param>
+        /// <param name="property">The property to map.</param>
+        /// <param name="converter">Converter to change the data type when mapping.</param>
+        /// <param name="type">The target JSON type.</param>
         public JsonFieldConverter(string jsonFieldName, ModelProperty property, IConverter converter, JsonFieldType type)
         {
             JsonFieldName = jsonFieldName;
@@ -73,6 +85,9 @@ namespace Jamiras.DataModels.Metadata
             jsonObject.AddField(JsonFieldName, Type, value);
         }
 
+        /// <summary>
+        /// Gets the value from the model.
+        /// </summary>
         protected virtual object GetValue(ModelBase model)
         {
             return model.GetValue(Property);

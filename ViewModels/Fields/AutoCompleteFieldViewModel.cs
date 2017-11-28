@@ -5,8 +5,18 @@ using Jamiras.DataModels.Metadata;
 
 namespace Jamiras.ViewModels.Fields
 {
+    /// <summary>
+    /// ViewModel for string input that supports suggesting values as the user types.
+    /// </summary>
     public class AutoCompleteFieldViewModel : TextFieldViewModelBase
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AutoCompleteFieldViewModel"/> class.
+        /// </summary>
+        /// <param name="label">The field label.</param>
+        /// <param name="metadata">Information about the field.</param>
+        /// <param name="searchFunction">Function to call to provide suggestions for current text.</param>
+        /// <param name="lookupLabelFunction">Function to call to get text for <see cref="SelectedId"/>.</param>
         public AutoCompleteFieldViewModel(string label, StringFieldMetadata metadata, 
             Func<string, IEnumerable<LookupItem>> searchFunction, Func<int, string> lookupLabelFunction)
             : base(label, metadata.MaxLength)
@@ -28,6 +38,9 @@ namespace Jamiras.ViewModels.Fields
         private static System.Timers.Timer _searchTimer;
         private static Action _searchTimerCallback;
 
+        /// <summary>
+        /// Notifies any subscribers that the value of a <see cref="ModelProperty" /> has changed.
+        /// </summary>
         protected override void OnModelPropertyChanged(ModelPropertyChangedEventArgs e)
         {
             if (e.Property == TextFieldViewModel.TextProperty && !_searchDisabled && !IsFixedSelection)
@@ -95,6 +108,9 @@ namespace Jamiras.ViewModels.Fields
             }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="Suggestions"/>
+        /// </summary>
         public static readonly ModelProperty SuggestionsProperty = 
             ModelProperty.Register(typeof(AutoCompleteFieldViewModel), "Suggestions", typeof(IEnumerable<LookupItem>), null);
 
@@ -117,6 +133,9 @@ namespace Jamiras.ViewModels.Fields
             SetBinding(SelectedIdProperty, new ModelBinding(source, property, mode));
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="SelectedId"/>
+        /// </summary>
         public static readonly ModelProperty SelectedIdProperty =
             ModelProperty.Register(typeof(AutoCompleteFieldViewModel), "SelectedId", typeof(int), 0, OnSelectedIdChanged);
 
@@ -174,6 +193,9 @@ namespace Jamiras.ViewModels.Fields
             }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="IsDisplayTextDifferentFromSearchText"/>
+        /// </summary>
         public static readonly ModelProperty IsDisplayTextDifferentFromSearchTextProperty =
             ModelProperty.Register(typeof(AutoCompleteFieldViewModel), "IsDisplayTextDifferentFromSearchText", typeof(bool), false);
 
@@ -189,6 +211,9 @@ namespace Jamiras.ViewModels.Fields
             set { SetValue(IsDisplayTextDifferentFromSearchTextProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="IsMatchRequired"/>
+        /// </summary>
         public static readonly ModelProperty IsMatchRequiredProperty =
             ModelProperty.Register(typeof(FieldViewModelBase), "IsMatchRequired", typeof(bool), false);
 
@@ -201,6 +226,14 @@ namespace Jamiras.ViewModels.Fields
             set { SetValue(IsMatchRequiredProperty, value); }
         }
 
+        /// <summary>
+        /// Validates a value being assigned to a property.
+        /// </summary>
+        /// <param name="property">Property being modified.</param>
+        /// <param name="value">Value being assigned to the property.</param>
+        /// <returns>
+        ///   <c>null</c> if the value is valid for the property, or an error message indicating why the value is not valid.
+        /// </returns>
         protected override string Validate(ModelProperty property, object value)
         {
             if (property == TextProperty && IsMatchRequired && !IsFixedSelection)
@@ -212,6 +245,9 @@ namespace Jamiras.ViewModels.Fields
             return base.Validate(property, value);
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="IsFixedSelection"/>
+        /// </summary>
         public static readonly ModelProperty IsFixedSelectionProperty =
             ModelProperty.Register(typeof(AutoCompleteFieldViewModel), "IsFixedSelection", typeof(bool), false, OnIsFixedSelectionChanged);
 

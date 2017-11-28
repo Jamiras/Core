@@ -11,6 +11,9 @@ namespace Jamiras.Controls
     /// </summary>
     public partial class DatePicker : UserControl
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DatePicker"/> class.
+        /// </summary>
         public DatePicker()
         {
             InitializeComponent();
@@ -24,6 +27,12 @@ namespace Jamiras.Controls
         }
 
         /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="IsCalendarVisible"/>
+        /// </summary>
+        public static readonly DependencyProperty IsCalendarVisibleProperty =
+            DependencyProperty.Register("IsCalendarVisible", typeof(bool), typeof(DatePicker));
+
+        /// <summary>
         /// Gets whether or not the suggestion list is visible
         /// </summary>
         public bool IsCalendarVisible
@@ -32,12 +41,15 @@ namespace Jamiras.Controls
             set { SetValue(IsCalendarVisibleProperty, value); }
         }
 
-        public static readonly DependencyProperty IsCalendarVisibleProperty =
-            DependencyProperty.Register("IsCalendarVisible", typeof(bool), typeof(DatePicker));
-
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="SelectedDate"/>
+        /// </summary>
         public static readonly DependencyProperty SelectedDateProperty = DependencyProperty.Register("SelectedDate",
             typeof(DateTime?), typeof(DatePicker), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, SelectedDateChanged, CoerceDate));
 
+        /// <summary>
+        /// Gets or sets the selected date.
+        /// </summary>
         public DateTime? SelectedDate
         {
             get { return (DateTime?)GetValue(SelectedDateProperty); }
@@ -74,6 +86,9 @@ namespace Jamiras.Controls
             IsCalendarVisible = false;
         }
 
+        /// <summary>
+        /// Gets a bindable command for opening the calendar dropdown.
+        /// </summary>
         public ICommand OpenCalendarCommand 
         {
             get { return new DelegateCommand(() => IsCalendarVisible = !IsCalendarVisible); }

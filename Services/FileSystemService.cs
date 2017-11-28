@@ -1,5 +1,6 @@
-﻿using System.IO;
-using Jamiras.Components;
+﻿using Jamiras.Components;
+using System;
+using System.IO;
 
 namespace Jamiras.Services
 {
@@ -39,6 +40,11 @@ namespace Jamiras.Services
         public long GetFileSize(string path)
         {
             return new FileInfo(path).Length;
+        }
+
+        public DateTime GetFileLastModified(string path)
+        {
+            return new FileInfo(path).LastWriteTimeUtc;
         }
 
         #endregion

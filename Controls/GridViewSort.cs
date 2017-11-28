@@ -10,29 +10,38 @@ namespace Jamiras.Controls
     /// </summary>
     /// <example>
     /// 
-    ///     <ListView ItemsSource="{Binding Items}" jamiras:GridViewSort.IsEnabled="true">
-    ///         <ListView.ItemContainerStyle>
-    ///             <Style TargetType="{x:Type ListViewItem}">
-    ///                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-    ///             </Style>
-    ///         </ListView.ItemContainerStyle>
-    ///         <ListView.View>
-    ///             <GridView>
-    ///                 <GridViewColumn Width="100" Header="Name" DisplayMemberBinding="{Binding Name}" />
+    ///     &lt;ListView ItemsSource="{Binding Items}" jamiras:GridViewSort.IsEnabled="true"&gt;
+    ///         &lt;ListView.ItemContainerStyle&gt;
+    ///             &lt;Style TargetType="{x:Type ListViewItem}"&gt;
+    ///                 &lt;Setter Property="HorizontalContentAlignment" Value="Stretch" /&gt;
+    ///             &lt;/Style&gt;
+    ///         &lt;/ListView.ItemContainerStyle&gt;
+    ///         &lt;ListView.View&gt;
+    ///             &lt;GridView&gt;
+    ///                 &lt;GridViewColumn Width="100" Header="Name" DisplayMemberBinding="{Binding Name}" /&gt;
     ///                 ...
     ///
     /// </example>
     public static class GridViewSort
     {
+        /// <summary>
+        /// Enables sorting
+        /// </summary>
         public static readonly DependencyProperty IsEnabledProperty =
             DependencyProperty.RegisterAttached("IsEnabled", typeof(bool), typeof(GridViewSort),
                 new FrameworkPropertyMetadata(false, OnIsEnabledChanged));
 
+        /// <summary>
+        /// Gets whether the <see cref="ListView"/> allows sorting by clicking on headers.
+        /// </summary>
         public static bool GetIsEnabled(ListView listView)
         {
             return (bool)listView.GetValue(IsEnabledProperty);
         }
 
+        /// <summary>
+        /// Sets whether the <see cref="ListView"/> should allow sorting by clicking on headers.
+        /// </summary>
         public static void SetIsEnabled(ListView target, bool value)
         {
             target.SetValue(IsEnabledProperty, value);

@@ -8,8 +8,15 @@ using Jamiras.DataModels.Metadata;
 
 namespace Jamiras.ViewModels
 {
+    /// <summary>
+    /// <see cref="ViewModelBase"/> extension that supports <see cref="IDataErrorInfo"/> validation.
+    /// </summary>
+    /// <seealso cref="System.ComponentModel.IDataErrorInfo" />
     public abstract class ValidatedViewModelBase : ViewModelBase, IDataErrorInfo
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ValidatedViewModelBase"/> class.
+        /// </summary>
         protected ValidatedViewModelBase()
         {
             _errors = EmptyTinyDictionary<string, string>.Instance;
@@ -31,6 +38,9 @@ namespace Jamiras.ViewModels
         private ITinyDictionary<string, string> _errors;
         private IDataModelMetadataRepository _metadataRepository;
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="IsValid"/>
+        /// </summary>
         public static readonly ModelProperty IsValidProperty =
             ModelProperty.Register(typeof(ValidatedViewModelBase), "IsValid", typeof(bool), true);
 
@@ -136,6 +146,10 @@ namespace Jamiras.ViewModels
             return null;
         }
 
+        /// <summary>
+        /// Formats an error message.
+        /// </summary>
+        /// <param name="errorMessage">The error message.</param>
         protected virtual string FormatErrorMessage(string errorMessage)
         {
             return String.Format(errorMessage, "Value");
@@ -180,6 +194,11 @@ namespace Jamiras.ViewModels
             SetError(property.PropertyName, errorMessage);
         }
 
+        /// <summary>
+        /// Sets an error message for a property.
+        /// </summary>
+        /// <param name="propertyName">Name of the property.</param>
+        /// <param name="errorMessage">The error message.</param>
         [EditorBrowsable(EditorBrowsableState.Never)]
         protected void SetError(string propertyName, string errorMessage)
         {

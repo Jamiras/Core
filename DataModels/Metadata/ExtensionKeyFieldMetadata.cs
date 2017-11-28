@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace Jamiras.DataModels.Metadata
+﻿namespace Jamiras.DataModels.Metadata
 {
     /// <summary>
     /// An ExtensionKeyField is a foreign key to a parent in a relationship where the extension object may or may not exist for 
@@ -15,7 +10,7 @@ namespace Jamiras.DataModels.Metadata
         /// Constructs a new parent key field metadata.
         /// </summary>
         /// <param name="fieldName">The foreign key field.</param>
-        /// <param name="relatedField">The metadata describing the primary key of the parent record.</param>
+        /// <param name="parentKeyField">The metadata describing the primary key of the parent record.</param>
         public ExtensionKeyFieldMetadata(string fieldName, FieldMetadata parentKeyField)
             : base(fieldName, parentKeyField, FieldAttributes.Required | (FieldAttributes)InternalFieldAttributes.PrimaryKey)
         {

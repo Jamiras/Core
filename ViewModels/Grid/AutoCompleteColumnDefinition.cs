@@ -7,8 +7,20 @@ using Jamiras.ViewModels.Fields;
 
 namespace Jamiras.ViewModels.Grid
 {
+    /// <summary>
+    /// Defines an autocomplete column for the <see cref="GridViewModel"/>.
+    /// </summary>
     public class AutoCompleteColumnDefinition : GridColumnDefinition
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AutoCompleteColumnDefinition"/> class.
+        /// </summary>
+        /// <param name="header">The column header text.</param>
+        /// <param name="idProperty">The integer property bound to the selected item.</param>
+        /// <param name="stringProperty">The string property bound to the displayed text.</param>
+        /// <param name="metadata">Information about the data for the column.</param>
+        /// <param name="searchFunction">Function to call to provide suggestions for current text.</param>
+        /// <param name="lookupLabelFunction">Function to call to get text for the selected item.</param>
         public AutoCompleteColumnDefinition(string header, ModelProperty idProperty, ModelProperty stringProperty,
             StringFieldMetadata metadata, Func<string, IEnumerable<LookupItem>> searchFunction, Func<int, string> lookupLabelFunction)
             : base(header, idProperty)
@@ -24,8 +36,17 @@ namespace Jamiras.ViewModels.Grid
         private readonly Func<string, IEnumerable<LookupItem>> _searchFunction;
         private readonly Func<int, string> _lookupLabelFunction;
 
+        /// <summary>
+        /// Gets or sets a value indicating whether this instance is display text different from search text.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if this instance is display text different from search text; otherwise, <c>false</c>.
+        /// </value>
         public bool IsDisplayTextDifferentFromSearchText { get; set; }
 
+        /// <summary>
+        /// Creates the FieldViewModel responsible for rendering this column and binds it to the provided row.
+        /// </summary>
         protected override FieldViewModelBase CreateFieldViewModel(GridRowViewModel row)
         {
             if (IsReadOnly)

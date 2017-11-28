@@ -11,6 +11,9 @@ namespace Jamiras.ViewModels
     /// </summary>
     public abstract class ViewModelBase : ModelBase
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ViewModelBase"/> class.
+        /// </summary>
         protected ViewModelBase()
         {
             _bindings = EmptyTinyDictionary<int, ModelBinding>.Instance;
@@ -143,6 +146,10 @@ namespace Jamiras.ViewModels
                 SynchronizeValue(this, ModelProperty.GetPropertyForKey(localPropertyKey), value);
         }
 
+        /// <summary>
+        /// Notifies any subscribers that the value of a <see cref="ModelProperty" /> has changed.
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnModelPropertyChanged(ModelPropertyChangedEventArgs e)
         {
             HandleModelPropertyChanged(e);

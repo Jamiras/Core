@@ -2,6 +2,9 @@
 
 namespace Jamiras.Database
 {
+    /// <summary>
+    /// Defines an interface for interacting with a database.
+    /// </summary>
     public interface IDatabase
     {
         /// <summary>

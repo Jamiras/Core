@@ -9,6 +9,9 @@ namespace Jamiras.Database
     /// </summary>
     public class QueryBuilder
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="QueryBuilder"/> class.
+        /// </summary>
         public QueryBuilder()
         {
             _fields = new List<string>();
@@ -27,6 +30,9 @@ namespace Jamiras.Database
         private readonly List<AggregateFieldDefinition> _aggregateFields;
         private string _filterExpression;
 
+        /// <summary>
+        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// </summary>
         public override string ToString()
         {
             return AccessDatabaseQuery.BuildQueryString(this, null);
@@ -81,7 +87,7 @@ namespace Jamiras.Database
         }
 
         /// <summary>
-        /// Defines the logical expression to apply to the filters. For example (1|2)&3
+        /// Defines the logical expression to apply to the filters. For example (1|2)&amp;3
         /// </summary>
         public string FilterExpression
         {

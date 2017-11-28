@@ -13,6 +13,10 @@ namespace Jamiras.IO.Serialization
     /// </summary>
     public class GraphQuery
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GraphQuery"/> class.
+        /// </summary>
+        /// <param name="objectType">Name of the object being queried.</param>
         public GraphQuery(string objectType)
         {
             ObjectType = objectType;
@@ -197,9 +201,16 @@ namespace Jamiras.IO.Serialization
         }
     }
 
+    /// <summary>
+    /// A field being queried.
+    /// </summary>
     [DebuggerDisplay("FieldName")]
     public class GraphQueryField
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GraphQueryField"/> class.
+        /// </summary>
+        /// <param name="fieldName">Name of the field.</param>
         public GraphQueryField(string fieldName)
         {
             FieldName = fieldName;

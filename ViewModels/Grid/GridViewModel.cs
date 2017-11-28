@@ -1,20 +1,26 @@
-﻿using System;
+﻿using Jamiras.Components;
+using Jamiras.DataModels;
+using Jamiras.Services;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Windows.Input;
-using Jamiras.DataModels;
-using Jamiras.Components;
-using Jamiras.Services;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace Jamiras.ViewModels.Grid
 {
+    /// <summary>
+    /// ViewModel for a grid of bound records.
+    /// </summary>
     [DebuggerDisplay("GridViewModel (Rows = {Rows.Count})")]
     public class GridViewModel : ViewModelBase, ICompositeViewModel
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GridViewModel"/> class.
+        /// </summary>
         public GridViewModel()
         {
             Columns = new List<GridColumnDefinition>();
@@ -96,6 +102,7 @@ namespace Jamiras.ViewModels.Grid
         /// <summary>
         /// Adds a row at the specified index within the grid.
         /// </summary>
+        /// <param name="index">Index to insert the row at.</param>
         /// <param name="model">The model to bind to the new row.</param>
         /// <param name="bindingMode">How to bind the model to the new row.</param>
         /// <returns>The newly created row.</returns>
@@ -137,6 +144,9 @@ namespace Jamiras.ViewModels.Grid
                 yield return row;
         }
 
+        /// <summary>
+        /// Gets the <see cref="GridRowViewModel"/> for the focused row.
+        /// </summary>
         public GridRowViewModel GetFocusedRow()
         {
             GridRowViewModel row = null;

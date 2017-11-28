@@ -7,17 +7,31 @@ using Jamiras.ViewModels.Fields;
 
 namespace Jamiras.ViewModels.Grid
 {
+    /// <summary>
+    /// Defines a column for the <see cref="GridViewModel"/>.
+    /// </summary>
     [DebuggerDisplay("{Header}")]
     public abstract class GridColumnDefinition : ModelBase
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GridColumnDefinition"/> class.
+        /// </summary>
+        /// <param name="header">The column header text.</param>
+        /// <param name="sourceProperty">The property bound to the column.</param>
         protected GridColumnDefinition(string header, ModelProperty sourceProperty)
         {
             Header = header;
             SourceProperty = sourceProperty;
         }
 
+        /// <summary>
+        /// Gets the property bound to the column
+        /// </summary>
         public ModelProperty SourceProperty { get; private set; }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="Header"/>
+        /// </summary>
         public static readonly ModelProperty HeaderProperty =
             ModelProperty.Register(typeof(GridColumnDefinition), "Header", typeof(string), null);
 
@@ -30,6 +44,9 @@ namespace Jamiras.ViewModels.Grid
             set { SetValue(HeaderProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="FooterText"/>
+        /// </summary>
         public static readonly ModelProperty FooterTextProperty =
             ModelProperty.Register(typeof(GridColumnDefinition), "FooterText", typeof(string), null);
 
@@ -45,6 +62,9 @@ namespace Jamiras.ViewModels.Grid
         internal static readonly ModelProperty SummarizeFunctionProperty =
             ModelProperty.Register(typeof(GridColumnDefinition), null, typeof(Func<IEnumerable, string>), null);
 
+        /// <summary>
+        /// Gets or sets the summarize function.
+        /// </summary>
         protected Func<IEnumerable, string> SummarizeFunction
         {
             get { return (Func<IEnumerable, string>)GetValue(SummarizeFunctionProperty); }
@@ -69,6 +89,9 @@ namespace Jamiras.ViewModels.Grid
             }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="IsReadOnly"/>
+        /// </summary>
         public static readonly ModelProperty IsReadOnlyProperty =
             ModelProperty.Register(typeof(GridColumnDefinition), "IsReadOnly", typeof(bool), false);
 
@@ -81,6 +104,9 @@ namespace Jamiras.ViewModels.Grid
             set { SetValue(IsReadOnlyProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="Width"/>
+        /// </summary>
         public static readonly ModelProperty WidthProperty =
             ModelProperty.Register(typeof(GridColumnDefinition), "Width", typeof(int), 0);
 
@@ -97,6 +123,9 @@ namespace Jamiras.ViewModels.Grid
             }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="WidthType"/>
+        /// </summary>
         public static readonly ModelProperty WidthTypeProperty =
             ModelProperty.Register(typeof(GridColumnDefinition), "WidthType", typeof(GridColumnWidthType), GridColumnWidthType.Auto);
 

@@ -4,6 +4,9 @@ using Jamiras.ViewModels.Fields;
 
 namespace Jamiras.ViewModels.Grid
 {
+    /// <summary>
+    /// Binds a <see cref="ModelBase"/> to a row of the <see cref="GridViewModel"/>.
+    /// </summary>
     public class GridRowViewModel : ViewModelBase, ICompositeViewModel
     {
         internal GridRowViewModel(ModelBase model, IEnumerable<GridColumnDefinition> columns, ModelBindingMode bindingMode)
@@ -20,8 +23,14 @@ namespace Jamiras.ViewModels.Grid
             Cells = new FieldViewModelBase[count];
         }
 
+        /// <summary>
+        /// Gets the model bound to the row.
+        /// </summary>
         public ModelBase Model { get; private set; }
 
+        /// <summary>
+        /// Notifies any subscribers that the value of a <see cref="ModelProperty" /> has changed.
+        /// </summary>
         protected override void OnModelPropertyChanged(ModelPropertyChangedEventArgs e)
         {
             // call HandleModelPropertyChanged and NotifyPropertyChangedHandlers instead of

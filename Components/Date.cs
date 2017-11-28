@@ -8,6 +8,17 @@ namespace Jamiras.Components
     /// </summary>
     public struct Date
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Date"/> struct.
+        /// </summary>
+        /// <param name="month">The month.</param>
+        /// <param name="day">The day.</param>
+        /// <param name="year">The year.</param>
+        /// <exception cref="ArgumentException">
+        /// <paramref name="month"/> must be between 0 and 12
+        /// or
+        /// <paramref name="day"/> must be between 0 and 31
+        /// </exception>
         public Date(int month, int day, int year)
         {
             if (month < 0 || month > 12)
@@ -395,7 +406,7 @@ namespace Jamiras.Components
         }
 
         /// <summary>
-        /// Attempts to convert a string into a <see cref="Date"/>. Supported formats are "MM/DD/YYYY" (system), "YYYY/MM/DD" (<see cref="ToDataString"/>), and  "[d] [MMM] [YYYY]" (<see cref="ToString"/>).
+        /// Attempts to convert a string into a <see cref="Date"/>. Supported formats are "MM/DD/YYYY" (system), "YYYY/MM/DD" (<see cref="ToDataString"/>), and  "[d] [MMM] [YYYY]" (<see cref="ToString(string)"/>).
         /// </summary>
         /// <param name="input">The string to parse.</param>
         /// <param name="date">The date to populate.</param>
@@ -578,21 +589,33 @@ namespace Jamiras.Components
             return (a._value - b._value);
         }
 
+        /// <summary>
+        /// Determines if one <see cref="Date"/> is chronologically after another.
+        /// </summary>
         public static bool operator >(Date left, Date right)
         {
             return left._value > right._value;
         }
 
+        /// <summary>
+        /// Determines if one <see cref="Date"/> is chronologically before another.
+        /// </summary>
         public static bool operator <(Date left, Date right)
         {
             return left._value < right._value;
         }
 
+        /// <summary>
+        /// Determines if one <see cref="Date"/> is chronologically the same another.
+        /// </summary>
         public static bool operator ==(Date left, Date right)
         {
             return left._value == right._value;
         }
 
+        /// <summary>
+        /// Determines if one <see cref="Date"/> is chronologically different than another.
+        /// </summary>
         public static bool operator !=(Date left, Date right)
         {
             return left._value != right._value;

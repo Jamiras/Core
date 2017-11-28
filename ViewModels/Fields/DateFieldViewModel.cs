@@ -6,8 +6,16 @@ using Jamiras.ViewModels.Converters;
 
 namespace Jamiras.ViewModels.Fields
 {
+    /// <summary>
+    /// ViewModel for date input.
+    /// </summary>
     public class DateFieldViewModel : FieldViewModelBase
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DateFieldViewModel"/> class.
+        /// </summary>
+        /// <param name="label">The field label.</param>
+        /// <param name="metadata">Information about the field.</param>
         public DateFieldViewModel(string label, DateTimeFieldMetadata metadata)
         {
             Label = label;
@@ -15,6 +23,9 @@ namespace Jamiras.ViewModels.Fields
             SetBinding(DateTimeProperty, new ModelBinding(this, DateProperty, new DateToDateTimeConverter()));
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="DateTime"/>
+        /// </summary>
         public static readonly ModelProperty DateTimeProperty =
             ModelProperty.Register(typeof(DateFieldViewModel), "DateTime", typeof(DateTime?), null);
 
@@ -27,6 +38,9 @@ namespace Jamiras.ViewModels.Fields
             set { SetValue(DateTimeProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="Date"/>
+        /// </summary>
         public static readonly ModelProperty DateProperty =
             ModelProperty.Register(typeof(DateFieldViewModel), "Date", typeof(Date), Date.Empty);
 

@@ -1,6 +1,9 @@
 ﻿
 namespace Jamiras.ViewModels.Grid
 {
+    /// <summary>
+    /// Defines how a grid column will size itself.
+    /// </summary>
     public enum GridColumnWidthType
     {
         /// <summary>

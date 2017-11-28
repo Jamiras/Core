@@ -15,14 +15,23 @@ namespace Jamiras.Controls
     /// </summary>
     public partial class CalendarControl : UserControl
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CalendarControl"/> class.
+        /// </summary>
         public CalendarControl()
         {
             InitializeComponent();
         }
 
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="SelectedYear"/>
+        /// </summary>
         public static readonly DependencyProperty SelectedYearProperty = DependencyProperty.Register("SelectedYear",
             typeof(int), typeof(CalendarControl), new FrameworkPropertyMetadata(SelectedYearChanged));
 
+        /// <summary>
+        /// Gets or sets the selected year.
+        /// </summary>
         public int SelectedYear
         {
             get { return (int)GetValue(SelectedYearProperty); }
@@ -34,9 +43,15 @@ namespace Jamiras.Controls
             ((CalendarControl)sender).UpdateMonth();
         }
 
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="SelectedMonth"/>
+        /// </summary>
         public static readonly DependencyProperty SelectedMonthProperty = DependencyProperty.Register("SelectedMonth",
             typeof(int), typeof(CalendarControl), new FrameworkPropertyMetadata(SelectedMonthChanged, CoerceMonth));
 
+        /// <summary>
+        /// Gets or sets the selected month.
+        /// </summary>
         public int SelectedMonth
         {
             get { return (int)GetValue(SelectedMonthProperty); }
@@ -146,9 +161,15 @@ namespace Jamiras.Controls
             }
         }
 
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="SelectedDay"/>
+        /// </summary>
         public static readonly DependencyProperty SelectedDayProperty = DependencyProperty.Register("SelectedDay",
             typeof(int), typeof(CalendarControl), new FrameworkPropertyMetadata(SelectedDayChanged, CoerceDay));
 
+        /// <summary>
+        /// Gets or sets the selected day.
+        /// </summary>
         public int SelectedDay
         {
             get { return (int)GetValue(SelectedDayProperty); }
@@ -188,8 +209,15 @@ namespace Jamiras.Controls
 
         private static readonly DependencyPropertyKey MonthLabelPropertyKey = DependencyProperty.RegisterReadOnly("MonthLabel",
             typeof(string), typeof(CalendarControl), new PropertyMetadata());
+
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="MonthLabel"/>
+        /// </summary>
         public static readonly DependencyProperty MonthLabelProperty = MonthLabelPropertyKey.DependencyProperty;
 
+        /// <summary>
+        /// Gets the label for the <see cref="SelectedMonth"/>.
+        /// </summary>
         public string MonthLabel
         {
             get { return (string)GetValue(MonthLabelProperty); }
@@ -198,17 +226,33 @@ namespace Jamiras.Controls
 
         private static readonly DependencyPropertyKey CalendarDaysPropertyKey = DependencyProperty.RegisterReadOnly("CalendarDays",
             typeof(IEnumerable<CalendarDay>), typeof(CalendarControl), new PropertyMetadata());
+
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="CalendarDays"/>
+        /// </summary>
         public static readonly DependencyProperty CalendarDaysProperty = CalendarDaysPropertyKey.DependencyProperty;
 
+        /// <summary>
+        /// Gets the collection of <see cref="CalendarDay"/>s for the selected month. Includes last few days of previous month and/or the 
+        /// next few days of the next month to ensure the calendar is fully populated.
+        /// </summary>
         public IEnumerable<CalendarDay> CalendarDays
         {
             get { return (IEnumerable<CalendarDay>)GetValue(CalendarDaysProperty); }
             private set { SetValue(CalendarDaysPropertyKey, value); }
         }
 
+        /// <summary>
+        /// Represents a single cell in the calendar.
+        /// </summary>
         [DebuggerDisplay("{Day}")]
         public class CalendarDay : ViewModelBase
         {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="CalendarDay"/> class.
+            /// </summary>
+            /// <param name="date">The date represented by the cell.</param>
+            /// <param name="isInSelectedMonth"><c>true</c> if the date is part of the selected month, <c>false</c> if it's from the previous or next month.</param>
             public CalendarDay(DateTime date, bool isInSelectedMonth)
             {
                 Date = date;
@@ -216,12 +260,27 @@ namespace Jamiras.Controls
                 IsInSelectedMonth = isInSelectedMonth;
             }
 
+            /// <summary>
+            /// Gets the date represented by the cell.
+            /// </summary>
             public DateTime Date { get; private set; }
 
+            /// <summary>
+            /// Gets the number to display in the cell.
+            /// </summary>
             public int Day { get; private set; }
 
+            /// <summary>
+            /// Gets whether the cell represents a day in the current month.
+            /// </summary>
+            /// <value>
+            /// <c>true</c> if the date is part of the selected month, <c>false</c> if it's from the previous or next month.
+            /// </value>
             public bool IsInSelectedMonth { get; private set; }
 
+            /// <summary>
+            /// Gets or sets a value whether the cell is selected.
+            /// </summary>
             public bool IsSelected
             {
                 get { return _isSelected; }
@@ -253,7 +312,15 @@ namespace Jamiras.Controls
             }
         }
 
+        /// <summary>
+        /// Raised when a cell is clicked.
+        /// </summary>
         public event EventHandler DateClicked;
+
+        /// <summary>
+        /// Raises the <see cref="E:DateClicked" /> event.
+        /// </summary>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected virtual void OnDateClicked(EventArgs e)
         {
             var handler = DateClicked;
@@ -261,20 +328,32 @@ namespace Jamiras.Controls
                 handler(this, e);
         }
 
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="ShowPreviousNextButtons"/>
+        /// </summary>
         public static readonly DependencyProperty ShowPreviousNextButtonsProperty = DependencyProperty.Register("ShowPreviousNextButtons",
             typeof(bool), typeof(CalendarControl), new PropertyMetadata(true));
 
+        /// <summary>
+        /// Gets or sets whether the previous and next month buttons should be visible.
+        /// </summary>
         public bool ShowPreviousNextButtons
         {
             get { return (bool)GetValue(ShowPreviousNextButtonsProperty); }
             set { SetValue(ShowPreviousNextButtonsProperty, value); }
         }
 
+        /// <summary>
+        /// A bindable command for changing the calendar to the previous month.
+        /// </summary>
         public ICommand PreviousMonthCommand 
         {
             get { return new DelegateCommand(PreviousMonth); }
         }
 
+        /// <summary>
+        /// Changes the calendar to the previous month.
+        /// </summary>
         public void PreviousMonth()
         {
             if (SelectedMonth == 1)
@@ -288,11 +367,17 @@ namespace Jamiras.Controls
             }
         }
 
+        /// <summary>
+        /// A bindable command for changing the calendar to the next month.
+        /// </summary>
         public ICommand NextMonthCommand
         {
             get { return new DelegateCommand(NextMonth); }
         }
 
+        /// <summary>
+        /// Changes the calendar to the next month.
+        /// </summary>
         public void NextMonth()
         {
             if (SelectedMonth == 12)

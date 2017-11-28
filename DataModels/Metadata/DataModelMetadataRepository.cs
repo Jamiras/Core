@@ -3,9 +3,15 @@ using Jamiras.Components;
 
 namespace Jamiras.DataModels.Metadata
 {
+    /// <summary>
+    /// A repository that stores metadata for model types.
+    /// </summary>
     [Export(typeof(IDataModelMetadataRepository))]
     public class DataModelMetadataRepository : IDataModelMetadataRepository
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DataModelMetadataRepository"/> class.
+        /// </summary>
         public DataModelMetadataRepository()
         {
             _repository = EmptyTinyDictionary<Type, ModelMetadata>.Instance;
@@ -54,7 +60,7 @@ namespace Jamiras.DataModels.Metadata
         /// Registers metadata for a model type.
         /// </summary>
         /// <param name="type">Type of model to register metadata for.</param>
-        /// <param name="metadata">Type of metadata to register.</param>
+        /// <param name="metadataType">Type of metadata to register.</param>
         public void RegisterModelMetadata(Type type, Type metadataType)
         {
             if (!typeof(ModelMetadata).IsAssignableFrom(metadataType))

@@ -5,6 +5,9 @@ using System.Windows.Input;
 
 namespace Jamiras.Controls
 {
+    /// <summary>
+    /// <see cref="Panel"/> extension that allows binding commands to mouse clicks.
+    /// </summary>
     public class EventBindingPanel : Panel
     {
         /// <summary>
@@ -124,6 +127,9 @@ namespace Jamiras.Controls
             base.OnMouseLeftButtonUp(e);
         }
 
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="ClickCommand"/>
+        /// </summary>
         public static readonly DependencyProperty ClickCommandProperty =
             DependencyProperty.Register("ClickCommand", typeof(ICommand), typeof(EventBindingPanel));
 
@@ -136,6 +142,9 @@ namespace Jamiras.Controls
             set { SetValue(ClickCommandProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="ClickCommandParameter"/>
+        /// </summary>
         public static readonly DependencyProperty ClickCommandParameterProperty =
             DependencyProperty.Register("ClickCommandParameter", typeof(object), typeof(EventBindingPanel));
 
@@ -148,6 +157,9 @@ namespace Jamiras.Controls
             set { SetValue(ClickCommandParameterProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="DoubleClickCommand"/>
+        /// </summary>
         public static readonly DependencyProperty DoubleClickCommandProperty =
             DependencyProperty.Register("DoubleClickCommand", typeof(ICommand), typeof(EventBindingPanel));
 
@@ -160,6 +172,9 @@ namespace Jamiras.Controls
             set { SetValue(DoubleClickCommandProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="DoubleClickCommandParameter"/>
+        /// </summary>
         public static readonly DependencyProperty DoubleClickCommandParameterProperty =
             DependencyProperty.Register("DoubleClickCommandParameter", typeof(object), typeof(EventBindingPanel));
 

@@ -2,6 +2,9 @@
 
 namespace Jamiras.Components
 {
+    /// <summary>
+    /// Interface for writing to the collection of <see cref="ILogTarget"/>s owned by the <see cref="ILogService"/>.
+    /// </summary>
     public interface ILogger
     {
         /// <summary>

@@ -2,6 +2,9 @@
 
 namespace Jamiras.Services
 {
+    /// <summary>
+    /// Defines a service for remembering window locations.
+    /// </summary>
     public interface IWindowSettingsRepository
     {
         /// <summary>

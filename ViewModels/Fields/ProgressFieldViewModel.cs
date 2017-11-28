@@ -6,6 +6,9 @@ using Jamiras.Services;
 
 namespace Jamiras.ViewModels.Fields
 {
+    /// <summary>
+    /// ViewModel for displaying progress.
+    /// </summary>
     public class ProgressFieldViewModel : FieldViewModelBase
     {
         const int SampleCount = 5;
@@ -17,6 +20,9 @@ namespace Jamiras.ViewModels.Fields
         private DateTime? _progressStart;
         //private TaskbarItemInfo _taskBarItemInfo;
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="Current"/>
+        /// </summary>
         public static readonly ModelProperty CurrentProperty = ModelProperty.Register(typeof(ProgressFieldViewModel), "Current", typeof(int), 0);
         
         /// <summary>
@@ -63,6 +69,9 @@ namespace Jamiras.ViewModels.Fields
         //    }), null);
         //}
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="Target"/>
+        /// </summary>
         public static readonly ModelProperty TargetProperty = ModelProperty.Register(typeof(ProgressFieldViewModel), "Target", typeof(int), 100, OnTargetChanged);
         
         /// <summary>
@@ -79,6 +88,9 @@ namespace Jamiras.ViewModels.Fields
             ((ProgressFieldViewModel)sender)._progressStart = null;
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="Percentage"/>
+        /// </summary>
         public static readonly ModelProperty PercentageProperty = ModelProperty.RegisterDependant(typeof(ProgressFieldViewModel), "Percentage", typeof(int),
             new[] { CurrentProperty, TargetProperty }, GetPercentage);
         
@@ -99,6 +111,9 @@ namespace Jamiras.ViewModels.Fields
             return (viewModel.Current * 100 / viewModel.Target);
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="TimeRemaining"/>
+        /// </summary>
         public static readonly ModelProperty TimeRemainingProperty = ModelProperty.RegisterDependant(typeof(ProgressFieldViewModel), "TimeRemaining", typeof(TimeSpan),
             new[] { CurrentProperty, TargetProperty }, GetTimeRemaining);
 
@@ -141,6 +156,9 @@ namespace Jamiras.ViewModels.Fields
             return TimeSpan.FromMilliseconds(remainingMilliseconds);
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="TimeRemainingString"/>
+        /// </summary>
         public static readonly ModelProperty TimeRemainingStringProperty = ModelProperty.RegisterDependant(typeof(ProgressFieldViewModel), "TimeRemainingString", typeof(string),
             new[] { TimeRemainingProperty }, GetTimeRemainingString);
 
@@ -165,6 +183,9 @@ namespace Jamiras.ViewModels.Fields
             return String.Format("Approximately {0} minutes remaining", (int)Math.Round(timeSpan.TotalMinutes));
         }
 
+        /// <summary>
+        /// Resets the progress tracker with a new completion target.
+        /// </summary>
         public void Reset(int newMaximum)
         {
             Target = 0; // disable updating TimeRemaining while changing Current

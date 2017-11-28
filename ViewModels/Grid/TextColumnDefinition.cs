@@ -5,14 +5,30 @@ using Jamiras.ViewModels.Fields;
 
 namespace Jamiras.ViewModels.Grid
 {
+    /// <summary>
+    /// Defines a text column for the <see cref="GridViewModel"/>.
+    /// </summary>
     public class TextColumnDefinition : GridColumnDefinition
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TextColumnDefinition"/> class.
+        /// </summary>
+        /// <param name="header">The column header text.</param>
+        /// <param name="sourceProperty">The property bound to the column.</param>
+        /// <param name="metadata">Information about the data for the column.</param>
+        /// <param name="converter">Converter to format text.</param>
         public TextColumnDefinition(string header, ModelProperty sourceProperty, StringFieldMetadata metadata, IConverter converter)
             : this(header, sourceProperty, metadata)
         {
             _converter = converter;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TextColumnDefinition"/> class.
+        /// </summary>
+        /// <param name="header">The column header text.</param>
+        /// <param name="sourceProperty">The property bound to the column.</param>
+        /// <param name="metadata">Information about the data for the column.</param>
         public TextColumnDefinition(string header, ModelProperty sourceProperty, StringFieldMetadata metadata)
             : base(header, sourceProperty)
         {
@@ -22,6 +38,9 @@ namespace Jamiras.ViewModels.Grid
         private readonly StringFieldMetadata _metadata;
         private readonly IConverter _converter;
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="IsRightAligned"/>
+        /// </summary>
         public static readonly ModelProperty IsRightAlignedProperty =
             ModelProperty.Register(typeof(TextColumnDefinition), "IsRightAligned", typeof(bool), false);
 
@@ -34,6 +53,9 @@ namespace Jamiras.ViewModels.Grid
             set { SetValue(IsRightAlignedProperty, value); }
         }
 
+        /// <summary>
+        /// Creates the FieldViewModel responsible for rendering this column and binds it to the provided row.
+        /// </summary>
         protected override FieldViewModelBase CreateFieldViewModel(GridRowViewModel row)
         {
             if (IsReadOnly)

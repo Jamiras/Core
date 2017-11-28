@@ -11,6 +11,9 @@ namespace Jamiras.DataModels.Metadata
     /// </summary>
     public abstract class ModelMetadata
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ModelMetadata"/> class.
+        /// </summary>
         protected ModelMetadata()
         {
             _fieldMetadata = EmptyTinyDictionary<int, FieldMetadata>.Instance;
@@ -33,6 +36,7 @@ namespace Jamiras.DataModels.Metadata
         /// </summary>
         /// <param name="property">Property to register metadata for.</param>
         /// <param name="metadata">Metadata for the field.</param>
+        /// <param name="converter">Converter to use when transfering data from the source field to the model property.</param>
         protected virtual void RegisterFieldMetadata(ModelProperty property, FieldMetadata metadata, IConverter converter)
         {
             _fieldMetadata = _fieldMetadata.AddOrUpdate(property.Key, metadata);

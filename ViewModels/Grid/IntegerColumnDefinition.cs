@@ -6,8 +6,17 @@ using Jamiras.ViewModels.Fields;
 
 namespace Jamiras.ViewModels.Grid
 {
+    /// <summary>
+    /// Defines an integral number column for the <see cref="GridViewModel"/>.
+    /// </summary>
     public class IntegerColumnDefinition : GridColumnDefinition
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IntegerColumnDefinition"/> class.
+        /// </summary>
+        /// <param name="header">The column header text.</param>
+        /// <param name="sourceProperty">The property bound to the column.</param>
+        /// <param name="metadata">Information about the data for the column.</param>
         public IntegerColumnDefinition(string header, ModelProperty sourceProperty, IntegerFieldMetadata metadata)
             : base(header, sourceProperty)
         {
@@ -23,6 +32,9 @@ namespace Jamiras.ViewModels.Grid
             return (c != null) ? c.ToString() : String.Empty;
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="Summarization"/>
+        /// </summary>
         public static readonly ModelProperty SummarizationProperty =
             ModelProperty.Register(typeof(IntegerColumnDefinition), "Summarization", typeof(Summarization), Summarization.None, OnSummarizationChanged);
 
@@ -63,6 +75,9 @@ namespace Jamiras.ViewModels.Grid
             return ConvertInteger(total);
         }
 
+        /// <summary>
+        /// Creates the FieldViewModel responsible for rendering this column and binds it to the provided row.
+        /// </summary>
         protected override FieldViewModelBase CreateFieldViewModel(GridRowViewModel row)
         {
             if (IsReadOnly)

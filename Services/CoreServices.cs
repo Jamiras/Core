@@ -6,6 +6,9 @@ using Jamiras.DataModels.Metadata;
 
 namespace Jamiras.Services
 {
+    /// <summary>
+    /// Helper class for defining default service implementations.
+    /// </summary>
     public static class CoreServices
     {
         /// <summary>

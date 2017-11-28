@@ -1,25 +1,33 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.ComponentModel;
 using System.Windows.Data;
 
 namespace Jamiras.Controls
 {
+    /// <summary>
+    /// Attached properties for extending <see cref="Grid"/>s.
+    /// </summary>
     public class GridUtils
     {
+        /// <summary>
+        /// Constrains the height of the <see cref="FrameworkElement"/> to the actual height of the bound row.
+        /// </summary>
         public static readonly DependencyProperty ConstrainToRowProperty =
             DependencyProperty.RegisterAttached("ConstrainToRow", typeof(int), typeof(GridUtils),
            new FrameworkPropertyMetadata(-1, OnConstrainToRowChanged));
 
+        /// <summary>
+        /// Gets the index of the row the <see cref="FrameworkElement"/> is constrained to.
+        /// </summary>
         public static int GetConstrainToRow(FrameworkElement target)
         {
             return (int)target.GetValue(ConstrainToRowProperty);
         }
 
+        /// <summary>
+        /// Gets the index of the row to constain the <see cref="FrameworkElement"/> to.
+        /// </summary>
         public static void SetConstrainToRow(FrameworkElement target, int value)
         {
             target.SetValue(ConstrainToRowProperty, value);

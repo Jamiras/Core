@@ -4,13 +4,27 @@ using Jamiras.DataModels.Metadata;
 
 namespace Jamiras.ViewModels.Fields
 {
+    /// <summary>
+    /// ViewModel for integral numeric input.
+    /// </summary>
     public class IntegerFieldViewModel : TextFieldViewModelBase
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IntegerFieldViewModel"/> class.
+        /// </summary>
+        /// <param name="label">The field label.</param>
+        /// <param name="metadata">Information about the field.</param>
         public IntegerFieldViewModel(string label, IntegerFieldMetadata metadata)
             : this(label, metadata.MinimumValue, metadata.MaximumValue)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IntegerFieldViewModel"/> class.
+        /// </summary>
+        /// <param name="label">The field label.</param>
+        /// <param name="minValue">The minimum value supported by the field.</param>
+        /// <param name="maxValue">The maximum value supported by the field.</param>
         public IntegerFieldViewModel(string label, int minValue, int maxValue)
             : base(label, GetMaxLength(minValue, maxValue))
         {
@@ -24,6 +38,9 @@ namespace Jamiras.ViewModels.Fields
             return Math.Max(minValue.ToString().Length, maxValue.ToString().Length);
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="Value"/>
+        /// </summary>
         public static readonly ModelProperty ValueProperty =
             ModelProperty.Register(typeof(IntegerFieldViewModel), "Value", typeof(int?), null, OnValueChanged);
 
@@ -41,6 +58,9 @@ namespace Jamiras.ViewModels.Fields
             set { SetValue(ValueProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="MinValue"/>
+        /// </summary>
         public static readonly ModelProperty MinValueProperty =
             ModelProperty.Register(typeof(IntegerFieldViewModel), "MinValue", typeof(int), 0);
 
@@ -64,6 +84,9 @@ namespace Jamiras.ViewModels.Fields
             set { SetValue(MinValueProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="MaxValue"/>
+        /// </summary>
         public static readonly ModelProperty MaxValueProperty =
             ModelProperty.Register(typeof(IntegerFieldViewModel), "MaxValue", typeof(int), Int32.MaxValue);
 
@@ -76,6 +99,14 @@ namespace Jamiras.ViewModels.Fields
             set { SetValue(MaxValueProperty, value); }
         }
 
+        /// <summary>
+        /// Validates a value being assigned to a property.
+        /// </summary>
+        /// <param name="property">Property being modified.</param>
+        /// <param name="value">Value being assigned to the property.</param>
+        /// <returns>
+        ///   <c>null</c> if the value is valid for the property, or an error message indicating why the value is not valid.
+        /// </returns>
         protected override string Validate(ModelProperty property, object value)
         {
             if (property == TextProperty)

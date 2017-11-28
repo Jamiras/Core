@@ -1,9 +1,12 @@
-﻿using System;
+﻿using Jamiras.Components;
+using System;
 using System.Collections.Generic;
-using Jamiras.Components;
 
 namespace Jamiras.Services
 {
+    /// <summary>
+    /// A service for managing the active log targets and logging level.
+    /// </summary>
     public interface ILogService
     {
         /// <summary>
@@ -27,6 +30,9 @@ namespace Jamiras.Services
         ILogger GetLogger(string key);
     }
 
+    /// <summary>
+    /// The various levels supported by an <see cref="ILogger"/>
+    /// </summary>
     [Flags]
     public enum LogLevel
     {

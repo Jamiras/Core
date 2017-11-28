@@ -23,6 +23,9 @@ namespace Jamiras.Commands
 
         private readonly Action _executeMethod;
 
+        /// <summary>
+        /// Executes the command.
+        /// </summary>
         public override void Execute()
         {
             _executeMethod();

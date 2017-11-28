@@ -6,17 +6,41 @@ using System.Windows.Input;
 
 namespace Jamiras.Controls
 {
+    /// <summary>
+    /// Attached property for <see cref="TextBox"/> that ensures entered data matches a specific pattern.
+    /// </summary>
     public class TextPattern
     {
+        /// <summary>
+        /// Defines the pattern to use when restricting input.
+        /// 
+        ///   # - character must be a digit (0-9)
+        ///   A - character must be a letter (A-Z a-z)
+        ///   ? - character can be anything
+        ///   
+        ///   all other characters are fixed and may be typed, or will be skipped over if anything else is typed.
+        /// </summary>
+        /// <example>
+        /// 
+        ///   Phone number:
+        ///   (###) ###-####
+        /// 
+        /// </example>
         public static readonly DependencyProperty PatternProperty =
             DependencyProperty.RegisterAttached("Pattern", typeof(string), typeof(TextPattern),
                 new FrameworkPropertyMetadata(OnPatternChanged));
 
+        /// <summary>
+        /// Gets the pattern associated to the specified <see cref="TextBox"/>.
+        /// </summary>
         public static string GetPattern(TextBox target)
         {
             return (string)target.GetValue(PatternProperty);
         }
 
+        /// <summary>
+        /// Sets the pattern for the specified <see cref="TextBox"/>.
+        /// </summary>
         public static void SetPattern(TextBox target, string value)
         {
             target.SetValue(PatternProperty, value);

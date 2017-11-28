@@ -114,7 +114,9 @@ namespace Jamiras.Core.Tests.DataModels
             Assert.That(property2.Equals(property1), Is.False);
             Assert.That(property2.Equals(property2), Is.True);
 
+#pragma warning disable CS1718 // Comparison made to same variable - testing equality operator
             Assert.That(property1 == property1, Is.True);
+#pragma warning restore CS1718 // Comparison made to same variable
             Assert.That(property1 == property2, Is.False);
 
             Assert.That(property1.Equals("Property1"), Is.False);

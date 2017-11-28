@@ -1,34 +1,48 @@
-﻿using System;
+﻿using Jamiras.Components;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
-using Jamiras.Components;
 
 namespace Jamiras.IO.Serialization
 {
+    /// <summary>
+    /// Represents a single JSON object.
+    /// </summary>
     [DebuggerTypeProxy(typeof(JsonObjectDebugView))]
     public class JsonObject : IEnumerable<JsonField>
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JsonObject"/> class from a JSON string.
+        /// </summary>
         public JsonObject(string json)
             : this()
         {
             Parse(Tokenizer.CreateTokenizer(json));
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JsonObject"/> class from a stream containing JSON.
+        /// </summary>
         public JsonObject(Stream stream)
             : this()
         {
             Parse(Tokenizer.CreateTokenizer(stream));
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JsonObject"/> class from a Token containing JSON.
+        /// </summary>
         public JsonObject(Token json)
             : this()
         {
             Parse(Tokenizer.CreateTokenizer(json));
         }
 
+        /// <summary>
+        /// Initializes a new empty instance of the <see cref="JsonObject"/> class.
+        /// </summary>
         public JsonObject()
         {
             _fields = EmptyTinyDictionary<string, JsonField>.Instance; 
@@ -61,6 +75,9 @@ namespace Jamiras.IO.Serialization
 
         private ITinyDictionary<string, JsonField> _fields;
 
+        /// <summary>
+        /// Gets whether this instance is empty (has no fields).
+        /// </summary>
         public bool IsEmpty
         {
             get { return _fields.Count == 0; }
@@ -82,11 +99,18 @@ namespace Jamiras.IO.Serialization
 
         #region ToString
 
+        /// <summary>
+        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// </summary>
         public override string ToString()
         {
             return ToString(0);
         }
 
+        /// <summary>
+        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// </summary>
+        /// <param name="indent">The amount to indent each nested value.</param>
         public string ToString(int indent)
         {
             var builder = new StringBuilder();
@@ -502,6 +526,11 @@ namespace Jamiras.IO.Serialization
 
         #endregion
 
+        /// <summary>
+        /// Gets the specified field from the object.
+        /// </summary>
+        /// <param name="fieldName">Name of the field.</param>
+        /// <returns>Requested field, <c>null</c> if not found.</returns>
         public JsonField GetField(string fieldName)
         {
             JsonField field;
@@ -509,37 +538,61 @@ namespace Jamiras.IO.Serialization
             return field;
         }
 
+        /// <summary>
+        /// Adds a field to the object.
+        /// </summary>
+        /// <param name="fieldName">Name of the field.</param>
+        /// <param name="type">The type of the field.</param>
+        /// <param name="value">The value of the field.</param>
         public void AddField(string fieldName, JsonFieldType type, object value)
         {
             var field = new JsonField(fieldName, type, value);
             _fields = _fields.AddOrUpdate(fieldName.ToLower(), field);
         }
 
+        /// <summary>
+        /// Adds a string field to the object.
+        /// </summary>
         public void AddField(string fieldName, string value)
         {
             AddField(fieldName, JsonFieldType.String, value);
         }
 
+        /// <summary>
+        /// Adds an integer field to the object.
+        /// </summary>
         public void AddField(string fieldName, int? value)
         {
             AddField(fieldName, JsonFieldType.Integer, value);
         }
 
+        /// <summary>
+        /// Adds an integer array field to the object.
+        /// </summary>
         public void AddField(string fieldName, int[] value)
         {
             AddField(fieldName, JsonFieldType.IntegerArray, value);
         }
 
+        /// <summary>
+        /// Adds a boolean field to the object.
+        /// </summary>
         public void AddField(string fieldName, bool value)
         {
             AddField(fieldName, JsonFieldType.Boolean, value);
         }
 
+        /// <summary>
+        /// Adds a double field to the object.
+        /// </summary>
         public void AddField(string fieldName, double? value)
         {
             AddField(fieldName, JsonFieldType.Double, value);
         }
 
+        /// <summary>
+        /// Adds a float field to the object.
+        /// </summary>
         public void AddField(string fieldName, float? value)
         {
             if (value == null)
@@ -548,6 +601,9 @@ namespace Jamiras.IO.Serialization
                 AddField(fieldName, JsonFieldType.Double, (double)value.GetValueOrDefault());
         }
 
+        /// <summary>
+        /// Adds a date field to the object.
+        /// </summary>
         public void AddField(string fieldName, Date value)
         {
             if (value.IsEmpty)
@@ -556,6 +612,9 @@ namespace Jamiras.IO.Serialization
                 AddField(fieldName, JsonFieldType.Date, value.ToString("yyyy-MM-dd") + 'Z');
         }
 
+        /// <summary>
+        /// Adds a date/time field to the object.
+        /// </summary>
         public void AddField(string fieldName, DateTime? value)
         {
             if (value == null)
@@ -570,20 +629,35 @@ namespace Jamiras.IO.Serialization
             }
         }
 
+        /// <summary>
+        /// Adds an object field to the object.
+        /// </summary>
         public void AddField(string fieldName, JsonObject value)
         {
             AddField(fieldName, JsonFieldType.Object, value);
         }
 
+        /// <summary>
+        /// Adds an object array field to the object.
+        /// </summary>
         public void AddField(string fieldName, IEnumerable<JsonObject> value)
         {
             AddField(fieldName, JsonFieldType.ObjectArray, value);
         }
     }
 
+    /// <summary>
+    /// A single field of a <see cref="JsonObject"/>.
+    /// </summary>
     [DebuggerDisplay("{FieldName,nq} = {Value} ({Type})")]
     public struct JsonField
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JsonField"/> struct.
+        /// </summary>
+        /// <param name="fieldName">Name of the field.</param>
+        /// <param name="type">The type.</param>
+        /// <param name="value">The value.</param>
         public JsonField(string fieldName, JsonFieldType type, object value)
         {
             _fieldName = fieldName;
@@ -595,20 +669,37 @@ namespace Jamiras.IO.Serialization
         private readonly JsonFieldType _type;
         private readonly object _value;
 
+        /// <summary>
+        /// Gets the name of the field.
+        /// </summary>
         public string FieldName { get { return _fieldName; } }
+
+        /// <summary>
+        /// Gets the type of the field.
+        /// </summary>
         public JsonFieldType Type { get { return _type; } }
+
         internal object Value { get { return _value; } }
 
+        /// <summary>
+        /// Gets the value of the field if the type is <see cref="JsonFieldType.Object"/>.
+        /// </summary>
         public JsonObject ObjectValue
         {
             get { return _value as JsonObject; }
         }
 
+        /// <summary>
+        /// Gets the value of the field if the type is <see cref="JsonFieldType.ObjectArray"/>.
+        /// </summary>
         public IEnumerable<JsonObject> ObjectArrayValue
         {
             get { return _value as IEnumerable<JsonObject>; }
         }
 
+        /// <summary>
+        /// Gets the value of the field if the type is <see cref="JsonFieldType.String"/>.
+        /// </summary>
         public string StringValue
         {
             get
@@ -620,6 +711,9 @@ namespace Jamiras.IO.Serialization
             }
         }
 
+        /// <summary>
+        /// Gets the value of the field if the type is <see cref="JsonFieldType.Boolean"/>.
+        /// </summary>
         public bool BooleanValue
         {
             get
@@ -631,6 +725,9 @@ namespace Jamiras.IO.Serialization
             }
         }
 
+        /// <summary>
+        /// Gets the value of the field if the type is <see cref="JsonFieldType.Integer"/>.
+        /// </summary>
         public int? IntegerValue
         {
             get
@@ -642,11 +739,17 @@ namespace Jamiras.IO.Serialization
             }
         }
 
+        /// <summary>
+        /// Gets the value of the field if the type is <see cref="JsonFieldType.IntegerArray"/>.
+        /// </summary>
         public int[] IntegerArrayValue
         {
             get { return _value as int[]; }
         }
 
+        /// <summary>
+        /// Gets the value of the field if the type is <see cref="JsonFieldType.Double"/>.
+        /// </summary>
         public double? DoubleValue
         {
             get
@@ -661,6 +764,9 @@ namespace Jamiras.IO.Serialization
             }
         }
 
+        /// <summary>
+        /// Gets the value of the field if the type is <see cref="JsonFieldType.Date"/>.
+        /// </summary>
         public Date DateValue
         {
             get
@@ -684,6 +790,9 @@ namespace Jamiras.IO.Serialization
             }
         }
 
+        /// <summary>
+        /// Gets the value of the field if the type is <see cref="JsonFieldType.DateTime"/>.
+        /// </summary>
         public DateTime? DateTimeValue
         {
             get
@@ -712,6 +821,10 @@ namespace Jamiras.IO.Serialization
             }
         }
 
+        /// <summary>
+        /// Infers the <see cref="JsonFieldType"/> from a <see cref="Type"/>.
+        /// </summary>
+        /// <exception cref="NotSupportedException">The provided <paramref name="t"/> doesn't map to a <see cref="JsonFieldType"/>.</exception>
         public static JsonFieldType GetFieldType(Type t)
         {
             if (t == typeof(int) || t == typeof(int?))
@@ -742,20 +855,74 @@ namespace Jamiras.IO.Serialization
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public enum JsonFieldType
     {
+        /// <summary>
+        /// Undefined.
+        /// </summary>
         None = 0,
+
+        /// <summary>
+        /// No value.
+        /// </summary>
         Null,
+
+        /// <summary>
+        /// An object.
+        /// </summary>
         Object,
+
+        /// <summary>
+        /// An array of objects.
+        /// </summary>
         ObjectArray,
+
+        /// <summary>
+        /// A string.
+        /// </summary>
         String,
+
+        /// <summary>
+        /// An array of strings.
+        /// </summary>
         StringArray,
+
+        /// <summary>
+        /// A true/false value.
+        /// </summary>
         Boolean,
+
+        /// <summary>
+        /// An integral numbers.
+        /// </summary>
         Integer,
+
+        /// <summary>
+        /// An array of integral numbers.
+        /// </summary>
         IntegerArray,
+
+        /// <summary>
+        /// A non-integral numbers.
+        /// </summary>
         Double,
+
+        /// <summary>
+        /// An array of non-integral numbers.
+        /// </summary>
         DoubleArray,
+
+        /// <summary>
+        /// A date.
+        /// </summary>
         Date,
+
+        /// <summary>
+        /// A date and time.
+        /// </summary>
         DateTime,
     }
 }

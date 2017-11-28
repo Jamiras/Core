@@ -1,22 +1,37 @@
-﻿using System.Collections.Generic;
+﻿using Jamiras.DataModels;
+using System.Collections.Generic;
 using System.Linq;
-using Jamiras.DataModels;
 
 namespace Jamiras.ViewModels.Fields
 {
+    /// <summary>
+    /// ViewModel for multiple choice input.
+    /// </summary>
     public class LookupFieldViewModel : FieldViewModelBase
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LookupFieldViewModel"/> class.
+        /// </summary>
+        /// <param name="label">The field label.</param>
         public LookupFieldViewModel(string label)
         {
             Label = label;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LookupFieldViewModel"/> class.
+        /// </summary>
+        /// <param name="label">The field label.</param>
+        /// <param name="items">The available items.</param>
         public LookupFieldViewModel(string label, IEnumerable<LookupItem> items)
             : this(label)
         {
             Items = items;
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="Items"/>
+        /// </summary>
         public static readonly ModelProperty ItemsProperty =
             ModelProperty.Register(typeof(LookupFieldViewModel), "Items", typeof(IEnumerable<LookupItem>), null);
 
@@ -29,6 +44,9 @@ namespace Jamiras.ViewModels.Fields
             set { SetValue(ItemsProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="SelectedId"/>
+        /// </summary>
         public static readonly ModelProperty SelectedIdProperty =
             ModelProperty.Register(typeof(LookupFieldViewModel), "SelectedId", typeof(int), 0);
 
@@ -41,6 +59,9 @@ namespace Jamiras.ViewModels.Fields
             set { SetValue(SelectedIdProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="SelectedLabel"/>
+        /// </summary>
         public static readonly ModelProperty SelectedLabelProperty =
             ModelProperty.RegisterDependant(typeof(LookupFieldViewModel), "SelectedLabel", typeof(string), new[] { SelectedIdProperty }, GetSelectedLabel);
 
@@ -59,6 +80,14 @@ namespace Jamiras.ViewModels.Fields
             get { return (string)GetValue(SelectedLabelProperty); }
         }
 
+        /// <summary>
+        /// Validates a value being assigned to a property.
+        /// </summary>
+        /// <param name="property">Property being modified.</param>
+        /// <param name="value">Value being assigned to the property.</param>
+        /// <returns>
+        ///   <c>null</c> if the value is valid for the property, or an error message indicating why the value is not valid.
+        /// </returns>
         protected override string Validate(ModelProperty property, object value)
         {
             if (property == SelectedIdProperty && IsRequired && (value == null || (int)value == 0))
@@ -67,6 +96,10 @@ namespace Jamiras.ViewModels.Fields
             return base.Validate(property, value);
         }
 
+        /// <summary>
+        /// Notifies any subscribers that the value of a <see cref="ModelProperty" /> has changed.
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnModelPropertyChanged(ModelPropertyChangedEventArgs e)
         {
             if (e.Property == IsRequiredProperty)

@@ -23,6 +23,9 @@ namespace Jamiras.Controls
     /// </summary>
     public class FormattedTextBlock : TextBlock
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FormattedTextBlock"/> class.
+        /// </summary>
         public FormattedTextBlock()
         {
             _hyperlinkCommand = new HyperlinkCommand(this);
@@ -65,9 +68,15 @@ namespace Jamiras.Controls
 
         private readonly HyperlinkCommand _hyperlinkCommand;
 
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="LinkCommand"/>
+        /// </summary>
         public static readonly DependencyProperty LinkCommandProperty = DependencyProperty.Register("LinkCommand",
             typeof(ICommand), typeof(FormattedTextBlock), new FrameworkPropertyMetadata(OnLinkChanged));
-        
+
+        /// <summary>
+        /// Gets or sets the command to call when a link is clicked.
+        /// </summary>
         public ICommand LinkCommand
         {
             get { return (ICommand)GetValue(LinkCommandProperty); }
@@ -79,9 +88,15 @@ namespace Jamiras.Controls
             ((FormattedTextBlock)sender)._hyperlinkCommand.RaiseCanExecuteChanged();
         }
 
+        /// <summary>
+        /// <see cref="DependencyProperty"/> for <see cref="Text"/>
+        /// </summary>
         public static readonly new DependencyProperty TextProperty = DependencyProperty.Register("Text",
             typeof(string), typeof(FormattedTextBlock), new FrameworkPropertyMetadata(OnTextChanged));
 
+        /// <summary>
+        /// Gets or sets the unformatted text.
+        /// </summary>
         public new string Text
         {
             get { return (string)GetValue(TextProperty); }

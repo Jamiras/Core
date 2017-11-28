@@ -7,8 +7,17 @@ using Jamiras.ViewModels.Fields;
 
 namespace Jamiras.ViewModels.Grid
 {
+    /// <summary>
+    /// Defines a date column for the <see cref="GridViewModel"/>.
+    /// </summary>
     public class DateColumnDefinition : GridColumnDefinition
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DateColumnDefinition"/> class.
+        /// </summary>
+        /// <param name="header">The column header text.</param>
+        /// <param name="sourceProperty">The property bound to the column.</param>
+        /// <param name="metadata">Information about the data for the column.</param>
         public DateColumnDefinition(string header, ModelProperty sourceProperty, DateTimeFieldMetadata metadata)
             : base(header, sourceProperty)
         {
@@ -29,6 +38,9 @@ namespace Jamiras.ViewModels.Grid
             return c.ToString();
         }
 
+        /// <summary>
+        /// Creates the FieldViewModel responsible for rendering this column and binds it to the provided row.
+        /// </summary>
         protected override FieldViewModelBase CreateFieldViewModel(GridRowViewModel row)
         {
             if (IsReadOnly)

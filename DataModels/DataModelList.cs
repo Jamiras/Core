@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Data;
 
 namespace Jamiras.DataModels
 {
+    /// <summary>
+    /// An indexable collection of data models.
+    /// </summary>
     public class DataModelList<T> : DataModelCollection<T>, IList<T>
         where T : DataModelBase
     {
@@ -48,6 +49,11 @@ namespace Jamiras.DataModels
             InsertAtIndex(index, item);
         }
 
+        /// <summary>
+        /// Gets or sets the item at the specified index.
+        /// </summary>
+        /// <exception cref="ReadOnlyException">The collection is read only.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="index"/> is before the first item or after the last item.</exception>
         public new T this[int index]
         {
             get { return Collection[index]; }
@@ -124,6 +130,9 @@ namespace Jamiras.DataModels
             base.OnCollectionChanged();
         }
 
+        /// <summary>
+        /// Accepts pending changes to the model.
+        /// </summary>
         public override void AcceptChanges()
         {
             UpdateUnmodifiedList();
@@ -131,6 +140,9 @@ namespace Jamiras.DataModels
             base.AcceptChanges();
         }
 
+        /// <summary>
+        /// Discards pending changes to the model.
+        /// </summary>
         public override void DiscardChanges()
         {
             UpdateUnmodifiedList();

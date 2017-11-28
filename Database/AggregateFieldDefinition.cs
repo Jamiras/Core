@@ -2,14 +2,28 @@
 
 namespace Jamiras.Database
 {
+    /// <summary>
+    /// Defines a query field that aggregates the results.
+    /// </summary>
     [DebuggerDisplay("{Function}({ColumnName,nq})")]
     public struct AggregateFieldDefinition
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AggregateFieldDefinition"/> struct.
+        /// </summary>
+        /// <param name="function">The function to use to aggregate the data.</param>
+        /// <param name="columnName">Name of the column to aggregate on.</param>
         public AggregateFieldDefinition(AggregateFunction function, string columnName)
             : this(function, columnName, null)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AggregateFieldDefinition"/> struct.
+        /// </summary>
+        /// <param name="function">The function to use to aggregate the data.</param>
+        /// <param name="columnName">Name of the column to aggregate on.</param>
+        /// <param name="groupByColumnNames">List of columns to group data by before aggregating.</param>
         public AggregateFieldDefinition(AggregateFunction function, string columnName, string[] groupByColumnNames)
         {
             _function = function;
@@ -46,10 +60,24 @@ namespace Jamiras.Database
         }
     }
 
+    /// <summary>
+    /// Method to use when aggregating data.
+    /// </summary>
     public enum AggregateFunction
     {
+        /// <summary>
+        /// Unspecified
+        /// </summary>
         None = 0,
+
+        /// <summary>
+        /// Counts values matching the group by criteria.
+        /// </summary>
         Count,
+
+        /// <summary>
+        /// Only returns unique rows.
+        /// </summary>
         Distinct,
     }
 }

@@ -9,6 +9,9 @@ namespace Jamiras.Components
     public class WeakDictionary<TKey, TValue> : IDictionary<TKey, TValue>
         where TValue : class
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="WeakDictionary{TKey, TValue}"/> class.
+        /// </summary>
         public WeakDictionary()
         {
             _items = new Dictionary<TKey, WeakReference>();
