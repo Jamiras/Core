@@ -41,6 +41,7 @@ namespace Jamiras.Services
             repository.RegisterService(typeof(DataModelMetadataRepository));
             repository.RegisterService(typeof(SoundPlayer));
             repository.RegisterService(typeof(HttpListener));
+            repository.RegisterService(typeof(ClipboardService));
         }
 
         private static void DispatcherShutdownStarted(object sender, EventArgs e)
