@@ -74,6 +74,9 @@
     <Compile Include="Components\Tokenizer.cs" />
     <Compile Include="Components\Trendline.cs" />
     <Compile Include="Components\WeightedList.cs" />
+    <Compile Include="Controls\CodeEditorView.xaml.cs">
+      <DependentUpon>CodeEditorView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Controls\TreeUtils.cs" />
     <Compile Include="Controls\Gallery.xaml.cs">
       <DependentUpon>Gallery.xaml</DependentUpon>
@@ -216,6 +219,12 @@
     <Compile Include="Services\PersistantDataRepository.cs" />
     <Compile Include="Services\SoundPlayer.cs" />
     <Compile Include="Services\WindowSettingsRepository.cs" />
+    <Compile Include="ViewModels\CodeEditor\CodeEditorViewModel.cs" />
+    <Compile Include="ViewModels\CodeEditor\EditorProperties.cs" />
+    <Compile Include="ViewModels\CodeEditor\EditorResources.cs" />
+    <Compile Include="ViewModels\CodeEditor\LineChangedEventArgs.cs" />
+    <Compile Include="ViewModels\CodeEditor\LineViewModel.cs" />
+    <Compile Include="ViewModels\CodeEditor\TextPiece.cs" />
     <Compile Include="ViewModels\CommandViewModel.cs" />
     <Compile Include="ViewModels\Converters\FloatToCurrencyConverter.cs" />
     <Compile Include="ViewModels\Converters\DateToDateTimeConverter.cs" />
@@ -276,6 +285,10 @@
     <Page Include="Controls\Gallery.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\CodeEditorView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Controls\GridView.xaml">
       <SubType>Designer</SubType>
