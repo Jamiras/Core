@@ -17,7 +17,7 @@
             <TextBlock Text="{Binding Text}" 
                        FontFamily="{Binding DataContext.Resources.FontName, ElementName=codeEditorLines}"
                        FontSize="{Binding DataContext.Resources.FontSize, ElementName=codeEditorLines}"
-                       Foreground="{Binding Foreground}" />
+                       Foreground="{Binding Foreground}" ToolTip="{Binding ToolTip}" />
         </DataTemplate>
 
         <Storyboard x:Key="blinkAnimation">

@@ -56,7 +56,8 @@ namespace Jamiras.ViewModels.CodeEditor
         public Color GetCustomColor(int id)
         {
             Color color;
-            _customColors.TryGetValue(id, out color);
+            if (!_customColors.TryGetValue(id, out color))
+                color = Colors.Orange;
             return color;
         }
     }

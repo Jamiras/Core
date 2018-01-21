@@ -9,6 +9,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Input;
+using Jamiras.ViewModels.Fields;
 
 namespace Jamiras.ViewModels.CodeEditor
 {
@@ -51,7 +52,7 @@ namespace Jamiras.ViewModels.CodeEditor
                 else
                 {
                     var lineViewModel = _lines[CursorLine - 1];
-                    var lineLength = lineViewModel.Text.Length;
+                    var lineLength = lineViewModel.LineLength;
                     if (lineLength == 0)
                         value = 1;
                     else if (value > lineLength + 1)
@@ -78,7 +79,7 @@ namespace Jamiras.ViewModels.CodeEditor
                 }
                 else 
                 {
-                    var lineLength = lineViewModel.Text.Length;
+                    var lineLength = lineViewModel.LineLength;
                     if (lineLength == 0)
                         newColumn = 1;
                     else if (newColumn > lineLength + 1)
@@ -116,7 +117,7 @@ namespace Jamiras.ViewModels.CodeEditor
             if (newLine > 0 && newLine <= viewModel._lines.Count)
             {
                 var lineViewModel = viewModel._lines[(int)e.NewValue - 1];
-                lineViewModel.CursorColumn = Math.Min(viewModel.CursorColumn, lineViewModel.Text.Length + 1);
+                lineViewModel.CursorColumn = Math.Min(viewModel.CursorColumn, lineViewModel.LineLength + 1);
             }
         }
 
@@ -129,6 +130,9 @@ namespace Jamiras.ViewModels.CodeEditor
         private string BuildContent()
         {
             var builder = new StringBuilder();
+            foreach (var line in _lines)
+                builder.AppendLine(line.Text);
+
             return builder.ToString();
         }
 
@@ -153,10 +157,55 @@ namespace Jamiras.ViewModels.CodeEditor
             LineCount = _lines.Count;
             CursorLine = 1;
             CursorColumn = 1;
+
+            OnContentChanged(value);
+        }
+
+        protected virtual void OnContentChanged(string newValue)
+        {
+
+        }
+
+        internal void ScheduleRefresh()
+        {
+            TextFieldViewModelBase.WaitForTyping(Refresh);
+        }
+
+        public override void Refresh()
+        {
+            var updatedLines = new List<LineViewModel>();
+
+            var newContent = new StringBuilder();
+            foreach (var line in _lines)
+            {
+                var pendingText = line.PendingText;
+                if (pendingText != null)
+                {
+                    newContent.AppendLine(pendingText);
+                    updatedLines.Add(line);
+                }
+                else
+                {
+                    newContent.AppendLine(line.Text);
+                }
+            }
+
+            OnContentChanged(newContent.ToString());
+
+            foreach (var line in updatedLines)
+            {
+                var pendingText = line.PendingText;
+                line.PendingText = null;
+                line.Text = pendingText;
+            }
         }
 
         public EventHandler<LineChangedEventArgs> LineChanged;
-        internal void OnLineChanged(LineChangedEventArgs e)
+        internal void RaiseLineChanged(LineChangedEventArgs e)
+        {
+            OnLineChanged(e);
+        }
+        protected virtual void OnLineChanged(LineChangedEventArgs e)
         {
             if (LineChanged != null)
                 LineChanged(this, e);
@@ -174,6 +223,11 @@ namespace Jamiras.ViewModels.CodeEditor
             get { return _lines; }
         }
         private ObservableCollection<LineViewModel> _lines;
+
+        private LineViewModel CursorLineViewModel
+        {
+            get { return _lines[CursorLine - 1]; }
+        }
 
         public EditorProperties Style { get; private set; }
 
@@ -210,47 +264,212 @@ namespace Jamiras.ViewModels.CodeEditor
 
         internal bool HandleKey(Key key, ModifierKeys modifiers)
         {
-            switch (key)
+            var e = new KeyPressedEventArgs(key, modifiers);
+            OnKeyPressed(e);
+            return e.Handled;
+        }
+
+        protected virtual void OnKeyPressed(KeyPressedEventArgs e)
+        {
+            switch (e.Key)
             {
                 case Key.Down:
                     CursorLine++;
-                    return true;
+                    UpdateVirtualCursorColumn();
+                    e.Handled = true;
+                    break;
 
                 case Key.Up:
                     CursorLine--;
-                    return true;
+                    UpdateVirtualCursorColumn();
+                    e.Handled = true;
+                    break;
 
                 case Key.Left:
-                    CursorColumn--;
-                    return true;
+                    if (CursorColumn == 1)
+                    {
+                        if (CursorLine > 1)
+                        {
+                            CursorLine--;
+                            CursorColumn = CursorLineViewModel.LineLength + 1;
+                        }
+                    }
+                    else
+                    {
+                        CursorColumn--;
+                    }
+                    ClearVirtualCursorColumn();
+                    e.Handled = true;
+                    break;
 
                 case Key.Right:
-                    CursorColumn++;
-                    return true;
+                    if (CursorColumn > CursorLineViewModel.LineLength)
+                    {
+                        if (CursorLine < _lines.Count)
+                        {
+                            CursorLine++;
+                            CursorColumn = 1;
+                        }
+                    }
+                    else
+                    {
+                        CursorColumn++;
+                    }
+                    ClearVirtualCursorColumn();
+                    e.Handled = true;
+                    break;
 
                 case Key.PageDown:
                     CursorLine += VisibleLines - 1;
-                    return true;
+                    UpdateVirtualCursorColumn();
+                    e.Handled = true;
+                    break;
 
                 case Key.PageUp:
                     CursorLine -= VisibleLines - 1;
-                    return true;
+                    UpdateVirtualCursorColumn();
+                    e.Handled = true;
+                    break;
 
                 case Key.Home:
-                    if (modifiers == ModifierKeys.Control)
+                    if (e.Modifiers == ModifierKeys.Control)
                         CursorLine = 1;
                     CursorColumn = 1;
-                    return true;
+                    ClearVirtualCursorColumn();
+                    e.Handled = true;
+                    break;
 
                 case Key.End:
-                    if (modifiers == ModifierKeys.Control)
+                    if (e.Modifiers == ModifierKeys.Control)
                         CursorLine = _lines.Count;
-                    CursorColumn = _lines[CursorLine - 1].Text.Length + 1;
-                    return true;
+                    CursorColumn = CursorLineViewModel.LineLength + 1;
+                    ClearVirtualCursorColumn();
+                    e.Handled = true;
+                    break;
+
+                case Key.Back:
+                    if (CursorColumn > 1)
+                    {
+                        CursorLineViewModel.Remove(CursorColumn - 1, CursorColumn - 1);
+                        CursorColumn--;
+                    }
+                    else if (CursorLine > 1)
+                    {
+                        CursorLine--;
+                        CursorColumn = CursorLineViewModel.LineLength + 1;
+                        MergeNextLine();
+                    }
+                    ClearVirtualCursorColumn();
+                    e.Handled = true;
+                    break;
+
+                case Key.Delete:
+                    if (CursorColumn <= CursorLineViewModel.LineLength)
+                    {
+                        _lines[CursorLine - 1].Remove(CursorColumn, CursorColumn);
+                    }
+                    else if (CursorLine < LineCount)
+                    {
+                        MergeNextLine();
+                    }
+                    ClearVirtualCursorColumn();
+                    e.Handled = true;
+                    break;
+
+                case Key.Enter:
+                    SplitLineAtCursor();
+                    ClearVirtualCursorColumn();
+                    e.Handled = true;
+                    break;
 
                 default:
-                    return false;
+                    char c = e.GetChar();
+                    if (c != '\0')
+                    {
+                        CursorLineViewModel.Insert(CursorColumn, c.ToString());
+                        CursorColumn++;
+                        ClearVirtualCursorColumn();
+                        e.Handled = true;
+                    }
+                    break;
             }
+        }
+
+        // remebers the cursor column when moving up or down even if the line doesn't have that many columns
+        private int? _virtualCursorColumn;
+
+        private void UpdateVirtualCursorColumn()
+        {
+            if (_virtualCursorColumn == null)
+                _virtualCursorColumn = CursorColumn;
+
+            var maxColumn = CursorLineViewModel.LineLength + 1;
+            CursorColumn = Math.Min(maxColumn, _virtualCursorColumn.GetValueOrDefault());
+        }
+
+        private void ClearVirtualCursorColumn()
+        {
+            _virtualCursorColumn = null;
+        }
+
+        private void MergeNextLine()
+        {
+            // merge the text from the next line into the current line
+            var cursorLineViewModel = CursorLineViewModel;
+            var left = cursorLineViewModel.PendingText ?? cursorLineViewModel.Text;
+            var nextLineViewModel = _lines[CursorLine];
+            var right = nextLineViewModel.PendingText ?? nextLineViewModel.Text;
+            cursorLineViewModel.PendingText = left + right;
+
+            // merge the TextPieces so the merged text appears
+            var newPieces = new List<TextPiece>(cursorLineViewModel.TextPieces);
+            newPieces.AddRange(nextLineViewModel.TextPieces);
+            cursorLineViewModel.SetValue(LineViewModel.TextPiecesProperty, newPieces.ToArray());
+
+            // remove the line that was merged
+            _lines.RemoveAt(CursorLine);
+            LineCount--;
+
+            // update the line numbers
+            for (int i = CursorLine; i < _lines.Count; i++)
+                _lines[i].Line--;
+
+            // schedule a refresh to update the syntax highlighting
+            ScheduleRefresh();
+        }
+
+        private void SplitLineAtCursor()
+        {
+            // split the current line at the cursor
+            var cursorLineViewModel = CursorLineViewModel;
+            string text = cursorLineViewModel.PendingText ?? cursorLineViewModel.Text;
+            var cursorColumn = CursorColumn - 1; // string index is 0-based
+            string left = (cursorColumn > 0) ? text.Substring(0, cursorColumn) : String.Empty;
+            string right = (cursorColumn < text.Length) ? text.Substring(cursorColumn) : String.Empty;
+
+            // truncate the first line
+            if (right.Length > 0)
+                cursorLineViewModel.Remove(CursorColumn, text.Length);
+
+            // add a new line
+            var newLineViewModel = new LineViewModel(this, CursorLine + 1) { PendingText = right };
+            _lines.Insert(CursorLine, newLineViewModel);
+            LineCount++;
+
+            // create TextPieces for the new line so it appears
+            var e = new LineChangedEventArgs(newLineViewModel);
+            newLineViewModel.SetValue(LineViewModel.TextPiecesProperty, e.ApplyColors(new TextPiece[0]));
+
+            // update the cursor position
+            CursorLine++;
+            CursorColumn = 1;
+
+            // update the line numbers
+            for (int i = CursorLine; i < _lines.Count; i++)
+                _lines[i].Line++;
+
+            // schedule a refresh to update the syntax highlighting
+            ScheduleRefresh();
         }
     }
 }

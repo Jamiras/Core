@@ -9,17 +9,17 @@ namespace Jamiras.ViewModels.CodeEditor
         public LineChangedEventArgs(LineViewModel line)
         {
             Line = line;
-            NewText = line.Text;
+            NewText = line.PendingText ?? line.Text;
 
             _ranges = new List<ColorRange>();
-            _ranges.Add(new ColorRange(1, NewText.Length, 0));
+            _ranges.Add(new ColorRange(1, NewText.Length, 0, null));
         }
 
         public LineViewModel Line { get; private set; }
 
         public string NewText { get; private set; }
 
-        public void SetColor(int startColumn, int length, int color)
+        public void SetColor(int startColumn, int length, int color, string toolTip = null)
         {
             var endColumn = startColumn + length - 1;
 
@@ -34,7 +34,7 @@ namespace Jamiras.ViewModels.CodeEditor
             int extra = startColumn - range.StartColumn;
             if (extra > 0)
             {
-                var newRange = new ColorRange(startColumn, range.Length - extra, range.Color);
+                var newRange = new ColorRange(startColumn, range.Length - extra, range.Color, range.ToolTip);
 
                 range.Length = extra;
                 _ranges[i] = range;
@@ -47,7 +47,7 @@ namespace Jamiras.ViewModels.CodeEditor
             // if there's extra space to the right, shorten the existing range and add a new one starting at endColumn + 1
             if (range.Length > length)
             {
-                var newRange = new ColorRange(range.StartColumn + length, range.Length - length, range.Color);
+                var newRange = new ColorRange(range.StartColumn + length, range.Length - length, range.Color, range.ToolTip);
                 _ranges.Insert(i + 1, newRange);
 
                 range.Length = length;
@@ -55,6 +55,7 @@ namespace Jamiras.ViewModels.CodeEditor
 
             // update the color of the range
             range.Color = color;
+            range.ToolTip = toolTip;
             _ranges[i] = range;
         }
 
@@ -63,16 +64,18 @@ namespace Jamiras.ViewModels.CodeEditor
         [DebuggerDisplay("{StartColumn}-{EndColumn} => {Color}")]
         private struct ColorRange
         {
-            public ColorRange(int startColumn, int length, int color)
+            public ColorRange(int startColumn, int length, int color, string toolTip)
             {
                 StartColumn = startColumn;
                 Length = length;
                 Color = color;
+                ToolTip = toolTip;
             }
 
             public int StartColumn { get; set; }
             public int Length { get; set; }
             public int Color { get; set; }
+            public string ToolTip { get; set; }
 
             public int EndColumn
             {
@@ -89,7 +92,8 @@ namespace Jamiras.ViewModels.CodeEditor
                 var range = _ranges[i];
                 newPieces[i] = new TextPiece
                 {
-                    Foreground = (range.Color == 0) ? Line.Resources.Foreground.Brush : Line.Resources.GetCustomBrush(range.Color)
+                    Foreground = (range.Color == 0) ? Line.Resources.Foreground.Brush : Line.Resources.GetCustomBrush(range.Color),
+                    ToolTip = range.ToolTip
                 };
             }
 

@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows;
+using System;
+using System.Linq;
 
 namespace Jamiras.ViewModels.CodeEditor
 {
@@ -62,6 +64,22 @@ namespace Jamiras.ViewModels.CodeEditor
             get { return _owner.Resources; }
         }
 
+        public int LineLength
+        {
+            get
+            {
+                var text = PendingText ?? Text;
+                return text.Length;
+            }
+        }
+
+        internal static readonly ModelProperty PendingTextProperty = ModelProperty.Register(typeof(LineViewModel), "PendingText", typeof(string), null);
+        internal string PendingText
+        {
+            get { return (string)GetValue(PendingTextProperty); }
+            set { SetValue(PendingTextProperty, value); }
+        }
+
         public static readonly ModelProperty TextProperty = ModelProperty.Register(typeof(LineViewModel), "Text", typeof(string), string.Empty);
         public string Text
         {
@@ -81,10 +99,131 @@ namespace Jamiras.ViewModels.CodeEditor
             var viewModel = (LineViewModel)model;
 
             var e = new LineChangedEventArgs(viewModel);
-            viewModel._owner.OnLineChanged(e);
+            viewModel._owner.RaiseLineChanged(e);
 
             var pieces = viewModel.TextPieces ?? new TextPiece[0];
             return e.ApplyColors(pieces);
+        }
+
+        public void Insert(int column, string str)
+        {
+            // cursor between characters 1 and 2 is inserting at column 2, but since the string is indexed via 0-based indexing, adjust the insert location
+            column--;
+            Debug.Assert(column >= 0);
+
+            var text = PendingText;
+            if (text == null)
+                text = Text;
+
+            Debug.Assert(column <= text.Length);
+            text = text.Insert(column, str);
+            PendingText = text;
+
+            var newPieces = new List<TextPiece>(TextPieces);
+
+            var index = column;
+            var enumerator = newPieces.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                var piece = enumerator.Current;
+                if (piece.Text.Length < index)
+                {
+                    index -= piece.Text.Length;
+                    continue;
+                }
+
+                if (piece.Text.Length == index && ReferenceEquals(piece.Foreground, Resources.Foreground)) // boundary between pieces, prefer non-default
+                {
+                    if (enumerator.MoveNext())
+                    {
+                        piece = enumerator.Current;
+                        index = 0;
+                    }
+                }
+
+                piece.Text = piece.Text.Insert(index, str);
+                break;
+            }
+
+            SetValue(TextPiecesProperty, newPieces.ToArray());
+
+            _owner.ScheduleRefresh();
+        }
+
+        internal void Remove(int startColumn, int endColumn)
+        {
+            Debug.Assert(endColumn >= startColumn);
+
+            // deleting columns 1 through 1 (first character) is really Text[0] because it's 0-based
+            startColumn--;
+            Debug.Assert(startColumn >= 0);
+            endColumn--;
+
+            var text = PendingText;
+            if (text == null)
+                text = Text;
+
+            Debug.Assert(endColumn <= text.Length);
+            int removeCount = endColumn - startColumn + 1;
+            text = text.Remove(startColumn, removeCount);
+            PendingText = text;
+
+            var newPieces = new List<TextPiece>(TextPieces);
+
+            var index = startColumn;
+            var pieceIndex = 0;
+            while (pieceIndex < newPieces.Count)
+            {
+                var piece = newPieces[pieceIndex++];
+                if (piece.Text.Length < index)
+                {
+                    index -= piece.Text.Length;
+                    continue;
+                }
+
+                if (piece.Text.Length == index && !ReferenceEquals(piece.Foreground, Resources.Foreground)) // boundary between pieces - prefer default
+                {
+                    if (pieceIndex < newPieces.Count)
+                    {
+                        piece = newPieces[pieceIndex++];
+                        index = 0;
+                    }
+                }
+
+                if (removeCount >= piece.Text.Length)
+                {
+                    if (index > 0)
+                    {
+                        removeCount -= (piece.Text.Length - index);
+                        piece.Text = piece.Text.Substring(0, index);
+
+                        Debug.Assert(pieceIndex < newPieces.Count);
+                        piece = newPieces[pieceIndex++];
+                        index = 0;
+                    }
+
+                    while (removeCount >= piece.Text.Length)
+                    {
+                        removeCount -= piece.Text.Length;
+
+                        newPieces.RemoveAt(pieceIndex - 1);
+                        if (removeCount == 0)
+                            break;
+
+                        Debug.Assert(pieceIndex <= newPieces.Count);
+                        piece = newPieces[pieceIndex - 1];
+                    }
+                }
+
+                if (removeCount > 0)
+                    piece.Text = piece.Text.Remove(index, removeCount);
+
+                break;
+            }
+
+            SetValue(TextPiecesProperty, newPieces.ToArray());
+
+            _owner.ScheduleRefresh();
         }
     }
 }
