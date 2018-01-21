@@ -458,7 +458,7 @@ namespace Jamiras.ViewModels.CodeEditor
 
             // create TextPieces for the new line so it appears
             var e = new LineChangedEventArgs(newLineViewModel);
-            newLineViewModel.SetValue(LineViewModel.TextPiecesProperty, e.ApplyColors(new TextPiece[0]));
+            newLineViewModel.SetValue(LineViewModel.TextPiecesProperty, e.BuildTextPieces());
 
             // update the cursor position
             CursorLine++;

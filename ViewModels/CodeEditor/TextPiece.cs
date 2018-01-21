@@ -9,5 +9,6 @@ namespace Jamiras.ViewModels.CodeEditor
         public string Text { get; set; }
         public Brush Foreground { get; set; }
         public string ToolTip { get; set; }
+        public bool IsError { get; set; }
     }
 }

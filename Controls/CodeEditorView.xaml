@@ -3,21 +3,43 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:controls="clr-namespace:Jamiras.Controls"
-             xmlns:fields="clr-namespace:Jamiras.ViewModels.Fields"
-             xmlns:grid="clr-namespace:Jamiras.ViewModels.Grid"
-             xmlns:converters="clr-namespace:Jamiras.ViewModels.Converters"
              SnapsToDevicePixels="True"
              Focusable="True"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
     <UserControl.Resources>
-        
+
+        <VisualBrush x:Key="WavyBrush" Viewbox="0,0,3,2" ViewboxUnits="Absolute" Viewport="0,1,6,5" ViewportUnits="Absolute" TileMode="Tile">
+            <VisualBrush.Visual>
+                <Path Data="M 0,1 C 1,0 2,2 3,1" Stroke="Red" Opacity=".8" StrokeThickness="0.2" StrokeEndLineCap="Square" StrokeStartLineCap="Square" />
+            </VisualBrush.Visual>
+        </VisualBrush>
+
         <DataTemplate x:Key="textPieceTemplate">
-            <TextBlock Text="{Binding Text}" 
+            <TextBlock Text="{Binding Text}" SnapsToDevicePixels="True"
                        FontFamily="{Binding DataContext.Resources.FontName, ElementName=codeEditorLines}"
                        FontSize="{Binding DataContext.Resources.FontSize, ElementName=codeEditorLines}"
-                       Foreground="{Binding Foreground}" ToolTip="{Binding ToolTip}" />
+                       Foreground="{Binding Foreground}" ToolTip="{Binding ToolTip}">
+                <TextBlock.Style>
+                    <Style TargetType="{x:Type TextBlock}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsError}" Value="True">
+                                <Setter Property="TextDecorations">
+                                    <Setter.Value>
+                                        <TextDecorationCollection>
+                                            <TextDecoration Location="Underline">
+                                                <TextDecoration.Pen>
+                                                    <Pen Brush="{StaticResource WavyBrush}" Thickness="6" />
+                                                </TextDecoration.Pen>
+                                            </TextDecoration>
+                                        </TextDecorationCollection>
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
         </DataTemplate>
 
         <Storyboard x:Key="blinkAnimation">

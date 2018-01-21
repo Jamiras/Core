@@ -13,7 +13,13 @@ namespace Jamiras.ViewModels.CodeEditor
 
             _ranges = new List<ColorRange>();
             _ranges.Add(new ColorRange(1, NewText.Length, 0, null));
+
+            _errorRanges = new List<ColorRange>();
+            _errorRanges.Add(new ColorRange(1, NewText.Length, 0, null));
         }
+
+        private List<ColorRange> _ranges;
+        private List<ColorRange> _errorRanges;
 
         public LineViewModel Line { get; private set; }
 
@@ -21,26 +27,58 @@ namespace Jamiras.ViewModels.CodeEditor
 
         public void SetColor(int startColumn, int length, int color, string toolTip = null)
         {
+            UpdateRange(_ranges, startColumn, length, color, toolTip);
+        }
+
+        public void SetError(int startColumn, int length, string toolTip = null)
+        {
+            UpdateRange(_errorRanges, startColumn, length, 1, toolTip);
+        }
+
+        private static void UpdateRange(List<ColorRange> ranges, int startColumn, int length, int color, string toolTip)
+        { 
             var endColumn = startColumn + length - 1;
 
             // find the range containing startColumn
-            int i = (startColumn > 1) ? _ranges.Count - 1 : 0;
-            while (_ranges[i].StartColumn > endColumn)
-                --i;
+            int i = 0;
+            if (startColumn > 1)
+            {
+                i = ranges.Count - 1;
+                while (ranges[i].StartColumn > endColumn)
+                    --i;
+            }
 
-            var range = _ranges[i];
+            var range = ranges[i];
+
+            // if the new range includes part of the previous range, separate them.
+            int extra = startColumn - range.StartColumn;
+            while (extra < 0)
+            {
+                if (ranges[i].EndColumn > endColumn)
+                {
+                    range.StartColumn = endColumn + 1;
+                    ranges[i] = range;
+                }
+                else
+                {
+                    ranges.RemoveAt(i);
+                }
+
+                range = ranges[--i];
+                range.Length = endColumn - range.StartColumn + 1;
+                extra = startColumn - range.StartColumn;
+            }
 
             // if there's extra space to the left, shorten the existing range and add a new one starting at startColumn
-            int extra = startColumn - range.StartColumn;
             if (extra > 0)
             {
                 var newRange = new ColorRange(startColumn, range.Length - extra, range.Color, range.ToolTip);
 
                 range.Length = extra;
-                _ranges[i] = range;
+                ranges[i] = range;
 
                 i++;
-                _ranges.Insert(i, newRange);
+                ranges.Insert(i, newRange);
                 range = newRange;
             }
 
@@ -48,7 +86,7 @@ namespace Jamiras.ViewModels.CodeEditor
             if (range.Length > length)
             {
                 var newRange = new ColorRange(range.StartColumn + length, range.Length - length, range.Color, range.ToolTip);
-                _ranges.Insert(i + 1, newRange);
+                ranges.Insert(i + 1, newRange);
 
                 range.Length = length;
             }
@@ -56,10 +94,8 @@ namespace Jamiras.ViewModels.CodeEditor
             // update the color of the range
             range.Color = color;
             range.ToolTip = toolTip;
-            _ranges[i] = range;
+            ranges[i] = range;
         }
-
-        private List<ColorRange> _ranges;
 
         [DebuggerDisplay("{StartColumn}-{EndColumn} => {Color}")]
         private struct ColorRange
@@ -83,66 +119,81 @@ namespace Jamiras.ViewModels.CodeEditor
             }
         }
 
-        internal IEnumerable<TextPiece> ApplyColors(IEnumerable<TextPiece> pieces)
+        private void MergeErrorRanges()
         {
-            // prepare the colors first
+            int rangeIndex = 0;
+            var range = _ranges[0];
+            foreach (var error in _errorRanges)
+            {
+                if (error.Color == 0)
+                    continue;
+
+                while (range.EndColumn < error.StartColumn)
+                    range = _ranges[++rangeIndex];
+
+                if (range.StartColumn < error.StartColumn)
+                {
+                    var newRange = new ColorRange(error.StartColumn, range.EndColumn - error.StartColumn + 1, range.Color, range.ToolTip);
+
+                    range.Length = error.StartColumn - range.StartColumn;
+                    _ranges[rangeIndex] = range;
+
+                    _ranges.Insert(++rangeIndex, newRange);
+                    range = newRange;
+                }
+
+                if (range.EndColumn > error.EndColumn)
+                {
+                    var newRange = new ColorRange(error.EndColumn + 1, range.EndColumn - error.EndColumn, range.Color, range.ToolTip);
+                    range.Length = newRange.StartColumn - range.StartColumn;
+                    _ranges[rangeIndex] = range;
+
+                    _ranges.Insert(++rangeIndex, newRange);
+                    range = newRange;
+                }
+            }
+        }
+
+        internal IEnumerable<TextPiece> BuildTextPieces()
+        {
+            if (_errorRanges.Count > 1)
+                MergeErrorRanges();
+
             var newPieces = new TextPiece[_ranges.Count];
             for (int i = 0; i < _ranges.Count; i++)
             {
                 var range = _ranges[i];
                 newPieces[i] = new TextPiece
                 {
+                    Text = NewText.Substring(range.StartColumn - 1, range.Length),
                     Foreground = (range.Color == 0) ? Line.Resources.Foreground.Brush : Line.Resources.GetCustomBrush(range.Color),
                     ToolTip = range.ToolTip
                 };
             }
 
-            // if the existing items don't have the same colors or lengths, we know we need to use the new pieces
-            bool same = true;
-            int index = 0;
-            var enumerator = pieces.GetEnumerator();
-            while (index < _ranges.Count)
+            int rangeIndex = 0;
+            foreach (var error in _errorRanges)
             {
-                if (!enumerator.MoveNext())
+                if (error.Color == 0)
+                    continue;
+
+                while (_ranges[rangeIndex].StartColumn != error.StartColumn)
+                    ++rangeIndex;
+
+                do
                 {
-                    same = false;
-                    break;
-                }
+                    newPieces[rangeIndex].IsError = true;
+                    newPieces[rangeIndex].ToolTip = error.ToolTip;
 
-                var range = _ranges[index];
-                if (!ReferenceEquals(enumerator.Current.Foreground, newPieces[index].Foreground))
-                {
-                    same = false;
-                    break;
-                }
+                    if (_ranges[rangeIndex].EndColumn == error.EndColumn)
+                        break;
 
-                if (enumerator.Current.Text.Length != range.Length)
-                {
-                    same = false;
-                    break;
-                }
-
-                index++;
-            }
-
-            // if existing items match, but previously more items existed, it's not a match
-            if (same && enumerator.MoveNext())
-                same = false;
-
-            // now process the string contents
-            index = 0;
-            enumerator = pieces.GetEnumerator();
-            while (index < _ranges.Count)
-            {
-                var range = _ranges[index];
-                var text = NewText.Substring(range.StartColumn - 1, range.Length);
-                newPieces[index++].Text = text;
-                if (!enumerator.MoveNext() || enumerator.Current.Text != text)
-                    same = false;
+                    rangeIndex++;
+                } while (true);
             }
 
             // if anything changed, use the updated values
-            return (same ? pieces : newPieces);
+            return newPieces;
         }
     }
 }

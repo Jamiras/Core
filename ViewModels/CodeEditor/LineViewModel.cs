@@ -101,8 +101,7 @@ namespace Jamiras.ViewModels.CodeEditor
             var e = new LineChangedEventArgs(viewModel);
             viewModel._owner.RaiseLineChanged(e);
 
-            var pieces = viewModel.TextPieces ?? new TextPiece[0];
-            return e.ApplyColors(pieces);
+            return e.BuildTextPieces();
         }
 
         public void Insert(int column, string str)
