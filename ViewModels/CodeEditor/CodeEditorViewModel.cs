@@ -286,35 +286,13 @@ namespace Jamiras.ViewModels.CodeEditor
                     break;
 
                 case Key.Left:
-                    if (CursorColumn == 1)
-                    {
-                        if (CursorLine > 1)
-                        {
-                            CursorLine--;
-                            CursorColumn = CursorLineViewModel.LineLength + 1;
-                        }
-                    }
-                    else
-                    {
-                        CursorColumn--;
-                    }
+                    HandleLeft(e.Modifiers);
                     ClearVirtualCursorColumn();
                     e.Handled = true;
                     break;
 
                 case Key.Right:
-                    if (CursorColumn > CursorLineViewModel.LineLength)
-                    {
-                        if (CursorLine < _lines.Count)
-                        {
-                            CursorLine++;
-                            CursorColumn = 1;
-                        }
-                    }
-                    else
-                    {
-                        CursorColumn++;
-                    }
+                    HandleRight(e.Modifiers);
                     ClearVirtualCursorColumn();
                     e.Handled = true;
                     break;
@@ -382,6 +360,12 @@ namespace Jamiras.ViewModels.CodeEditor
                     e.Handled = true;
                     break;
 
+                case Key.Tab:
+                    IndentSelection();
+                    ClearVirtualCursorColumn();
+                    e.Handled = true;
+                    break;
+
                 default:
                     char c = e.GetChar();
                     if (c != '\0')
@@ -392,6 +376,117 @@ namespace Jamiras.ViewModels.CodeEditor
                         e.Handled = true;
                     }
                     break;
+            }
+        }
+
+        private void HandleLeft(ModifierKeys modifier)
+        {
+            if (modifier == ModifierKeys.Control)
+            {
+                var cursorLine = CursorLineViewModel;
+                var text = cursorLine.Text;
+                var count = 0;
+                var offset = CursorColumn - 2;
+                while (offset > 0 && Char.IsWhiteSpace(text[offset]))
+                {
+                    offset--;
+                    count++;
+                }
+
+                if (offset < 0)
+                {
+                    if (CursorLine > 1)
+                    {
+                        CursorLine--;
+                        CursorColumn = CursorLineViewModel.LineLength + 1;
+                    }
+                }
+                else
+                {
+                    var textPiece = cursorLine.GetTextPiece(offset + 1);
+                    var pieceLength = textPiece.Offset + 1;
+                    var pieceCount = 0;
+                    while (pieceCount < pieceLength && !Char.IsWhiteSpace(text[offset]))
+                    {
+                        offset--;
+                        pieceCount++;
+                    }
+
+                    CursorColumn -= (count + pieceCount);
+                }
+            }
+            else if (CursorColumn == 1)
+            {
+                if (CursorLine > 1)
+                {
+                    CursorLine--;
+                    CursorColumn = CursorLineViewModel.LineLength + 1;
+                }
+            }
+            else
+            {
+                CursorColumn--;
+            }
+        }
+
+        private void HandleRight(ModifierKeys modifier)
+        {
+            var cursorLine = CursorLineViewModel;
+            if (CursorColumn > cursorLine.LineLength)
+            {
+                if (CursorLine < _lines.Count)
+                {
+                    CursorLine++;
+                    if (modifier == ModifierKeys.Control)
+                    {
+                        var text = CursorLineViewModel.Text;
+                        var count = 0;
+                        while (count < text.Length && Char.IsWhiteSpace(text[count]))
+                            count++;
+
+                        CursorColumn = count + 1;
+                    }
+                    else
+                    {
+                        CursorColumn = 1;
+                    }
+                }
+            }
+            else if (modifier == ModifierKeys.Control)
+            {
+                var currentTextPiece = cursorLine.GetTextPiece(CursorColumn);
+                if (currentTextPiece.Piece == null)
+                {
+                    CursorColumn = cursorLine.LineLength + 1;
+                }
+                else
+                {
+                    var text = currentTextPiece.Piece.Text;
+                    var offset = currentTextPiece.Offset;
+                    var count = 0;
+                    while ((offset + count) < text.Length && !Char.IsWhiteSpace(text[offset + count]))
+                        count++;
+                    while ((offset + count) < text.Length && Char.IsWhiteSpace(text[offset + count]))
+                        count++;
+
+                    offset = 0;
+                    if (offset + count == text.Length)
+                    {
+                        currentTextPiece = cursorLine.GetTextPiece(CursorColumn + count);
+                        if (currentTextPiece.Piece != null)
+                        {
+                            text = currentTextPiece.Piece.Text;
+                            while (offset < text.Length && Char.IsWhiteSpace(text[offset]))
+                                offset++;
+                        }
+                    }
+
+                    CursorColumn += (count + offset);
+                }
+            }
+            else
+            {
+                CursorColumn++;
             }
         }
 
@@ -410,6 +505,14 @@ namespace Jamiras.ViewModels.CodeEditor
         private void ClearVirtualCursorColumn()
         {
             _virtualCursorColumn = null;
+        }
+
+        private void IndentSelection()
+        {
+            var cursorColumn = CursorColumn;
+            int newColumn = (((cursorColumn - 1) / 4) + 1) * 4 + 1;
+            CursorLineViewModel.Insert(CursorColumn, new string(' ', newColumn - cursorColumn));
+            CursorColumn = newColumn;
         }
 
         private void MergeNextLine()

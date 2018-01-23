@@ -104,6 +104,23 @@ namespace Jamiras.ViewModels.CodeEditor
             return e.BuildTextPieces();
         }
 
+        public TextPieceLocation GetTextPiece(int column)
+        {
+            if (column >= 1)
+            {
+                column--;
+                foreach (var textPiece in TextPieces)
+                {
+                    if (textPiece.Text.Length > column)
+                        return new TextPieceLocation { Piece = textPiece, Offset = column };
+
+                    column -= textPiece.Text.Length;
+                }
+            }
+
+            return new TextPieceLocation();
+        }
+
         public void Insert(int column, string str)
         {
             // cursor between characters 1 and 2 is inserting at column 2, but since the string is indexed via 0-based indexing, adjust the insert location
