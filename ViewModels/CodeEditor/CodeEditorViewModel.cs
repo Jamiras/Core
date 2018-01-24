@@ -121,6 +121,8 @@ namespace Jamiras.ViewModels.CodeEditor
             }
         }
 
+        private int _selectionStartLine, _selectionStartColumn, _selectionEndLine, _selectionEndColumn;
+
         public string Content
         {
             get { return BuildContent(); }
@@ -274,54 +276,70 @@ namespace Jamiras.ViewModels.CodeEditor
             switch (e.Key)
             {
                 case Key.Down:
+                    BeginSelection(e.Modifiers);
                     CursorLine++;
                     UpdateVirtualCursorColumn();
+                    UpdateSelection(e.Modifiers);
                     e.Handled = true;
                     break;
 
                 case Key.Up:
+                    BeginSelection(e.Modifiers);
                     CursorLine--;
                     UpdateVirtualCursorColumn();
+                    UpdateSelection(e.Modifiers);
                     e.Handled = true;
                     break;
 
                 case Key.Left:
+                    BeginSelection(e.Modifiers);
                     HandleLeft(e.Modifiers);
+                    UpdateSelection(e.Modifiers);
                     ClearVirtualCursorColumn();
                     e.Handled = true;
                     break;
 
                 case Key.Right:
+                    BeginSelection(e.Modifiers);
                     HandleRight(e.Modifiers);
                     ClearVirtualCursorColumn();
+                    UpdateSelection(e.Modifiers);
                     e.Handled = true;
                     break;
 
                 case Key.PageDown:
+                    BeginSelection(e.Modifiers);
                     CursorLine += VisibleLines - 1;
                     UpdateVirtualCursorColumn();
+                    UpdateSelection(e.Modifiers);
                     e.Handled = true;
                     break;
 
                 case Key.PageUp:
+                    BeginSelection(e.Modifiers);
                     CursorLine -= VisibleLines - 1;
                     UpdateVirtualCursorColumn();
+                    UpdateSelection(e.Modifiers);
                     e.Handled = true;
                     break;
 
                 case Key.Home:
-                    if (e.Modifiers == ModifierKeys.Control)
+                    BeginSelection(e.Modifiers);
+                    if ((e.Modifiers & ModifierKeys.Control) != 0)
                         CursorLine = 1;
                     CursorColumn = 1;
                     ClearVirtualCursorColumn();
+                    UpdateSelection(e.Modifiers);
                     e.Handled = true;
                     break;
 
                 case Key.End:
-                    if (e.Modifiers == ModifierKeys.Control)
+                    BeginSelection(e.Modifiers);
+                    if ((e.Modifiers & ModifierKeys.Control) != 0)
                         CursorLine = _lines.Count;
                     CursorColumn = CursorLineViewModel.LineLength + 1;
                     ClearVirtualCursorColumn();
+                    UpdateSelection(e.Modifiers);
                     e.Handled = true;
                     break;
 
@@ -573,6 +591,80 @@ namespace Jamiras.ViewModels.CodeEditor
 
             // schedule a refresh to update the syntax highlighting
             ScheduleRefresh();
+        }
+
+        private void BeginSelection(ModifierKeys modifier)
+        {
+            if ((modifier & ModifierKeys.Shift) != 0)
+            {
+                if (_selectionStartLine == 0)
+                {
+                    _selectionStartLine = _selectionEndLine = CursorLine;
+                    _selectionStartColumn = _selectionEndColumn = CursorColumn;
+                }
+            }
+        }
+
+        private void UpdateSelection(ModifierKeys modifier)
+        {
+            if ((modifier & ModifierKeys.Shift) == 0)
+            {
+                if (_selectionStartLine == 0)
+                    return;
+
+                for (int i = _selectionStartLine - 1; i < _selectionEndLine; i++)
+                    _lines[i].ClearSelection();
+
+                _selectionStartLine = 0;
+                _selectionStartColumn = 0;
+                _selectionEndLine = 0;
+                _selectionEndColumn = 0;
+                return;
+            }
+
+            int cursorLine = CursorLine;
+
+            if (_selectionEndLine != 0)
+            {
+                for (int i = _selectionEndLine; i < cursorLine; i++)
+                    _lines[i - 1].ClearSelection();
+                for (int i = cursorLine + 1; i <= _selectionEndLine; i++)
+                    _lines[i - 1].ClearSelection();
+            }
+
+            _selectionEndLine = cursorLine;
+            _selectionEndColumn = CursorColumn;
+
+            if (_selectionStartLine == _selectionEndLine)
+            {
+                if (_selectionStartColumn < _selectionEndColumn)
+                    _lines[_selectionStartLine - 1].Select(_selectionStartColumn, _selectionEndColumn);
+                else
+                    _lines[_selectionStartLine - 1].Select(_selectionEndColumn, _selectionStartColumn);
+            }
+            else
+            {
+                int firstLine, firstColumn, lastLine, lastColumn;
+                if (_selectionStartLine < _selectionEndLine)
+                {
+                    firstLine = _selectionStartLine;
+                    firstColumn = _selectionStartColumn;
+                    lastLine = _selectionEndLine;
+                    lastColumn = _selectionEndColumn;
+                }
+                else
+                {
+                    firstLine = _selectionEndLine;
+                    firstColumn = _selectionEndColumn;
+                    lastLine = _selectionStartLine;
+                    lastColumn = _selectionStartColumn;
+                }
+
+                _lines[firstLine - 1].Select(firstColumn, _lines[firstLine - 1].LineLength + 1);
+                for (int i = firstLine; i < lastLine - 1; i++)
+                    _lines[i].Select(1, _lines[i].LineLength + 1);
+                _lines[lastLine - 1].Select(1, lastColumn);
+            }
         }
     }
 }

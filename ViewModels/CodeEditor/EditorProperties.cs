@@ -41,6 +41,13 @@ namespace Jamiras.ViewModels.CodeEditor
             set { SetValue(ForegroundProperty, value); }
         }
 
+        public static readonly ModelProperty SelectionProperty = ModelProperty.Register(typeof(EditorProperties), "Selection", typeof(Color), Colors.LightGray);
+        public Color Selection
+        {
+            get { return (Color)GetValue(SelectionProperty); }
+            set { SetValue(SelectionProperty, value); }
+        }
+
         public static readonly ModelProperty LineNumberProperty = ModelProperty.Register(typeof(EditorProperties), "LineNumber", typeof(Color), Colors.LightGray);
         public Color LineNumber
         {

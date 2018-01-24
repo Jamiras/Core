@@ -49,6 +49,7 @@ namespace Jamiras.ViewModels.CodeEditor
 
             Background = new BrushResource(properties, EditorProperties.BackgroundProperty);
             Foreground = new BrushResource(properties, EditorProperties.ForegroundProperty);
+            Selection = new BrushResource(properties, EditorProperties.SelectionProperty);
             LineNumber = new BrushResource(properties, EditorProperties.LineNumberProperty);
 
             FontName = properties.FontName;
@@ -65,6 +66,7 @@ namespace Jamiras.ViewModels.CodeEditor
 
         public BrushResource Background { get; private set; }
         public BrushResource Foreground { get; private set; }
+        public BrushResource Selection { get; private set; }
         public BrushResource LineNumber { get; private set; }
 
         public Brush GetCustomBrush(int id)

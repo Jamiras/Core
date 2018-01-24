@@ -47,7 +47,10 @@ namespace Jamiras.Controls
         {
             var editorViewModel = DataContext as CodeEditorViewModel;
             if (editorViewModel != null)
+            {
                 editorViewModel.AddPropertyChangedHandler(CodeEditorViewModel.CursorLineProperty, OnCursorLineChanged);
+                editorViewModel.AddPropertyChangedHandler(CodeEditorViewModel.CursorColumnProperty, OnCursorColumnChanged);
+            }
         }
 
         private ScrollViewer CodeLinesScrollViewer
@@ -57,8 +60,18 @@ namespace Jamiras.Controls
 
         private void OnCursorLineChanged(object sender, ModelPropertyChangedEventArgs e)
         {
+            EnsureCursorVisible();
+        }
+
+        private void OnCursorColumnChanged(object sender, ModelPropertyChangedEventArgs e)
+        {
+            EnsureCursorVisible();
+        }
+
+        private void EnsureCursorVisible()
+        {
             var scrollViewer = CodeLinesScrollViewer;
-            var newOffset = (int)e.NewValue - 1;
+            var newOffset = ((CodeEditorViewModel)DataContext).CursorLine - 1;
             var firstVisibleOffset = scrollViewer.VerticalOffset;
             if (newOffset < firstVisibleOffset)
             {

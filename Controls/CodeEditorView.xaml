@@ -60,6 +60,7 @@
                             FontSize="{Binding Resources.FontSize}"
                             Foreground="{Binding Resources.LineNumber.Brush}"
                             Margin="0,0,8,0" HorizontalAlignment="Right" />
+                <Border Grid.Column="1" Background="{Binding Resources.LineNumber.Brush}" Margin="{Binding SelectionLocation}" Width="{Binding SelectionWidth}" HorizontalAlignment="Left" />
                 <ItemsControl Grid.Column="1" ItemsSource="{Binding TextPieces}" ItemTemplate="{StaticResource textPieceTemplate}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>

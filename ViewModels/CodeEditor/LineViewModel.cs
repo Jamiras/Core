@@ -25,18 +25,43 @@ namespace Jamiras.ViewModels.CodeEditor
             internal set { SetValue(LineProperty, value); }
         }
 
-        private static readonly ModelProperty HighlightBeginProperty = ModelProperty.Register(typeof(LineViewModel), "HighlightBegin", typeof(int), 0);
-        public int HighlightBegin
+        private static readonly ModelProperty SelectionStartProperty = ModelProperty.Register(typeof(LineViewModel), "SelectionStart", typeof(int), 0);
+        public int SelectionStart
         {
-            get { return (int)GetValue(HighlightBeginProperty); }
-            private set { SetValue(HighlightBeginProperty, value); }
+            get { return (int)GetValue(SelectionStartProperty); }
+            private set { SetValue(SelectionStartProperty, value); }
         }
 
-        private static readonly ModelProperty HighlightEndProperty = ModelProperty.Register(typeof(LineViewModel), "HighlightEnd", typeof(int), 0);
-        public int HighlightEnd
+        private static readonly ModelProperty SelectionEndProperty = ModelProperty.Register(typeof(LineViewModel), "SelectionEnd", typeof(int), 0);
+        public int SelectionEnd
         {
-            get { return (int)GetValue(HighlightEndProperty); }
-            internal set { SetValue(HighlightEndProperty, value); }
+            get { return (int)GetValue(SelectionEndProperty); }
+            internal set { SetValue(SelectionEndProperty, value); }
+        }
+
+        private static readonly ModelProperty SelectionLocationProperty =
+            ModelProperty.RegisterDependant(typeof(LineViewModel), "SelectionLocation", typeof(Thickness), new[] { SelectionStartProperty }, GetSelectionLocation);
+        public Thickness SelectionLocation
+        {
+            get { return (Thickness)GetValue(SelectionLocationProperty); }
+        }
+        private static object GetSelectionLocation(ModelBase model)
+        {
+            var viewModel = (LineViewModel)model;
+            var offset = (viewModel.SelectionStart - 1) * viewModel._owner.CharacterWidth;
+            return new Thickness((int)offset, 0, 0, 0);
+        }
+
+        private static readonly ModelProperty SelectionWidthProperty =
+            ModelProperty.RegisterDependant(typeof(LineViewModel), "SelectionWidth", typeof(double), new[] { SelectionStartProperty, SelectionEndProperty }, GetSelectionWidth);
+        public double SelectionWidth
+        {
+            get { return (double)GetValue(SelectionWidthProperty); }
+        }
+        private static object GetSelectionWidth(ModelBase model)
+        {
+            var viewModel = (LineViewModel)model;
+            return (viewModel.SelectionEnd - viewModel.SelectionStart) * viewModel._owner.CharacterWidth;
         }
 
         private static readonly ModelProperty CursorColumnProperty = ModelProperty.Register(typeof(LineViewModel), "CursorColumn", typeof(int), 0);
@@ -240,6 +265,18 @@ namespace Jamiras.ViewModels.CodeEditor
             SetValue(TextPiecesProperty, newPieces.ToArray());
 
             _owner.ScheduleRefresh();
+        }
+
+        internal void ClearSelection()
+        {
+            SelectionEnd = 0;
+            SelectionStart = 0;
+        }
+
+        internal void Select(int startColumn, int endColumn)
+        {
+            SelectionStart = startColumn;
+            SelectionEnd = endColumn;
         }
     }
 }
