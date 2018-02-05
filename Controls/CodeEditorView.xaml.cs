@@ -105,6 +105,13 @@ namespace Jamiras.Controls
             return null;
         }
 
+        private static int GetColumn(CodeEditorViewModel viewModel, Point mousePosition)
+        {
+            var characterWidth = viewModel.CharacterWidth;
+            int column = (int)((mousePosition.X - 2 - viewModel.LineNumberColumnWidth + 1) / characterWidth) + 1;
+            return column;
+        }
+
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
             var position = e.GetPosition(this);
@@ -112,16 +119,30 @@ namespace Jamiras.Controls
             if (line != null)
             {
                 var viewModel = (CodeEditorViewModel)DataContext;
-
-                var characterWidth = viewModel.CharacterWidth;
-                int column = (int)((position.X - 2 - viewModel.LineNumberColumnWidth + 1) / characterWidth) + 1;
-                viewModel.CursorLine = line.Line;
-                viewModel.CursorColumn = column;
+                var moveCursorFlags = ((Keyboard.Modifiers & ModifierKeys.Shift) != 0) ? CodeEditorViewModel.MoveCursorFlags.Highlighting : CodeEditorViewModel.MoveCursorFlags.None;
+                viewModel.MoveCursorTo(line.Line, GetColumn(viewModel, position), moveCursorFlags);
             }
 
             Focus();
 
             base.OnMouseLeftButtonDown(e);
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                var viewModel = (CodeEditorViewModel)DataContext;
+                var position = e.GetPosition(this);
+
+                var line = GetLine(position);
+                if (line != null)
+                    viewModel.MoveCursorTo(line.Line, GetColumn(viewModel, position), CodeEditorViewModel.MoveCursorFlags.Highlighting);
+                else
+                    viewModel.MoveCursorTo(viewModel.LineCount, Int32.MaxValue, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+            }
+
+            base.OnMouseMove(e);
         }
 
         protected override void OnKeyDown(KeyEventArgs e)

@@ -1,15 +1,14 @@
 ﻿using Jamiras.Components;
 using Jamiras.DataModels;
+using Jamiras.ViewModels.Fields;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
-using System.Linq;
 using System.Text;
 using System.Windows;
-using System.Windows.Media;
 using System.Windows.Input;
-using Jamiras.ViewModels.Fields;
+using System.Windows.Media;
 
 namespace Jamiras.ViewModels.CodeEditor
 {
@@ -39,89 +38,19 @@ namespace Jamiras.ViewModels.CodeEditor
             set { SetValue(AreLineNumbersVisibleProperty, value); }
         }
 
-        public static readonly ModelProperty CursorColumnProperty = ModelProperty.Register(typeof(CodeEditorViewModel), "CursorColumn", typeof(int), 1, OnCursorColumnChanged);
+        public static readonly ModelProperty CursorColumnProperty = ModelProperty.Register(typeof(CodeEditorViewModel), "CursorColumn", typeof(int), 1);
         public int CursorColumn
         {
             get { return (int)GetValue(CursorColumnProperty); }
-            set
-            {
-                if (value < 1)
-                {
-                    value = 0;
-                }
-                else
-                {
-                    var lineViewModel = _lines[CursorLine - 1];
-                    var lineLength = lineViewModel.LineLength;
-                    if (lineLength == 0)
-                        value = 1;
-                    else if (value > lineLength + 1)
-                        value = lineLength + 1;
-                }
-
-                SetValue(CursorColumnProperty, value);
-            }
+            private set { SetValue(CursorColumnProperty, value); }
         }
 
-        private static void OnCursorColumnChanged(object sender, ModelPropertyChangedEventArgs e)
-        {
-            var viewModel = (CodeEditorViewModel)sender;
-
-            var line = viewModel.CursorLine;
-            if (line > 0 && line <= viewModel._lines.Count)
-            {
-                var lineViewModel = viewModel._lines[line - 1];
-
-                var newColumn = (int)e.NewValue;
-                if (newColumn < 1)
-                {
-                    newColumn = 0;
-                }
-                else 
-                {
-                    var lineLength = lineViewModel.LineLength;
-                    if (lineLength == 0)
-                        newColumn = 1;
-                    else if (newColumn > lineLength + 1)
-                        newColumn = lineLength + 1;
-                }
-
-                lineViewModel.CursorColumn = newColumn;
-            }
-        }
-
-        public static readonly ModelProperty CursorLineProperty = ModelProperty.Register(typeof(CodeEditorViewModel), "CursorLine", typeof(int), 1, OnCursorLineChanged);
+        public static readonly ModelProperty CursorLineProperty = ModelProperty.Register(typeof(CodeEditorViewModel), "CursorLine", typeof(int), 1);
         public int CursorLine
         {
             get { return (int)GetValue(CursorLineProperty); }
-            set
-            {
-                if (value < 1)
-                    value = 1;
-                else if (value > LineCount)
-                    value = LineCount;
-
-                SetValue(CursorLineProperty, value);
-            }
+            private set { SetValue(CursorLineProperty, value); }
         }
-
-        private static void OnCursorLineChanged(object sender, ModelPropertyChangedEventArgs e)
-        {
-            var viewModel = (CodeEditorViewModel)sender;
-
-            int oldLine = (int)e.OldValue;
-            if (oldLine > 0 && oldLine <= viewModel._lines.Count)
-                viewModel._lines[oldLine - 1].CursorColumn = 0;
-
-            int newLine = (int)e.NewValue;
-            if (newLine > 0 && newLine <= viewModel._lines.Count)
-            {
-                var lineViewModel = viewModel._lines[(int)e.NewValue - 1];
-                lineViewModel.CursorColumn = Math.Min(viewModel.CursorColumn, lineViewModel.LineLength + 1);
-            }
-        }
-
-        private int _selectionStartLine, _selectionStartColumn, _selectionEndLine, _selectionEndColumn;
 
         public string Content
         {
@@ -226,11 +155,6 @@ namespace Jamiras.ViewModels.CodeEditor
         }
         private ObservableCollection<LineViewModel> _lines;
 
-        private LineViewModel CursorLineViewModel
-        {
-            get { return _lines[CursorLine - 1]; }
-        }
-
         public EditorProperties Style { get; private set; }
 
         public EditorResources Resources { get; private set; }
@@ -273,114 +197,73 @@ namespace Jamiras.ViewModels.CodeEditor
 
         protected virtual void OnKeyPressed(KeyPressedEventArgs e)
         {
+            var moveCursorFlags = ((e.Modifiers & ModifierKeys.Shift) != 0) ? MoveCursorFlags.Highlighting : MoveCursorFlags.None;
+
             switch (e.Key)
             {
                 case Key.Down:
-                    BeginSelection(e.Modifiers);
-                    CursorLine++;
-                    UpdateVirtualCursorColumn();
-                    UpdateSelection(e.Modifiers);
+                    MoveCursorTo(CursorLine + 1, CursorColumn, moveCursorFlags | MoveCursorFlags.RememberColumn);
                     e.Handled = true;
                     break;
 
                 case Key.Up:
-                    BeginSelection(e.Modifiers);
-                    CursorLine--;
-                    UpdateVirtualCursorColumn();
-                    UpdateSelection(e.Modifiers);
+                    MoveCursorTo(CursorLine - 1, CursorColumn, moveCursorFlags | MoveCursorFlags.RememberColumn);
                     e.Handled = true;
                     break;
 
                 case Key.Left:
-                    BeginSelection(e.Modifiers);
-                    HandleLeft(e.Modifiers);
-                    UpdateSelection(e.Modifiers);
-                    ClearVirtualCursorColumn();
+                    HandleLeft(moveCursorFlags, (e.Modifiers & ModifierKeys.Control) != 0);
                     e.Handled = true;
                     break;
 
                 case Key.Right:
-                    BeginSelection(e.Modifiers);
-                    HandleRight(e.Modifiers);
-                    ClearVirtualCursorColumn();
-                    UpdateSelection(e.Modifiers);
+                    HandleRight(moveCursorFlags, (e.Modifiers & ModifierKeys.Control) != 0);
                     e.Handled = true;
                     break;
 
                 case Key.PageDown:
-                    BeginSelection(e.Modifiers);
-                    CursorLine += VisibleLines - 1;
-                    UpdateVirtualCursorColumn();
-                    UpdateSelection(e.Modifiers);
+                    MoveCursorTo(CursorLine + (VisibleLines - 1), CursorColumn, moveCursorFlags | MoveCursorFlags.RememberColumn);
                     e.Handled = true;
                     break;
 
                 case Key.PageUp:
-                    BeginSelection(e.Modifiers);
-                    CursorLine -= VisibleLines - 1;
-                    UpdateVirtualCursorColumn();
-                    UpdateSelection(e.Modifiers);
+                    MoveCursorTo(CursorLine - (VisibleLines - 1), CursorColumn, moveCursorFlags | MoveCursorFlags.RememberColumn);
                     e.Handled = true;
                     break;
 
                 case Key.Home:
-                    BeginSelection(e.Modifiers);
                     if ((e.Modifiers & ModifierKeys.Control) != 0)
-                        CursorLine = 1;
-                    CursorColumn = 1;
-                    ClearVirtualCursorColumn();
-                    UpdateSelection(e.Modifiers);
+                        MoveCursorTo(1, 1, moveCursorFlags);
+                    else
+                        MoveCursorTo(CursorLine, 1, moveCursorFlags);
                     e.Handled = true;
                     break;
 
                 case Key.End:
-                    BeginSelection(e.Modifiers);
                     if ((e.Modifiers & ModifierKeys.Control) != 0)
-                        CursorLine = _lines.Count;
-                    CursorColumn = CursorLineViewModel.LineLength + 1;
-                    ClearVirtualCursorColumn();
-                    UpdateSelection(e.Modifiers);
+                        MoveCursorTo(_lines.Count, _lines[_lines.Count - 1].LineLength + 1, moveCursorFlags);
+                    else
+                        MoveCursorTo(CursorLine, _lines[CursorLine - 1].LineLength + 1, moveCursorFlags);
                     e.Handled = true;
                     break;
 
                 case Key.Back:
-                    if (CursorColumn > 1)
-                    {
-                        CursorLineViewModel.Remove(CursorColumn - 1, CursorColumn - 1);
-                        CursorColumn--;
-                    }
-                    else if (CursorLine > 1)
-                    {
-                        CursorLine--;
-                        CursorColumn = CursorLineViewModel.LineLength + 1;
-                        MergeNextLine();
-                    }
-                    ClearVirtualCursorColumn();
+                    HandleBackspace();
                     e.Handled = true;
                     break;
 
                 case Key.Delete:
-                    if (CursorColumn <= CursorLineViewModel.LineLength)
-                    {
-                        _lines[CursorLine - 1].Remove(CursorColumn, CursorColumn);
-                    }
-                    else if (CursorLine < LineCount)
-                    {
-                        MergeNextLine();
-                    }
-                    ClearVirtualCursorColumn();
+                    HandleDelete();
                     e.Handled = true;
                     break;
 
                 case Key.Enter:
-                    SplitLineAtCursor();
-                    ClearVirtualCursorColumn();
+                    HandleEnter();
                     e.Handled = true;
                     break;
 
                 case Key.Tab:
-                    IndentSelection();
-                    ClearVirtualCursorColumn();
+                    HandleTab();
                     e.Handled = true;
                     break;
 
@@ -388,21 +271,90 @@ namespace Jamiras.ViewModels.CodeEditor
                     char c = e.GetChar();
                     if (c != '\0')
                     {
-                        CursorLineViewModel.Insert(CursorColumn, c.ToString());
-                        CursorColumn++;
-                        ClearVirtualCursorColumn();
+                        HandleCharacter(c);
                         e.Handled = true;
                     }
                     break;
             }
         }
 
-        private void HandleLeft(ModifierKeys modifier)
+        private void HandleCharacter(char c)
         {
-            if (modifier == ModifierKeys.Control)
+            if (_selectionStartLine != 0)
+                DeleteSelection();
+
+            var column = CursorColumn;
+            var line = CursorLine;
+            var lineViewModel = _lines[line - 1];
+
+            lineViewModel.Insert(column, c.ToString());
+            MoveCursorTo(line, column + 1, MoveCursorFlags.None);
+        }
+
+        private void HandleDelete()
+        {
+            if (_selectionStartLine != 0)
             {
-                var cursorLine = CursorLineViewModel;
-                var text = cursorLine.Text;
+                DeleteSelection();
+            }
+            else
+            {
+                var column = CursorColumn;
+                var line = CursorLine;
+
+                var lineViewModel = _lines[line - 1];
+                if (column <= lineViewModel.LineLength)
+                {
+                    lineViewModel.Remove(column, column);
+                }
+                else if (line < LineCount)
+                {
+                    MergeNextLine();
+                }
+            }
+        }
+
+        private void HandleBackspace()
+        {
+            if (_selectionStartLine != 0)
+            {
+                DeleteSelection();
+            }
+            else
+            {
+                var column = CursorColumn;
+                var line = CursorLine;
+
+                if (column > 1)
+                {
+                    column--;
+                    _lines[line - 1].Remove(column, column);
+                    MoveCursorTo(line, column, MoveCursorFlags.None);
+                }
+                else if (line > 1)
+                {
+                    line--;
+                    column = _lines[line - 1].LineLength + 1;
+                    MoveCursorTo(line, column, MoveCursorFlags.None);
+                    MergeNextLine();
+                }
+            }
+        }
+
+        private void DeleteSelection()
+        {
+            // TODO
+        }
+
+        private void HandleLeft(MoveCursorFlags flags, bool nextWord)
+        {
+            var newLine = CursorLine;
+            var newColumn = CursorColumn;
+
+            if (nextWord)
+            {
+                var cursorLineViewModel = _lines[newLine - 1];
+                var text = cursorLineViewModel.Text;
                 var count = 0;
                 var offset = CursorColumn - 2;
                 while (offset > 0 && Char.IsWhiteSpace(text[offset]))
@@ -413,15 +365,15 @@ namespace Jamiras.ViewModels.CodeEditor
 
                 if (offset < 0)
                 {
-                    if (CursorLine > 1)
+                    if (newLine > 1)
                     {
-                        CursorLine--;
-                        CursorColumn = CursorLineViewModel.LineLength + 1;
+                        newLine--;
+                        newColumn = _lines[newLine - 1].LineLength + 1;
                     }
                 }
                 else
                 {
-                    var textPiece = cursorLine.GetTextPiece(offset + 1);
+                    var textPiece = cursorLineViewModel.GetTextPiece(offset + 1);
                     var pieceLength = textPiece.Offset + 1;
                     var pieceCount = 0;
                     while (pieceCount < pieceLength && !Char.IsWhiteSpace(text[offset]))
@@ -430,52 +382,57 @@ namespace Jamiras.ViewModels.CodeEditor
                         pieceCount++;
                     }
 
-                    CursorColumn -= (count + pieceCount);
+                    newColumn -= (count + pieceCount);
                 }
             }
-            else if (CursorColumn == 1)
+            else if (newColumn == 1)
             {
-                if (CursorLine > 1)
+                if (newLine > 1)
                 {
-                    CursorLine--;
-                    CursorColumn = CursorLineViewModel.LineLength + 1;
+                    newLine--;
+                    newColumn = _lines[newLine - 1].LineLength + 1;
                 }
             }
             else
             {
-                CursorColumn--;
+                newColumn--;
             }
+
+            MoveCursorTo(newLine, newColumn, flags);
         }
 
-        private void HandleRight(ModifierKeys modifier)
+        private void HandleRight(MoveCursorFlags flags, bool nextWord)
         {
-            var cursorLine = CursorLineViewModel;
-            if (CursorColumn > cursorLine.LineLength)
+            var newLine = CursorLine;
+            var newColumn = CursorColumn;
+
+            var cursorLineViewModel = _lines[newLine - 1];
+            if (newColumn > cursorLineViewModel.LineLength)
             {
-                if (CursorLine < _lines.Count)
+                if (newLine < _lines.Count)
                 {
-                    CursorLine++;
-                    if (modifier == ModifierKeys.Control)
+                    newLine++;
+                    if (nextWord)
                     {
-                        var text = CursorLineViewModel.Text;
+                        var text = _lines[newLine - 1].Text;
                         var count = 0;
                         while (count < text.Length && Char.IsWhiteSpace(text[count]))
                             count++;
 
-                        CursorColumn = count + 1;
+                        newColumn = count + 1;
                     }
                     else
                     {
-                        CursorColumn = 1;
+                        newColumn = 1;
                     }
                 }
             }
-            else if (modifier == ModifierKeys.Control)
+            else if (nextWord)
             {
-                var currentTextPiece = cursorLine.GetTextPiece(CursorColumn);
+                var currentTextPiece = cursorLineViewModel.GetTextPiece(CursorColumn);
                 if (currentTextPiece.Piece == null)
                 {
-                    CursorColumn = cursorLine.LineLength + 1;
+                    newColumn = cursorLineViewModel.LineLength + 1;
                 }
                 else
                 {
@@ -490,7 +447,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     offset = 0;
                     if (offset + count == text.Length)
                     {
-                        currentTextPiece = cursorLine.GetTextPiece(CursorColumn + count);
+                        currentTextPiece = cursorLineViewModel.GetTextPiece(CursorColumn + count);
                         if (currentTextPiece.Piece != null)
                         {
                             text = currentTextPiece.Piece.Text;
@@ -499,46 +456,39 @@ namespace Jamiras.ViewModels.CodeEditor
                         }
                     }
 
-                    CursorColumn += (count + offset);
+                    newColumn += (count + offset);
                 }
             }
             else
             {
-                CursorColumn++;
+                newColumn++;
             }
+
+            MoveCursorTo(newLine, newColumn, flags);
         }
 
-        // remebers the cursor column when moving up or down even if the line doesn't have that many columns
-        private int? _virtualCursorColumn;
-
-        private void UpdateVirtualCursorColumn()
+        private void HandleTab()
         {
-            if (_virtualCursorColumn == null)
-                _virtualCursorColumn = CursorColumn;
+            if (_selectionStartLine != 0) {
+                // TODO: if entire line is selected, indent instead of delete
+                DeleteSelection();
+            }
 
-            var maxColumn = CursorLineViewModel.LineLength + 1;
-            CursorColumn = Math.Min(maxColumn, _virtualCursorColumn.GetValueOrDefault());
-        }
-
-        private void ClearVirtualCursorColumn()
-        {
-            _virtualCursorColumn = null;
-        }
-
-        private void IndentSelection()
-        {
+            var cursorLine = CursorLine;
             var cursorColumn = CursorColumn;
             int newColumn = (((cursorColumn - 1) / 4) + 1) * 4 + 1;
-            CursorLineViewModel.Insert(CursorColumn, new string(' ', newColumn - cursorColumn));
+            _lines[cursorLine - 1].Insert(cursorColumn, new string(' ', newColumn - cursorColumn));
+            MoveCursorTo(cursorLine, newColumn, MoveCursorFlags.None);
             CursorColumn = newColumn;
         }
 
         private void MergeNextLine()
         {
             // merge the text from the next line into the current line
-            var cursorLineViewModel = CursorLineViewModel;
+            var cursorLine = CursorLine;
+            var cursorLineViewModel = _lines[cursorLine - 1];
             var left = cursorLineViewModel.PendingText ?? cursorLineViewModel.Text;
-            var nextLineViewModel = _lines[CursorLine];
+            var nextLineViewModel = _lines[cursorLine];
             var right = nextLineViewModel.PendingText ?? nextLineViewModel.Text;
             cursorLineViewModel.PendingText = left + right;
 
@@ -548,7 +498,7 @@ namespace Jamiras.ViewModels.CodeEditor
             cursorLineViewModel.SetValue(LineViewModel.TextPiecesProperty, newPieces.ToArray());
 
             // remove the line that was merged
-            _lines.RemoveAt(CursorLine);
+            _lines.RemoveAt(cursorLine);
             LineCount--;
 
             // update the line numbers
@@ -559,10 +509,14 @@ namespace Jamiras.ViewModels.CodeEditor
             ScheduleRefresh();
         }
 
-        private void SplitLineAtCursor()
+        private void HandleEnter()
         {
+            if (_selectionStartLine != 0)
+                DeleteSelection();
+
             // split the current line at the cursor
-            var cursorLineViewModel = CursorLineViewModel;
+            var cursorLine = CursorLine;
+            var cursorLineViewModel = _lines[cursorLine - 1];
             string text = cursorLineViewModel.PendingText ?? cursorLineViewModel.Text;
             var cursorColumn = CursorColumn - 1; // string index is 0-based
             string left = (cursorColumn > 0) ? text.Substring(0, cursorColumn) : String.Empty;
@@ -573,8 +527,8 @@ namespace Jamiras.ViewModels.CodeEditor
                 cursorLineViewModel.Remove(CursorColumn, text.Length);
 
             // add a new line
-            var newLineViewModel = new LineViewModel(this, CursorLine + 1) { PendingText = right };
-            _lines.Insert(CursorLine, newLineViewModel);
+            var newLineViewModel = new LineViewModel(this, cursorLine + 1) { PendingText = right };
+            _lines.Insert(cursorLine, newLineViewModel);
             LineCount++;
 
             // create TextPieces for the new line so it appears
@@ -582,8 +536,7 @@ namespace Jamiras.ViewModels.CodeEditor
             newLineViewModel.SetValue(LineViewModel.TextPiecesProperty, e.BuildTextPieces());
 
             // update the cursor position
-            CursorLine++;
-            CursorColumn = 1;
+            MoveCursorTo(cursorLine + 1, 1, MoveCursorFlags.None);
 
             // update the line numbers
             for (int i = CursorLine; i < _lines.Count; i++)
@@ -593,77 +546,147 @@ namespace Jamiras.ViewModels.CodeEditor
             ScheduleRefresh();
         }
 
-        private void BeginSelection(ModifierKeys modifier)
+        // remebers the cursor column when moving up or down even if the line doesn't have that many columns
+        private int? _virtualCursorColumn;
+
+        private int _selectionStartLine, _selectionStartColumn, _selectionEndLine, _selectionEndColumn;
+
+        public enum MoveCursorFlags
         {
-            if ((modifier & ModifierKeys.Shift) != 0)
-            {
-                if (_selectionStartLine == 0)
-                {
-                    _selectionStartLine = _selectionEndLine = CursorLine;
-                    _selectionStartColumn = _selectionEndColumn = CursorColumn;
-                }
-            }
+            None = 0,
+            Highlighting = 0x01,
+            RememberColumn = 0x02,
         }
 
-        private void UpdateSelection(ModifierKeys modifier)
+        public void MoveCursorTo(int line, int column, MoveCursorFlags flags)
         {
-            if ((modifier & ModifierKeys.Shift) == 0)
+            var currentLine = CursorLine;
+            var currentColumn = CursorColumn;
+
+            // capture cursor location as start of highlighting if highlight region doesn't yet exist
+            if ((flags & MoveCursorFlags.Highlighting) != 0 && _selectionStartLine == 0)
             {
-                if (_selectionStartLine == 0)
-                    return;
-
-                for (int i = _selectionStartLine - 1; i < _selectionEndLine; i++)
-                    _lines[i].ClearSelection();
-
-                _selectionStartLine = 0;
-                _selectionStartColumn = 0;
-                _selectionEndLine = 0;
-                _selectionEndColumn = 0;
-                return;
+                _selectionStartLine = _selectionEndLine = currentLine;
+                _selectionStartColumn = _selectionEndColumn = currentColumn;
             }
 
-            int cursorLine = CursorLine;
-
-            if (_selectionEndLine != 0)
+            // switching lines, make sure the new line is valid
+            if (line != currentLine)
             {
-                for (int i = _selectionEndLine; i < cursorLine; i++)
-                    _lines[i - 1].ClearSelection();
-                for (int i = cursorLine + 1; i <= _selectionEndLine; i++)
-                    _lines[i - 1].ClearSelection();
+                if (line < 1)
+                    line = 1;
+                else if (line > LineCount)
+                    line = LineCount;
             }
 
-            _selectionEndLine = cursorLine;
-            _selectionEndColumn = CursorColumn;
+            // make sure cursor stays within the line's bounds
+            var maxColumn = _lines[line - 1].LineLength + 1;
 
-            if (_selectionStartLine == _selectionEndLine)
+            if ((flags & MoveCursorFlags.RememberColumn) != 0)
             {
-                if (_selectionStartColumn < _selectionEndColumn)
-                    _lines[_selectionStartLine - 1].Select(_selectionStartColumn, _selectionEndColumn);
-                else
-                    _lines[_selectionStartLine - 1].Select(_selectionEndColumn, _selectionStartColumn);
+                if (_virtualCursorColumn == null)
+                    _virtualCursorColumn = currentColumn;
+
+                column = Math.Min(maxColumn, _virtualCursorColumn.GetValueOrDefault());
             }
             else
             {
-                int firstLine, firstColumn, lastLine, lastColumn;
-                if (_selectionStartLine < _selectionEndLine)
+                _virtualCursorColumn = null;
+                if (column > maxColumn)
+                    column = maxColumn;
+            }
+
+            // update highlighting
+            if ((flags & MoveCursorFlags.Highlighting) == 0)
+            {
+                // remove highlighted region
+                if (_selectionStartColumn != 0)
                 {
-                    firstLine = _selectionStartLine;
-                    firstColumn = _selectionStartColumn;
-                    lastLine = _selectionEndLine;
-                    lastColumn = _selectionEndColumn;
+                    if (_selectionStartLine > _selectionEndLine)
+                    {
+                        for (int i = _selectionEndLine - 1; i < _selectionStartLine; i++)
+                            _lines[i].ClearSelection();
+                    }
+                    else
+                    {
+                        for (int i = _selectionStartLine - 1; i < _selectionEndLine; i++)
+                            _lines[i].ClearSelection();
+                    }
+
+                    _selectionStartLine = 0;
+                    _selectionStartColumn = 0;
+                    _selectionEndLine = 0;
+                    _selectionEndColumn = 0;
+                }
+            }
+            else if (_selectionEndLine != line || _selectionEndColumn != column)
+            {
+                // update highlighted region
+                if (_selectionEndLine != 0)
+                {
+                    for (int i = _selectionEndLine; i < line; i++)
+                        _lines[i - 1].ClearSelection();
+                    for (int i = line + 1; i <= _selectionEndLine; i++)
+                        _lines[i - 1].ClearSelection();
+                }
+
+                _selectionEndLine = line;
+                _selectionEndColumn = column;
+
+                if (_selectionStartLine == _selectionEndLine)
+                {
+                    if (_selectionStartColumn < _selectionEndColumn)
+                        _lines[_selectionStartLine - 1].Select(_selectionStartColumn, _selectionEndColumn);
+                    else
+                        _lines[_selectionStartLine - 1].Select(_selectionEndColumn, _selectionStartColumn);
                 }
                 else
                 {
-                    firstLine = _selectionEndLine;
-                    firstColumn = _selectionEndColumn;
-                    lastLine = _selectionStartLine;
-                    lastColumn = _selectionStartColumn;
-                }
+                    int firstLine, firstColumn, lastLine, lastColumn;
+                    if (_selectionStartLine < _selectionEndLine)
+                    {
+                        firstLine = _selectionStartLine;
+                        firstColumn = _selectionStartColumn;
+                        lastLine = _selectionEndLine;
+                        lastColumn = _selectionEndColumn;
+                    }
+                    else
+                    {
+                        firstLine = _selectionEndLine;
+                        firstColumn = _selectionEndColumn;
+                        lastLine = _selectionStartLine;
+                        lastColumn = _selectionStartColumn;
+                    }
 
-                _lines[firstLine - 1].Select(firstColumn, _lines[firstLine - 1].LineLength + 1);
-                for (int i = firstLine; i < lastLine - 1; i++)
-                    _lines[i].Select(1, _lines[i].LineLength + 1);
-                _lines[lastLine - 1].Select(1, lastColumn);
+                    _lines[firstLine - 1].Select(firstColumn, _lines[firstLine - 1].LineLength + 1);
+                    for (int i = firstLine; i < lastLine - 1; i++)
+                        _lines[i].Select(1, _lines[i].LineLength + 1);
+                    _lines[lastLine - 1].Select(1, lastColumn);
+                }
+            }
+
+            // update the cursor position
+            if (line != currentLine)
+            {
+                _lines[currentLine - 1].CursorColumn = 0;
+                _lines[line - 1].CursorColumn = column;
+
+                if (column != currentColumn)
+                {
+                    // sneaky framework trick to set both values before raising propertychanged for either property
+                    SetValueCore(CursorLineProperty, line);
+                    CursorColumn = column;
+                    OnModelPropertyChanged(new ModelPropertyChangedEventArgs(CursorLineProperty, line, currentLine));
+                }
+                else
+                {
+                    CursorLine = line;
+                }
+            }
+            else if (column != currentColumn)
+            {
+                _lines[line - 1].CursorColumn = column;
+                CursorColumn = column;
             }
         }
     }

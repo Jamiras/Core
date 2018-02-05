@@ -49,7 +49,7 @@ namespace Jamiras.ViewModels.CodeEditor
         {
             var viewModel = (LineViewModel)model;
             var offset = (viewModel.SelectionStart - 1) * viewModel._owner.CharacterWidth;
-            return new Thickness((int)offset, 0, 0, 0);
+            return new Thickness(offset, 0.0, 0.0, 0.0);
         }
 
         private static readonly ModelProperty SelectionWidthProperty =
@@ -269,14 +269,16 @@ namespace Jamiras.ViewModels.CodeEditor
 
         internal void ClearSelection()
         {
-            SelectionEnd = 0;
-            SelectionStart = 0;
+            Select(0, 0);
         }
 
         internal void Select(int startColumn, int endColumn)
         {
-            SelectionStart = startColumn;
+            // framework trickery to update both values before raising property changed events
+            var oldStartColumn = SelectionStart;
+            SetValueCore(SelectionStartProperty, startColumn);
             SelectionEnd = endColumn;
+            OnModelPropertyChanged(new ModelPropertyChangedEventArgs(SelectionStartProperty, oldStartColumn, startColumn));
         }
     }
 }
