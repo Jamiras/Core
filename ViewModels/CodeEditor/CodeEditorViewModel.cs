@@ -346,6 +346,56 @@ namespace Jamiras.ViewModels.CodeEditor
             // TODO
         }
 
+        public void HighlightWordAt(int line, int column)
+        {
+            var cursorLineViewModel = _lines[line - 1];
+            var currentTextPiece = cursorLineViewModel.GetTextPiece(column);
+            if (currentTextPiece.Piece == null) // column exceeds line length
+                return;
+
+            var text = currentTextPiece.Piece.Text;
+            var offset = currentTextPiece.Offset;
+
+            int wordStart, wordEnd;
+            if (Char.IsWhiteSpace(text[offset]))
+            {
+                do
+                {
+                    offset--;
+                } while (offset >= 0 && Char.IsWhiteSpace(text[offset]));
+
+                wordStart = column - (currentTextPiece.Offset - offset) + 1;
+
+                offset = currentTextPiece.Offset;
+                do
+                {
+                    offset++;
+                } while (offset < text.Length && Char.IsWhiteSpace(text[offset]));
+
+                wordEnd = column + (offset - currentTextPiece.Offset);
+            }
+            else
+            {
+                do
+                {
+                    offset--;
+                } while (offset >= 0 && !Char.IsWhiteSpace(text[offset]));
+
+                wordStart = column - (currentTextPiece.Offset - offset) + 1;
+
+                offset = currentTextPiece.Offset;
+                do
+                {
+                    offset++;
+                } while (offset < text.Length && !Char.IsWhiteSpace(text[offset]));
+
+                wordEnd = column + (offset - currentTextPiece.Offset);
+            }
+
+            MoveCursorTo(line, wordStart, MoveCursorFlags.None);
+            MoveCursorTo(line, wordEnd, MoveCursorFlags.Highlighting);
+        }
+
         private void HandleLeft(MoveCursorFlags flags, bool nextWord)
         {
             var newLine = CursorLine;
@@ -357,7 +407,7 @@ namespace Jamiras.ViewModels.CodeEditor
                 var text = cursorLineViewModel.Text;
                 var count = 0;
                 var offset = CursorColumn - 2;
-                while (offset > 0 && Char.IsWhiteSpace(text[offset]))
+                while (offset >= 0 && Char.IsWhiteSpace(text[offset]))
                 {
                     offset--;
                     count++;
@@ -365,6 +415,7 @@ namespace Jamiras.ViewModels.CodeEditor
 
                 if (offset < 0)
                 {
+                    // in whitespace at start of line, go to previous line
                     if (newLine > 1)
                     {
                         newLine--;
@@ -373,6 +424,7 @@ namespace Jamiras.ViewModels.CodeEditor
                 }
                 else
                 {
+                    // find start of word
                     var textPiece = cursorLineViewModel.GetTextPiece(offset + 1);
                     var pieceLength = textPiece.Offset + 1;
                     var pieceCount = 0;
@@ -429,7 +481,7 @@ namespace Jamiras.ViewModels.CodeEditor
             }
             else if (nextWord)
             {
-                var currentTextPiece = cursorLineViewModel.GetTextPiece(CursorColumn);
+                var currentTextPiece = cursorLineViewModel.GetTextPiece(newColumn);
                 if (currentTextPiece.Piece == null)
                 {
                     newColumn = cursorLineViewModel.LineLength + 1;
@@ -624,9 +676,9 @@ namespace Jamiras.ViewModels.CodeEditor
                 // update highlighted region
                 if (_selectionEndLine != 0)
                 {
-                    for (int i = _selectionEndLine; i < line; i++)
+                    for (int i = _selectionEndLine + 1; i < line; i++)
                         _lines[i - 1].ClearSelection();
-                    for (int i = line + 1; i <= _selectionEndLine; i++)
+                    for (int i = line + 1; i < _selectionEndLine; i++)
                         _lines[i - 1].ClearSelection();
                 }
 

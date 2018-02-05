@@ -112,34 +112,58 @@ namespace Jamiras.Controls
             return column;
         }
 
+        private DateTime doubleClickTime;
+
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+        {
+            if (e.ClickCount == 1)
+            {
+                var position = e.GetPosition(this);
+                var line = GetLine(position);
+                if (line != null)
+                {
+                    var viewModel = (CodeEditorViewModel)DataContext;
+                    var moveCursorFlags = ((Keyboard.Modifiers & ModifierKeys.Shift) != 0) ? CodeEditorViewModel.MoveCursorFlags.Highlighting : CodeEditorViewModel.MoveCursorFlags.None;
+                    viewModel.MoveCursorTo(line.Line, GetColumn(viewModel, position), moveCursorFlags);
+                }
+
+                Focus();
+            }
+
+            base.OnMouseLeftButtonDown(e);
+        }
+
+        protected override void OnMouseDoubleClick(MouseButtonEventArgs e)
         {
             var position = e.GetPosition(this);
             var line = GetLine(position);
             if (line != null)
             {
                 var viewModel = (CodeEditorViewModel)DataContext;
-                var moveCursorFlags = ((Keyboard.Modifiers & ModifierKeys.Shift) != 0) ? CodeEditorViewModel.MoveCursorFlags.Highlighting : CodeEditorViewModel.MoveCursorFlags.None;
-                viewModel.MoveCursorTo(line.Line, GetColumn(viewModel, position), moveCursorFlags);
+                viewModel.HighlightWordAt(line.Line, GetColumn(viewModel, position));
+                e.Handled = true;
             }
 
-            Focus();
+            doubleClickTime = DateTime.UtcNow;
 
-            base.OnMouseLeftButtonDown(e);
+            base.OnMouseDoubleClick(e);
         }
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed)
             {
-                var viewModel = (CodeEditorViewModel)DataContext;
-                var position = e.GetPosition(this);
+                if (DateTime.UtcNow - doubleClickTime > TimeSpan.FromSeconds(1)) // prevent trigger when mouse moves during double click
+                {
+                    var viewModel = (CodeEditorViewModel)DataContext;
+                    var position = e.GetPosition(this);
 
-                var line = GetLine(position);
-                if (line != null)
-                    viewModel.MoveCursorTo(line.Line, GetColumn(viewModel, position), CodeEditorViewModel.MoveCursorFlags.Highlighting);
-                else
-                    viewModel.MoveCursorTo(viewModel.LineCount, Int32.MaxValue, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+                    var line = GetLine(position);
+                    if (line != null)
+                        viewModel.MoveCursorTo(line.Line, GetColumn(viewModel, position), CodeEditorViewModel.MoveCursorFlags.Highlighting);
+                    else
+                        viewModel.MoveCursorTo(viewModel.LineCount, Int32.MaxValue, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+                }
             }
 
             base.OnMouseMove(e);
