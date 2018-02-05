@@ -2,6 +2,7 @@
 using Jamiras.ViewModels.CodeEditor;
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -33,30 +34,77 @@ namespace Jamiras.Controls
             var descriptor = DependencyPropertyDescriptor.FromProperty(ScrollViewer.ViewportHeightProperty, typeof(ScrollViewer));
             if (descriptor != null)
                 descriptor.AddValueChanged(CodeLinesScrollViewer, OnViewportHeightChanged);
+
+            descriptor = DependencyPropertyDescriptor.FromProperty(ScrollViewer.VerticalOffsetProperty, typeof(ScrollViewer));
+            if (descriptor != null)
+                descriptor.AddValueChanged(CodeLinesScrollViewer, OnVerticalOffsetChanged);
+
             OnViewportHeightChanged(CodeLinesScrollViewer, EventArgs.Empty);
-        }
-
-        private void OnViewportHeightChanged(object sender, EventArgs e)
-        {
-            var editorViewModel = DataContext as CodeEditorViewModel;
-            if (editorViewModel != null)
-                editorViewModel.VisibleLines = (int)CodeLinesScrollViewer.ViewportHeight;
-        }
-
-        private void OnDataContextChanged(object sender, EventArgs e)
-        {
-            var editorViewModel = DataContext as CodeEditorViewModel;
-            if (editorViewModel != null)
-            {
-                editorViewModel.AddPropertyChangedHandler(CodeEditorViewModel.CursorLineProperty, OnCursorLineChanged);
-                editorViewModel.AddPropertyChangedHandler(CodeEditorViewModel.CursorColumnProperty, OnCursorColumnChanged);
-            }
+            RestoreScrollOffset();
+            EnsureCursorVisible();
         }
 
         private ScrollViewer CodeLinesScrollViewer
         {
-            get { return (ScrollViewer)VisualTreeHelper.GetChild(codeEditorLines, 0);  }
+            get { return (ScrollViewer)VisualTreeHelper.GetChild(codeEditorLines, 0); }
         }
+
+        private void RestoreScrollOffset()
+        {
+            if (IsLoaded && ViewModel != null)
+            {
+                double scrollOffset = (double)ViewModel.GetValue(EditorScrollOffsetProperty);
+                CodeLinesScrollViewer.ScrollToVerticalOffset(scrollOffset);
+            }
+        }
+
+        private void OnViewportHeightChanged(object sender, EventArgs e)
+        {
+            if (ViewModel != null)
+                ViewModel.VisibleLines = (int)CodeLinesScrollViewer.ViewportHeight;
+        }
+
+        private static readonly ModelProperty EditorScrollOffsetProperty = ModelProperty.Register(typeof(CodeEditorView), null, typeof(double), 0.0);
+
+        private void OnVerticalOffsetChanged(object sender, EventArgs e)
+        {
+            if (ViewModel != null)
+                ViewModel.SetValueCore(EditorScrollOffsetProperty, ((ScrollViewer)sender).VerticalOffset);
+        }
+
+        private void OnDataContextChanged(object sender, EventArgs e)
+        {
+            ViewModel = DataContext as CodeEditorViewModel;
+        }
+
+        private CodeEditorViewModel ViewModel
+        {
+            get { return _viewModel; }
+            set
+            {
+                if (!ReferenceEquals(value, _viewModel))
+                {
+                    if (_viewModel != null)
+                    {
+                        _viewModel.RemovePropertyChangedHandler(CodeEditorViewModel.CursorLineProperty, OnCursorLineChanged);
+                        _viewModel.RemovePropertyChangedHandler(CodeEditorViewModel.CursorColumnProperty, OnCursorColumnChanged);
+                    }
+
+                    _viewModel = value;
+
+                    if (_viewModel != null)
+                    {
+                        _viewModel.AddPropertyChangedHandler(CodeEditorViewModel.CursorLineProperty, OnCursorLineChanged);
+                        _viewModel.AddPropertyChangedHandler(CodeEditorViewModel.CursorColumnProperty, OnCursorColumnChanged);
+
+                        RestoreScrollOffset();
+                        EnsureCursorVisible();
+                    }
+                }
+            }
+        }
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private CodeEditorViewModel _viewModel;
 
         private void OnCursorLineChanged(object sender, ModelPropertyChangedEventArgs e)
         {
@@ -70,19 +118,26 @@ namespace Jamiras.Controls
 
         private void EnsureCursorVisible()
         {
-            var scrollViewer = CodeLinesScrollViewer;
-            var newOffset = ((CodeEditorViewModel)DataContext).CursorLine - 1;
-            var firstVisibleOffset = scrollViewer.VerticalOffset;
-            if (newOffset < firstVisibleOffset)
+            if (!IsLoaded)
+                return;
+
+            // do this asynchronously in case the cursor position is being updated rapidly
+            Dispatcher.BeginInvoke(new Action(() =>
             {
+                var scrollViewer = CodeLinesScrollViewer;
+                var newOffset = (double)(ViewModel.CursorLine - 1);
+                var firstVisibleOffset = scrollViewer.VerticalOffset;
+                if (newOffset >= firstVisibleOffset)
+                {
+                    var lastVisibleOffset = firstVisibleOffset + scrollViewer.ViewportHeight - 1;
+                    if (newOffset < lastVisibleOffset)
+                        return;
+
+                    newOffset = newOffset - scrollViewer.ViewportHeight + 1;
+                }
+
                 scrollViewer.ScrollToVerticalOffset(newOffset);
-            }
-            else 
-            {
-                var lastVisibleOffset = firstVisibleOffset + scrollViewer.ViewportHeight - 1;
-                if (newOffset > lastVisibleOffset)
-                    scrollViewer.ScrollToVerticalOffset(newOffset - scrollViewer.ViewportHeight + 1);
-            }
+            }));
         }
 
         private LineViewModel GetLine(Point point)
@@ -116,15 +171,14 @@ namespace Jamiras.Controls
 
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
-            if (e.ClickCount == 1)
+            if (e.ClickCount == 1 && ViewModel != null)
             {
                 var position = e.GetPosition(this);
                 var line = GetLine(position);
                 if (line != null)
                 {
-                    var viewModel = (CodeEditorViewModel)DataContext;
                     var moveCursorFlags = ((Keyboard.Modifiers & ModifierKeys.Shift) != 0) ? CodeEditorViewModel.MoveCursorFlags.Highlighting : CodeEditorViewModel.MoveCursorFlags.None;
-                    viewModel.MoveCursorTo(line.Line, GetColumn(viewModel, position), moveCursorFlags);
+                    ViewModel.MoveCursorTo(line.Line, GetColumn(ViewModel, position), moveCursorFlags);
                 }
 
                 Focus();
@@ -135,34 +189,38 @@ namespace Jamiras.Controls
 
         protected override void OnMouseDoubleClick(MouseButtonEventArgs e)
         {
-            var position = e.GetPosition(this);
-            var line = GetLine(position);
-            if (line != null)
+            if (ViewModel != null)
             {
-                var viewModel = (CodeEditorViewModel)DataContext;
-                viewModel.HighlightWordAt(line.Line, GetColumn(viewModel, position));
-                e.Handled = true;
-            }
+                var position = e.GetPosition(this);
+                var line = GetLine(position);
+                if (line != null)
+                {
+                    ViewModel.HighlightWordAt(line.Line, GetColumn(ViewModel, position));
+                    e.Handled = true;
+                }
 
-            doubleClickTime = DateTime.UtcNow;
+                doubleClickTime = DateTime.UtcNow;
+            }
 
             base.OnMouseDoubleClick(e);
         }
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed)
+            if (e.LeftButton == MouseButtonState.Pressed && ViewModel != null)
             {
-                if (DateTime.UtcNow - doubleClickTime > TimeSpan.FromSeconds(1)) // prevent trigger when mouse moves during double click
+                if (!(e.OriginalSource is System.Windows.Controls.Primitives.Thumb)) // ignore when the user is dragging the scrollbar
                 {
-                    var viewModel = (CodeEditorViewModel)DataContext;
-                    var position = e.GetPosition(this);
+                    if (DateTime.UtcNow - doubleClickTime > TimeSpan.FromSeconds(1)) // prevent trigger when mouse moves during double click
+                    {
+                        var position = e.GetPosition(this);
 
-                    var line = GetLine(position);
-                    if (line != null)
-                        viewModel.MoveCursorTo(line.Line, GetColumn(viewModel, position), CodeEditorViewModel.MoveCursorFlags.Highlighting);
-                    else
-                        viewModel.MoveCursorTo(viewModel.LineCount, Int32.MaxValue, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+                        var line = GetLine(position);
+                        if (line != null)
+                            ViewModel.MoveCursorTo(line.Line, GetColumn(ViewModel, position), CodeEditorViewModel.MoveCursorFlags.Highlighting);
+                        else
+                            ViewModel.MoveCursorTo(ViewModel.LineCount, Int32.MaxValue, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+                    }
                 }
             }
 
@@ -171,8 +229,7 @@ namespace Jamiras.Controls
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            var viewModel = (CodeEditorViewModel)DataContext;
-            if (viewModel.HandleKey(e.Key, Keyboard.Modifiers))
+            if (ViewModel != null && ViewModel.HandleKey(e.Key, Keyboard.Modifiers))
                 e.Handled = true;
             else
                 base.OnKeyDown(e);

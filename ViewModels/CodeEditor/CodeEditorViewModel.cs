@@ -267,6 +267,18 @@ namespace Jamiras.ViewModels.CodeEditor
                     e.Handled = true;
                     break;
 
+                case Key.A:
+                    if ((e.Modifiers & ModifierKeys.Control) != 0)
+                    {
+                        SelectAll();
+                        e.Handled = true;
+                    }
+                    else
+                    {
+                        goto default;
+                    }
+                    break;
+
                 default:
                     char c = e.GetChar();
                     if (c != '\0')
@@ -339,6 +351,12 @@ namespace Jamiras.ViewModels.CodeEditor
                     MergeNextLine();
                 }
             }
+        }
+
+        public void SelectAll()
+        {
+            MoveCursorTo(LineCount, Int32.MaxValue, MoveCursorFlags.None);
+            MoveCursorTo(1, 1, MoveCursorFlags.Highlighting);
         }
 
         private void DeleteSelection()
