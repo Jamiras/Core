@@ -77,6 +77,7 @@
     <Compile Include="Controls\CodeEditorView.xaml.cs">
       <DependentUpon>CodeEditorView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Controls\CodeEditorTextBlock.cs" />
     <Compile Include="Controls\TreeUtils.cs" />
     <Compile Include="Controls\Gallery.xaml.cs">
       <DependentUpon>Gallery.xaml</DependentUpon>

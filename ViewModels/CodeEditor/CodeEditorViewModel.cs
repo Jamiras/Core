@@ -25,12 +25,19 @@ namespace Jamiras.ViewModels.CodeEditor
 
             var formattedText = new FormattedText("0", CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface(Resources.FontName), Resources.FontSize, Brushes.Black); 
             SetValue(CharacterWidthProperty, formattedText.Width);
+            SetValue(LineHeightProperty, (int)(formattedText.Height + 0.25));
         }
 
         private static readonly ModelProperty CharacterWidthProperty = ModelProperty.Register(typeof(CodeEditorViewModel), null, typeof(double), 8.0);
         internal double CharacterWidth
         {
             get { return (double)GetValue(CharacterWidthProperty); }
+        }
+
+        private static readonly ModelProperty LineHeightProperty = ModelProperty.Register(typeof(CodeEditorViewModel), "LineHeight", typeof(int), 14);
+        public int LineHeight
+        {
+            get { return (int)GetValue(LineHeightProperty); }
         }
 
         public static readonly ModelProperty AreLineNumbersVisibleProperty = ModelProperty.Register(typeof(CodeEditorViewModel), "AreLineNumbersVisible", typeof(bool), true);

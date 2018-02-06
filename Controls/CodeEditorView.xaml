@@ -3,45 +3,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:jamiras="clr-namespace:Jamiras.Controls"
              SnapsToDevicePixels="True"
              Focusable="True"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
     <UserControl.Resources>
-
-        <VisualBrush x:Key="WavyBrush" Viewbox="0,0,3,2" ViewboxUnits="Absolute" Viewport="0,1,6,5" ViewportUnits="Absolute" TileMode="Tile">
-            <VisualBrush.Visual>
-                <Path Data="M 0,1 C 1,0 2,2 3,1" Stroke="Red" Opacity=".8" StrokeThickness="0.2" StrokeEndLineCap="Square" StrokeStartLineCap="Square" />
-            </VisualBrush.Visual>
-        </VisualBrush>
-
-        <DataTemplate x:Key="textPieceTemplate">
-            <TextBlock Text="{Binding Text}" SnapsToDevicePixels="True"
-                       FontFamily="{Binding DataContext.Resources.FontName, ElementName=codeEditorLines}"
-                       FontSize="{Binding DataContext.Resources.FontSize, ElementName=codeEditorLines}"
-                       Foreground="{Binding Foreground}" ToolTip="{Binding ToolTip}">
-                <TextBlock.Style>
-                    <Style TargetType="{x:Type TextBlock}">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsError}" Value="True">
-                                <Setter Property="TextDecorations">
-                                    <Setter.Value>
-                                        <TextDecorationCollection>
-                                            <TextDecoration Location="Underline">
-                                                <TextDecoration.Pen>
-                                                    <Pen Brush="{StaticResource WavyBrush}" Thickness="6" />
-                                                </TextDecoration.Pen>
-                                            </TextDecoration>
-                                        </TextDecorationCollection>
-                                    </Setter.Value>
-                                </Setter>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </TextBlock.Style>
-            </TextBlock>
-        </DataTemplate>
-
         <Storyboard x:Key="blinkAnimation">
             <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity" Duration="0:0:1.0" RepeatBehavior="Forever">
                 <DiscreteDoubleKeyFrame Value="0" KeyTime="0:0:0.5" />
@@ -50,25 +17,25 @@
         </Storyboard>
         
         <DataTemplate x:Key="lineTemplate">
-            <Grid HorizontalAlignment="Stretch" Background="{Binding Resources.Background.Brush}" Margin="2,0,0,0">
+            <Grid HorizontalAlignment="Stretch" Background="{Binding Resources.Background.Brush, Mode=OneTime}" 
+                  Height="{Binding DataContext.LineHeight, Mode=OneTime, ElementName=codeEditorLines}" Margin="2,0,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="{Binding DataContext.LineNumberColumnWidth, ElementName=codeEditorLines}" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="{Binding Line}" 
-                            FontFamily="{Binding Resources.FontName}"
-                            FontSize="{Binding Resources.FontSize}"
-                            Foreground="{Binding Resources.LineNumber.Brush}"
+                            FontFamily="{Binding Resources.FontName, Mode=OneTime}"
+                            FontSize="{Binding Resources.FontSize, Mode=OneTime}"
+                            Foreground="{Binding Resources.LineNumber.Brush, Mode=OneTime}"
                             Margin="0,0,8,0" HorizontalAlignment="Right" />
-                <Border Grid.Column="1" Background="{Binding Resources.LineNumber.Brush}" Margin="{Binding SelectionLocation}" Width="{Binding SelectionWidth}" HorizontalAlignment="Left" />
-                <ItemsControl Grid.Column="1" ItemsSource="{Binding TextPieces}" ItemTemplate="{StaticResource textPieceTemplate}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                </ItemsControl>
-                <Border Grid.Column="1" BorderThickness="1" BorderBrush="{Binding Resources.Foreground.Brush}" SnapsToDevicePixels="True"
+                <Border Grid.Column="1" Background="{Binding Resources.Selection.Brush, Mode=OneTime}" Margin="{Binding SelectionLocation}" Width="{Binding SelectionWidth}" HorizontalAlignment="Left" />
+                <jamiras:CodeEditorTextBlock Grid.Column="1" SnapsToDevicePixels="True"
+                                             FontFamily="{Binding Resources.FontName, Mode=OneTime}"
+                                             FontSize="{Binding Resources.FontSize, Mode=OneTime}"
+                                             Foreground="{Binding Resources.Foreground.Brush, Mode=OneTime}" 
+                                             TextPieces="{Binding TextPieces}" />
+
+                <Border Grid.Column="1" BorderThickness="1" BorderBrush="{Binding Resources.Foreground.Brush, Mode=OneTime}" SnapsToDevicePixels="True"
                         Margin="{Binding CursorLocation}" Width="1" VerticalAlignment="Stretch" HorizontalAlignment="Left">
                     <Border.Style>
                         <Style TargetType="{x:Type Border}">
@@ -103,6 +70,7 @@
             <ItemsControl Grid.ColumnSpan="2" ItemsSource="{Binding Lines}"
                           x:Name="codeEditorLines"
                           VirtualizingStackPanel.IsVirtualizing="True"
+                          VirtualizingStackPanel.VirtualizationMode="Recycling"
                           ScrollViewer.CanContentScroll="True"
                           ItemTemplate="{StaticResource lineTemplate}"
                           HorizontalContentAlignment="Stretch">
