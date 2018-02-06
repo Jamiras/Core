@@ -123,8 +123,8 @@ namespace Jamiras.ViewModels.CodeEditor
         {
             var viewModel = (LineViewModel)model;
 
-            var e = new LineChangedEventArgs(viewModel);
-            viewModel._owner.RaiseLineChanged(e);
+            var e = new LineFormatEventArgs(viewModel);
+            viewModel._owner.RaiseFormatLine(e);
 
             return e.BuildTextPieces();
         }
@@ -188,7 +188,7 @@ namespace Jamiras.ViewModels.CodeEditor
 
             SetValue(TextPiecesProperty, newPieces.ToArray());
 
-            _owner.ScheduleRefresh();
+            _owner.RaiseLineChanged(new LineEventArgs(this));
         }
 
         internal void Remove(int startColumn, int endColumn)
@@ -264,7 +264,7 @@ namespace Jamiras.ViewModels.CodeEditor
 
             SetValue(TextPiecesProperty, newPieces.ToArray());
 
-            _owner.ScheduleRefresh();
+            _owner.RaiseLineChanged(new LineEventArgs(this));
         }
 
         internal void ClearSelection()

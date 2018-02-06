@@ -1,10 +1,12 @@
 ﻿using Jamiras.Components;
 using Jamiras.DataModels;
+using Jamiras.Services;
 using Jamiras.ViewModels.Fields;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Input;
@@ -92,12 +94,26 @@ namespace Jamiras.ViewModels.CodeEditor
             OnContentChanged(value);
         }
 
+        public void FormatInBackground()
+        {
+            // initialize the formatting structures so they're ready when we display
+            ServiceRepository.Instance.FindService<IBackgroundWorkerService>().RunAsync(() =>
+            {
+                var lines = _lines.ToArray();
+                foreach (var line in lines)
+                {
+                    // force construction of TextPieces objects for each line
+                    var unused = line.TextPieces;
+                }
+            });
+        }
+
         protected virtual void OnContentChanged(string newValue)
         {
 
         }
 
-        internal void ScheduleRefresh()
+        private void ScheduleRefresh()
         {
             TextFieldViewModelBase.WaitForTyping(Refresh);
         }
@@ -131,15 +147,27 @@ namespace Jamiras.ViewModels.CodeEditor
             }
         }
 
-        public EventHandler<LineChangedEventArgs> LineChanged;
-        internal void RaiseLineChanged(LineChangedEventArgs e)
+        public EventHandler<LineEventArgs> LineChanged;
+        internal void RaiseLineChanged(LineEventArgs e)
         {
             OnLineChanged(e);
+            ScheduleRefresh();
         }
-        protected virtual void OnLineChanged(LineChangedEventArgs e)
+        protected virtual void OnLineChanged(LineEventArgs e)
         {
             if (LineChanged != null)
                 LineChanged(this, e);
+        }
+
+        public EventHandler<LineFormatEventArgs> FormatLine;
+        internal void RaiseFormatLine(LineFormatEventArgs e)
+        {
+            OnFormatLine(e);
+        }
+        protected virtual void OnFormatLine(LineFormatEventArgs e)
+        {
+            if (FormatLine != null)
+                FormatLine(this, e);
         }
 
         public static readonly ModelProperty LineCountProperty = ModelProperty.Register(typeof(CodeEditorViewModel), "LineCount", typeof(int), 1);
@@ -602,7 +630,7 @@ namespace Jamiras.ViewModels.CodeEditor
             LineCount++;
 
             // create TextPieces for the new line so it appears
-            var e = new LineChangedEventArgs(newLineViewModel);
+            var e = new LineFormatEventArgs(newLineViewModel);
             newLineViewModel.SetValue(LineViewModel.TextPiecesProperty, e.BuildTextPieces());
 
             // update the cursor position

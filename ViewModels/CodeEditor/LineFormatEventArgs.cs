@@ -1,29 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Jamiras.ViewModels.CodeEditor
 {
-    public class LineChangedEventArgs : EventArgs
+    public class LineFormatEventArgs : LineEventArgs
     {
-        public LineChangedEventArgs(LineViewModel line)
+        public LineFormatEventArgs(LineViewModel line)
+            : base(line)
         {
-            Line = line;
-            NewText = line.PendingText ?? line.Text;
-
             _ranges = new List<ColorRange>();
-            _ranges.Add(new ColorRange(1, NewText.Length, 0, null));
+            _ranges.Add(new ColorRange(1, Text.Length, 0, null));
 
             _errorRanges = new List<ColorRange>();
-            _errorRanges.Add(new ColorRange(1, NewText.Length, 0, null));
+            _errorRanges.Add(new ColorRange(1, Text.Length, 0, null));
         }
 
         private List<ColorRange> _ranges;
         private List<ColorRange> _errorRanges;
-
-        public LineViewModel Line { get; private set; }
-
-        public string NewText { get; private set; }
 
         public void SetColor(int startColumn, int length, int color, string toolTip = null)
         {
@@ -165,7 +158,7 @@ namespace Jamiras.ViewModels.CodeEditor
                 var range = _ranges[i];
                 newPieces[i] = new TextPiece
                 {
-                    Text = NewText.Substring(range.StartColumn - 1, range.Length),
+                    Text = Text.Substring(range.StartColumn - 1, range.Length),
                     Foreground = (range.Color == 0) ? Line.Resources.Foreground.Brush : Line.Resources.GetCustomBrush(range.Color),
                     ToolTip = range.ToolTip
                 };
