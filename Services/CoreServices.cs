@@ -42,6 +42,7 @@ namespace Jamiras.Services
             repository.RegisterService(typeof(SoundPlayer));
             repository.RegisterService(typeof(HttpListener));
             repository.RegisterService(typeof(ClipboardService));
+            repository.RegisterService(typeof(TimerService));
         }
 
         private static void DispatcherShutdownStarted(object sender, EventArgs e)

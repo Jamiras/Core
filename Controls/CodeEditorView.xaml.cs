@@ -162,7 +162,7 @@ namespace Jamiras.Controls
 
         private static int GetColumn(CodeEditorViewModel viewModel, Point mousePosition)
         {
-            var characterWidth = viewModel.CharacterWidth;
+            var characterWidth = viewModel.Resources.CharacterWidth;
             int column = (int)((mousePosition.X - 2 - viewModel.LineNumberColumnWidth + 1) / characterWidth) + 1;
             return column;
         }

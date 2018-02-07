@@ -5,69 +5,84 @@ using Jamiras.ViewModels.Fields;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Globalization;
-using System.Linq;
+using System.Diagnostics;
 using System.Text;
-using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
 
 namespace Jamiras.ViewModels.CodeEditor
 {
+    /// <summary>
+    /// View model for a simple code editor
+    /// </summary>
     public class CodeEditorViewModel : ViewModelBase
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CodeEditorViewModel"/> class.
+        /// </summary>
         public CodeEditorViewModel()
+            : this(ServiceRepository.Instance.FindService<ITimerService>())
         {
+        }
+
+        internal CodeEditorViewModel(ITimerService timerService)
+        {
+            _timerService = timerService;
+
             _lines = new ObservableCollection<LineViewModel>();
+            _linesWrapper = new ReadOnlyObservableCollection<LineViewModel>(_lines);
 
             Style = new EditorProperties();
             Resources = new EditorResources(Style);
-
-            var formattedText = new FormattedText("0", CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface(Resources.FontName), Resources.FontSize, Brushes.Black); 
-            SetValue(CharacterWidthProperty, formattedText.Width);
-            SetValue(LineHeightProperty, (int)(formattedText.Height + 0.25));
         }
 
-        private static readonly ModelProperty CharacterWidthProperty = ModelProperty.Register(typeof(CodeEditorViewModel), null, typeof(double), 8.0);
-        internal double CharacterWidth
-        {
-            get { return (double)GetValue(CharacterWidthProperty); }
-        }
+        private readonly ITimerService _timerService;
 
-        private static readonly ModelProperty LineHeightProperty = ModelProperty.Register(typeof(CodeEditorViewModel), "LineHeight", typeof(int), 14);
-        public int LineHeight
-        {
-            get { return (int)GetValue(LineHeightProperty); }
-        }
-
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="AreLineNumbersVisible"/>
+        /// </summary>
         public static readonly ModelProperty AreLineNumbersVisibleProperty = ModelProperty.Register(typeof(CodeEditorViewModel), "AreLineNumbersVisible", typeof(bool), true);
+
+        /// <summary>
+        /// Gets or sets a value indicating whether line numbers should be displayed.
+        /// </summary>
         public bool AreLineNumbersVisible
         {
             get { return (bool)GetValue(AreLineNumbersVisibleProperty); }
             set { SetValue(AreLineNumbersVisibleProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="CursorColumn"/>
+        /// </summary>
         public static readonly ModelProperty CursorColumnProperty = ModelProperty.Register(typeof(CodeEditorViewModel), "CursorColumn", typeof(int), 1);
+
+        /// <summary>
+        /// Gets the column where the cursor is currently located.
+        /// </summary>
         public int CursorColumn
         {
             get { return (int)GetValue(CursorColumnProperty); }
             private set { SetValue(CursorColumnProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="CursorLine"/>
+        /// </summary>
         public static readonly ModelProperty CursorLineProperty = ModelProperty.Register(typeof(CodeEditorViewModel), "CursorLine", typeof(int), 1);
+
+        /// <summary>
+        /// Gets the line where the cursor is currently located.
+        /// </summary>
         public int CursorLine
         {
             get { return (int)GetValue(CursorLineProperty); }
             private set { SetValue(CursorLineProperty, value); }
         }
 
-        public string Content
-        {
-            get { return BuildContent(); }
-            set { SetContent(value); }
-        }
-
-        private string BuildContent()
+        /// <summary>
+        /// Builds a string containing all of the text in the editor.
+        /// </summary>
+        public string GetContent()
         {
             var builder = new StringBuilder();
             foreach (var line in _lines)
@@ -76,7 +91,10 @@ namespace Jamiras.ViewModels.CodeEditor
             return builder.ToString();
         }
 
-        private void SetContent(string value)
+        /// <summary>
+        /// Sets the text for the editor.
+        /// </summary>
+        public void SetContent(string value)
         {
             _lines.Clear();
 
@@ -101,20 +119,10 @@ namespace Jamiras.ViewModels.CodeEditor
             OnContentChanged(value);
         }
 
-        public void FormatInBackground()
-        {
-            // initialize the formatting structures so they're ready when we display
-            ServiceRepository.Instance.FindService<IBackgroundWorkerService>().RunAsync(() =>
-            {
-                var lines = _lines.ToArray();
-                foreach (var line in lines)
-                {
-                    // force construction of TextPieces objects for each line
-                    var unused = line.TextPieces;
-                }
-            });
-        }
-
+        /// <summary>
+        /// Called after <see cref="SetContent"/> has updated the <see cref="Lines"/>.
+        /// </summary>
+        /// <param name="newValue">The value passed to <see cref="SetContent"/>.</param>
         protected virtual void OnContentChanged(string newValue)
         {
 
@@ -122,9 +130,12 @@ namespace Jamiras.ViewModels.CodeEditor
 
         private void ScheduleRefresh()
         {
-            TextFieldViewModelBase.WaitForTyping(Refresh);
+            _timerService.WaitForTyping(Refresh);
         }
 
+        /// <summary>
+        /// Commits and pending changes to the editor text.
+        /// </summary>
         public override void Refresh()
         {
             var updatedLines = new List<LineViewModel>();
@@ -154,49 +165,94 @@ namespace Jamiras.ViewModels.CodeEditor
             }
         }
 
+        /// <summary>
+        /// Raised whenever the text of a line changes.
+        /// </summary>
         public EventHandler<LineEventArgs> LineChanged;
         internal void RaiseLineChanged(LineEventArgs e)
         {
             OnLineChanged(e);
             ScheduleRefresh();
         }
+
+        /// <summary>
+        /// Raises the <see cref="E:LineChanged" /> event.
+        /// </summary>
+        /// <param name="e">Information about which line changed.</param>
         protected virtual void OnLineChanged(LineEventArgs e)
         {
             if (LineChanged != null)
                 LineChanged(this, e);
         }
 
+        /// <summary>
+        /// Raised to format the text of a line.
+        /// </summary>
         public EventHandler<LineFormatEventArgs> FormatLine;
         internal void RaiseFormatLine(LineFormatEventArgs e)
         {
             OnFormatLine(e);
         }
+
+        /// <summary>
+        /// Raises the <see cref="E:FormatLine" /> event.
+        /// </summary>
+        /// <param name="e">Information about the line that needs to be formatted.</param>
         protected virtual void OnFormatLine(LineFormatEventArgs e)
         {
             if (FormatLine != null)
                 FormatLine(this, e);
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="LineCount"/>
+        /// </summary>
         public static readonly ModelProperty LineCountProperty = ModelProperty.Register(typeof(CodeEditorViewModel), "LineCount", typeof(int), 1);
+
+        /// <summary>
+        /// Gets the number of lines in the editor.
+        /// </summary>
         public int LineCount
         {
             get { return (int)GetValue(LineCountProperty); }
             private set { SetValue(LineCountProperty, value); }
         }
 
-        public IEnumerable<LineViewModel> Lines
+        /// <summary>
+        /// Gets the individual lines.
+        /// </summary>
+        public ReadOnlyObservableCollection<LineViewModel> Lines
         {
-            get { return _lines; }
+            get { return _linesWrapper; }
         }
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private ReadOnlyObservableCollection<LineViewModel> _linesWrapper;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private ObservableCollection<LineViewModel> _lines;
 
+        /// <summary>
+        /// Gets an object containing the settings for the editor.
+        /// </summary>
         public EditorProperties Style { get; private set; }
 
+        /// <summary>
+        /// Gets an object containing the resources for the editor.
+        /// </summary>
+        /// <remarks>
+        /// Constructed from the <see cref="Style"/> object. Cannot be directly modified.
+        /// </remarks>
         public EditorResources Resources { get; private set; }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="LineNumberColumnWidth"/>
+        /// </summary>
         public static readonly ModelProperty LineNumberColumnWidthProperty =
             ModelProperty.RegisterDependant(typeof(CodeEditorViewModel), "LineNumberColumnWidth", typeof(double),
-                new[] { LineCountProperty, CharacterWidthProperty }, GetLineNumberColumnWidth);
+                new[] { LineCountProperty }, GetLineNumberColumnWidth);
+
+        /// <summary>
+        /// Gets the width of the line number column..
+        /// </summary>
         public double LineNumberColumnWidth
         {
             get { return (double)GetValue(LineNumberColumnWidthProperty); }
@@ -204,7 +260,7 @@ namespace Jamiras.ViewModels.CodeEditor
         private static object GetLineNumberColumnWidth(ModelBase model)
         {
             var viewModel = (CodeEditorViewModel)model;
-            double characterWidth = viewModel.CharacterWidth;
+            double characterWidth = viewModel.Resources.CharacterWidth;
 
             var lineCount = viewModel.LineCount;
             if (lineCount < 100)
@@ -230,19 +286,23 @@ namespace Jamiras.ViewModels.CodeEditor
             return e.Handled;
         }
 
+        /// <summary>
+        /// Raises the <see cref="E:KeyPressed" /> event.
+        /// </summary>
+        /// <param name="e">Information about which key was pressed.</param>
         protected virtual void OnKeyPressed(KeyPressedEventArgs e)
         {
             var moveCursorFlags = ((e.Modifiers & ModifierKeys.Shift) != 0) ? MoveCursorFlags.Highlighting : MoveCursorFlags.None;
 
             switch (e.Key)
             {
-                case Key.Down:
-                    MoveCursorTo(CursorLine + 1, CursorColumn, moveCursorFlags | MoveCursorFlags.RememberColumn);
+                case Key.Up:
+                    MoveCursorTo(CursorLine - 1, CursorColumn, moveCursorFlags | MoveCursorFlags.RememberColumn);
                     e.Handled = true;
                     break;
 
-                case Key.Up:
-                    MoveCursorTo(CursorLine - 1, CursorColumn, moveCursorFlags | MoveCursorFlags.RememberColumn);
+                case Key.Down:
+                    MoveCursorTo(CursorLine + 1, CursorColumn, moveCursorFlags | MoveCursorFlags.RememberColumn);
                     e.Handled = true;
                     break;
 
@@ -325,7 +385,7 @@ namespace Jamiras.ViewModels.CodeEditor
             }
         }
 
-        private void HandleCharacter(char c)
+        internal void HandleCharacter(char c)
         {
             if (_selectionStartLine != 0)
                 DeleteSelection();
@@ -388,10 +448,47 @@ namespace Jamiras.ViewModels.CodeEditor
             }
         }
 
+        /// <summary>
+        /// Selects all of the text in the editor.
+        /// </summary>
         public void SelectAll()
         {
             MoveCursorTo(LineCount, Int32.MaxValue, MoveCursorFlags.None);
             MoveCursorTo(1, 1, MoveCursorFlags.Highlighting);
+        }
+
+        /// <summary>
+        /// Builds a string containing the text selected in the editor.
+        /// </summary>
+        public string GetSelectedText()
+        {
+            if (_selectionEndLine == 0)
+                return String.Empty;
+
+            int startLine, endLine;
+            if (_selectionStartLine < _selectionEndLine)
+            {
+                startLine = _selectionStartLine;
+                endLine = _selectionEndLine;
+            }
+            else
+            {
+                startLine = _selectionEndLine;
+                endLine = _selectionStartLine;
+            }
+
+            var builder = new StringBuilder();
+            for (int i = startLine; i <= endLine; ++i)
+            {
+                if (i != startLine)
+                    builder.AppendLine();
+
+                var line = _lines[i - 1];
+                var text = line.PendingText ?? line.Text;
+                builder.Append(text, line.SelectionStart - 1, line.SelectionEnd - line.SelectionStart);
+            }
+
+            return builder.ToString();
         }
 
         private void DeleteSelection()
@@ -399,6 +496,11 @@ namespace Jamiras.ViewModels.CodeEditor
             // TODO
         }
 
+        /// <summary>
+        /// Selected the word at the specified location.
+        /// </summary>
+        /// <param name="line">The line.</param>
+        /// <param name="column">The column.</param>
         public void HighlightWordAt(int line, int column)
         {
             var cursorLineViewModel = _lines[line - 1];
@@ -629,7 +731,7 @@ namespace Jamiras.ViewModels.CodeEditor
 
             // truncate the first line
             if (right.Length > 0)
-                cursorLineViewModel.Remove(CursorColumn, text.Length);
+                cursorLineViewModel.Remove(cursorColumn + 1, text.Length);
 
             // add a new line
             var newLineViewModel = new LineViewModel(this, cursorLine + 1) { PendingText = right };
@@ -656,13 +758,33 @@ namespace Jamiras.ViewModels.CodeEditor
 
         private int _selectionStartLine, _selectionStartColumn, _selectionEndLine, _selectionEndColumn;
 
+        /// <summary>
+        /// Behavioral flags to pass to the <see cref="MoveCursorTo" method. />
+        /// </summary>
         public enum MoveCursorFlags
         {
+            /// <summary>
+            /// No special behavior.
+            /// </summary>
             None = 0,
+
+            /// <summary>
+            /// Update the selected region while moving the cursor.
+            /// </summary>
             Highlighting = 0x01,
+
+            /// <summary>
+            /// Remember (or restore) the column value when changing lines.
+            /// </summary>
             RememberColumn = 0x02,
         }
 
+        /// <summary>
+        /// Moves the cursor to the specified location.
+        /// </summary>
+        /// <param name="line">The line.</param>
+        /// <param name="column">The column.</param>
+        /// <param name="flags">Additional logic to perform while moving the cursor.</param>
         public void MoveCursorTo(int line, int column, MoveCursorFlags flags)
         {
             var currentLine = CursorLine;
@@ -685,6 +807,9 @@ namespace Jamiras.ViewModels.CodeEditor
             }
 
             // make sure cursor stays within the line's bounds
+            if (column < 1)
+                column = 1;
+
             var maxColumn = _lines[line - 1].LineLength + 1;
 
             if ((flags & MoveCursorFlags.RememberColumn) != 0)
@@ -724,7 +849,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     _selectionEndColumn = 0;
                 }
             }
-            else if (_selectionEndLine != line || _selectionEndColumn != column)
+            else 
             {
                 // update highlighted region
                 if (_selectionEndLine != 0)

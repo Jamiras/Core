@@ -1,5 +1,7 @@
 ﻿using Jamiras.Components;
 using Jamiras.DataModels;
+using System.Globalization;
+using System.Windows;
 using System.Windows.Media;
 
 namespace Jamiras.ViewModels.CodeEditor
@@ -56,6 +58,10 @@ namespace Jamiras.ViewModels.CodeEditor
             FontSize = properties.FontSize;
 
             _customBrushes = new TinyDictionary<int, Brush>();
+
+            var formattedText = new FormattedText("0", CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface(FontName), FontSize, Brushes.Black);
+            CharacterWidth = formattedText.Width;
+            CharacterHeight = (int)(formattedText.Height + 0.75);
         }
 
         private readonly EditorProperties _properties;
@@ -63,6 +69,9 @@ namespace Jamiras.ViewModels.CodeEditor
 
         public string FontName { get; private set; }
         public double FontSize { get; private set; }
+
+        public double CharacterWidth { get; private set; }
+        public int CharacterHeight { get; private set; }
 
         public BrushResource Background { get; private set; }
         public BrushResource Foreground { get; private set; }

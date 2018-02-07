@@ -48,7 +48,7 @@ namespace Jamiras.ViewModels.CodeEditor
         private static object GetSelectionLocation(ModelBase model)
         {
             var viewModel = (LineViewModel)model;
-            var offset = (viewModel.SelectionStart - 1) * viewModel._owner.CharacterWidth;
+            var offset = (viewModel.SelectionStart - 1) * viewModel.Resources.CharacterWidth;
             return new Thickness(offset, 0.0, 0.0, 0.0);
         }
 
@@ -61,7 +61,7 @@ namespace Jamiras.ViewModels.CodeEditor
         private static object GetSelectionWidth(ModelBase model)
         {
             var viewModel = (LineViewModel)model;
-            return (viewModel.SelectionEnd - viewModel.SelectionStart) * viewModel._owner.CharacterWidth;
+            return (viewModel.SelectionEnd - viewModel.SelectionStart) * viewModel.Resources.CharacterWidth;
         }
 
         private static readonly ModelProperty CursorColumnProperty = ModelProperty.Register(typeof(LineViewModel), "CursorColumn", typeof(int), 0);
@@ -80,7 +80,7 @@ namespace Jamiras.ViewModels.CodeEditor
         private static object GetCursorLocation(ModelBase model)
         {
             var viewModel = (LineViewModel)model;
-            var offset = (viewModel.CursorColumn - 1) * viewModel._owner.CharacterWidth;
+            var offset = (viewModel.CursorColumn - 1) * viewModel.Resources.CharacterWidth;
             return new Thickness((int)offset, 0, 0, 0);
         }
 
@@ -198,18 +198,16 @@ namespace Jamiras.ViewModels.CodeEditor
             // deleting columns 1 through 1 (first character) is really Text[0] because it's 0-based
             startColumn--;
             Debug.Assert(startColumn >= 0);
+
+            var text = PendingText ?? Text;
+            var newPieces = new List<TextPiece>(TextPieces); // make sure TextPieces are captured before we update PendingText
+
             endColumn--;
-
-            var text = PendingText;
-            if (text == null)
-                text = Text;
-
             Debug.Assert(endColumn <= text.Length);
+
             int removeCount = endColumn - startColumn + 1;
             text = text.Remove(startColumn, removeCount);
             PendingText = text;
-
-            var newPieces = new List<TextPiece>(TextPieces);
 
             var index = startColumn;
             var pieceIndex = 0;

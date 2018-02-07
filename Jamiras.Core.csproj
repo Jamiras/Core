@@ -214,8 +214,10 @@
     <Compile Include="Components\ILogTarget.cs" />
     <Compile Include="Services\IPersistantDataRepository.cs" />
     <Compile Include="Services\ISoundPlayer.cs" />
+    <Compile Include="Services\ITimerService.cs" />
     <Compile Include="Services\IWindowSettingsRepository.cs" />
     <Compile Include="Components\Logger.cs" />
+    <Compile Include="Services\TimerService.cs" />
     <Compile Include="Services\LogService.cs" />
     <Compile Include="Services\PersistantDataRepository.cs" />
     <Compile Include="Services\SoundPlayer.cs" />
