@@ -20,12 +20,14 @@ namespace Jamiras.ViewModels.CodeEditor
         /// Initializes a new instance of the <see cref="CodeEditorViewModel"/> class.
         /// </summary>
         public CodeEditorViewModel()
-            : this(ServiceRepository.Instance.FindService<ITimerService>())
+            : this(ServiceRepository.Instance.FindService<IClipboardService>(),
+                   ServiceRepository.Instance.FindService<ITimerService>())
         {
         }
 
-        internal CodeEditorViewModel(ITimerService timerService)
+        internal CodeEditorViewModel(IClipboardService clipboardService, ITimerService timerService)
         {
+            _clipboardService = clipboardService;
             _timerService = timerService;
 
             _lines = new ObservableCollection<LineViewModel>();
@@ -36,6 +38,7 @@ namespace Jamiras.ViewModels.CodeEditor
         }
 
         private readonly ITimerService _timerService;
+        private readonly IClipboardService _clipboardService;
 
         /// <summary>
         /// <see cref="ModelProperty"/> for <see cref="AreLineNumbersVisible"/>
@@ -158,11 +161,7 @@ namespace Jamiras.ViewModels.CodeEditor
             OnContentChanged(newContent.ToString());
 
             foreach (var line in updatedLines)
-            {
-                var pendingText = line.PendingText;
-                line.PendingText = null;
-                line.Text = pendingText;
-            }
+                line.CommitPending();
         }
 
         /// <summary>
@@ -374,12 +373,51 @@ namespace Jamiras.ViewModels.CodeEditor
                     }
                     break;
 
-                default:
-                    char c = e.GetChar();
-                    if (c != '\0')
+                case Key.C:
+                    if ((e.Modifiers & ModifierKeys.Control) != 0)
                     {
-                        HandleCharacter(c);
+                        CopySelection();
                         e.Handled = true;
+                    }
+                    else
+                    {
+                        goto default;
+                    }
+                    break;
+
+                case Key.X:
+                    if ((e.Modifiers & ModifierKeys.Control) != 0)
+                    {
+                        CutSelection();
+                        e.Handled = true;
+                    }
+                    else
+                    {
+                        goto default;
+                    }
+                    break;
+
+                case Key.V:
+                    if ((e.Modifiers & ModifierKeys.Control) != 0)
+                    {
+                        HandlePaste();
+                        e.Handled = true;
+                    }
+                    else
+                    {
+                        goto default;
+                    }
+                    break;
+
+                default:
+                    if ((e.Modifiers & ModifierKeys.Control) == 0)
+                    {
+                        char c = e.GetChar();
+                        if (c != '\0')
+                        {
+                            HandleCharacter(c);
+                            e.Handled = true;
+                        }
                     }
                     break;
             }
@@ -485,15 +523,171 @@ namespace Jamiras.ViewModels.CodeEditor
 
                 var line = _lines[i - 1];
                 var text = line.PendingText ?? line.Text;
-                builder.Append(text, line.SelectionStart - 1, line.SelectionEnd - line.SelectionStart);
+                builder.Append(text, line.SelectionStart - 1, line.SelectionEnd - line.SelectionStart + 1);
             }
 
             return builder.ToString();
         }
 
-        private void DeleteSelection()
+        internal void DeleteSelection()
         {
-            // TODO
+            if (_selectionEndLine == 0)
+                return;
+
+            int startLine, endLine;
+            if (_selectionStartLine < _selectionEndLine)
+            {
+                startLine = _selectionStartLine;
+                endLine = _selectionEndLine;
+            }
+            else
+            {
+                startLine = _selectionEndLine;
+                endLine = _selectionStartLine;
+            }
+
+            var line = _lines[startLine - 1];
+            line.Remove(line.SelectionStart, line.SelectionEnd);
+
+            if (startLine != endLine)
+            {
+                var lastLine = _lines[endLine - 1];
+                if (lastLine.SelectionEnd < lastLine.LineLength)
+                    line.Insert(line.LineLength + 1, lastLine.Text.Substring(lastLine.SelectionEnd - 1, lastLine.LineLength - lastLine.SelectionEnd));
+
+                for (int i = endLine - 1; i >= startLine; --i)
+                    _lines.RemoveAt(i);
+
+                var linesRemoved = (endLine - startLine);
+                LineCount -= linesRemoved;
+
+                for (int i = startLine; i < _lines.Count; ++i)
+                    _lines[i].Line -= linesRemoved;
+            }
+
+            MoveCursorTo(_selectionStartLine, _selectionStartColumn, MoveCursorFlags.None);
+
+            _selectionStartColumn = _selectionEndColumn = _selectionStartLine = _selectionEndLine = 0;
+
+            Refresh();
+        }
+
+        internal void ReplaceSelection(string newText)
+        {
+            if (_selectionStartLine == 0)
+            {
+                var line = CursorLine;
+                var column = CursorColumn;
+                ReplaceText(line, column, line, column, newText);
+            }
+            else
+            {
+                ReplaceText(_selectionStartLine, _selectionStartColumn, _selectionEndLine, _selectionEndColumn, newText);
+            }
+
+            Refresh();
+        }
+
+        private void ReplaceText(int startLine, int startColumn, int endLine, int endColumn, string newText)
+        {
+            if (startLine > endLine)
+            {
+                var temp = startLine;
+                startLine = endLine;
+                endLine = temp;
+
+                temp = startColumn;
+                startColumn = endColumn;
+                endColumn = temp;
+            }
+            else if (startLine == endLine && startColumn > endColumn)
+            {
+                var temp = startColumn;
+                startColumn = endColumn;
+                endColumn = startColumn;
+            }
+
+            LineViewModel line;
+            var linesAdded = 0;
+            if (startLine == endLine)
+            {
+                line = _lines[startLine - 1];
+                if (startColumn < endColumn)
+                    line.Remove(startColumn, endColumn - 1);
+
+                if (!newText.Contains("\n"))
+                {
+                    line.Insert(startColumn, newText);
+
+                    MoveCursorTo(startLine, startColumn + newText.Length, MoveCursorFlags.None);
+                    return;
+                }
+
+                var remaining = (line.PendingText ?? line.Text).Substring(startColumn - 1);
+                if (startColumn < line.LineLength)
+                    line.Remove(startColumn, line.LineLength);
+
+                line = new LineViewModel(this, line.Line + 1) { Text = remaining };
+                _lines.Insert(startLine, line);
+                ++endLine;
+                linesAdded = 1;
+            }
+            else
+            {
+                line = _lines[startLine - 1];
+                if (startColumn < line.LineLength)
+                    line.Remove(startColumn, line.LineLength);
+
+                line = _lines[endLine - 1];
+                line.Remove(1, endColumn - 1);
+
+                for (int i = endLine - 2; i >= startLine; --i)
+                {
+                    _lines.RemoveAt(i);
+                    linesAdded--;
+                }
+
+                line.Line += linesAdded;
+            }
+
+            var newTextLines = newText.Split('\n');
+            line = _lines[startLine - 1];
+            line.Insert(startColumn, newTextLines[0].TrimEnd('\r'));
+
+            if (newTextLines.Length == 1)
+            {
+                endColumn = line.LineLength + 1;
+
+                line.Insert(line.LineLength + 1, _lines[startLine].PendingText);
+
+                _lines.RemoveAt(startLine);
+                linesAdded--;
+            }
+            else
+            {
+                line = _lines[startLine];
+                var text = newTextLines[newTextLines.Length - 1].TrimEnd('\r');
+                line.Insert(1, text);
+
+                endColumn = text.Length + 1;
+            }
+
+            for (int i = 1; i < newTextLines.Length - 1; i++)
+            {
+                line = new LineViewModel(this, startLine + i) { Text = newTextLines[i] };
+                _lines.Insert(startLine + i - 1, line);
+                linesAdded++;
+            }
+
+            endLine = startLine + newTextLines.Length - 1;
+
+            if (linesAdded != 0)
+            {
+                for (int i = endLine; i < _lines.Count; ++i)
+                    _lines[i].Line += linesAdded;
+            }
+
+            MoveCursorTo(endLine, endColumn, MoveCursorFlags.None);
         }
 
         /// <summary>
@@ -866,9 +1060,9 @@ namespace Jamiras.ViewModels.CodeEditor
                 if (_selectionStartLine == _selectionEndLine)
                 {
                     if (_selectionStartColumn < _selectionEndColumn)
-                        _lines[_selectionStartLine - 1].Select(_selectionStartColumn, _selectionEndColumn);
+                        _lines[_selectionStartLine - 1].Select(_selectionStartColumn, _selectionEndColumn - 1);
                     else
-                        _lines[_selectionStartLine - 1].Select(_selectionEndColumn, _selectionStartColumn);
+                        _lines[_selectionStartLine - 1].Select(_selectionEndColumn, _selectionStartColumn - 1);
                 }
                 else
                 {
@@ -888,10 +1082,10 @@ namespace Jamiras.ViewModels.CodeEditor
                         lastColumn = _selectionStartColumn;
                     }
 
-                    _lines[firstLine - 1].Select(firstColumn, _lines[firstLine - 1].LineLength + 1);
+                    _lines[firstLine - 1].Select(firstColumn, _lines[firstLine - 1].LineLength);
                     for (int i = firstLine; i < lastLine - 1; i++)
-                        _lines[i].Select(1, _lines[i].LineLength + 1);
-                    _lines[lastLine - 1].Select(1, lastColumn);
+                        _lines[i].Select(1, _lines[i].LineLength);
+                    _lines[lastLine - 1].Select(1, lastColumn - 1);
                 }
             }
 
@@ -918,6 +1112,23 @@ namespace Jamiras.ViewModels.CodeEditor
                 _lines[line - 1].CursorColumn = column;
                 CursorColumn = column;
             }
+        }
+
+        private void CopySelection()
+        {
+            _clipboardService.SetData(GetSelectedText());
+        }
+
+        private void CutSelection()
+        {
+            _clipboardService.SetData(GetSelectedText());
+            DeleteSelection();
+        }
+
+        private void HandlePaste()
+        {
+            var text = _clipboardService.GetText();
+            ReplaceSelection(text);
         }
     }
 }

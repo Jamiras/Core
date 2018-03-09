@@ -145,6 +145,7 @@
     <Compile Include="IO\Serialization\JsonObjectTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\PersistantDataRepositoryTests.cs" />
+    <Compile Include="ViewModels\CodeEditor\LineViewModelTests.cs" />
     <Compile Include="ViewModels\CodeEditor\CodeEditorViewModelTests.cs" />
     <Compile Include="ViewModels\DialogViewModelBaseTests.cs" />
     <Compile Include="ViewModels\Fields\FieldViewModelTests.cs" />

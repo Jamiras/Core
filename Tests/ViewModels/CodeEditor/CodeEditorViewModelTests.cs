@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Windows.Input;
-using Jamiras.Services;
-using Jamiras.ViewModels;
+﻿using Jamiras.Services;
 using Jamiras.ViewModels.CodeEditor;
 using Moq;
 using NUnit.Framework;
+using System;
+using System.Windows.Input;
 
 namespace Jamiras.Core.Tests.ViewModels.CodeEditor
 {
@@ -29,12 +27,14 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
                           "}\n";                                              // 10
 
             var mockTimerService = new Mock<ITimerService>();
-            viewModel = new CodeEditorViewModel(mockTimerService.Object);
+            mockClipboardService = new Mock<IClipboardService>();
+            viewModel = new CodeEditorViewModel(mockClipboardService.Object, mockTimerService.Object);
             viewModel.SetContent(content);
             viewModel.FormatLine += FormatLine;
         }
 
         CodeEditorViewModel viewModel;
+        Mock<IClipboardService> mockClipboardService;
 
         private void FormatLine(object sender, LineFormatEventArgs e)
         {
@@ -539,5 +539,133 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             // trim Content() since SelectedText doesn't contain the trailing newline
             Assert.That(viewModel.GetSelectedText(), Is.EqualTo(viewModel.GetContent().TrimEnd()));
         }
+
+        [Test]
+        [TestCase(4, 9, 4, 15, "param1")]
+        [TestCase(4, 9, 4, 5, "if (")]
+        [TestCase(4, 9, 4, 9, "")]
+        [TestCase(9, 12, 10, 2, "true;\r\n}")]
+        [TestCase(10, 2, 9, 12, "true;\r\n}")]
+        public void TestKeyCtrlC(int startLine, int startColumn, int endLine, int endColumn, string expectedText)
+        {
+            string clipboardText = null;
+            mockClipboardService.Setup(c => c.SetData(It.IsAny<string>())).Callback<string>((t) => clipboardText = t);
+
+            viewModel.MoveCursorTo(startLine, startColumn, CodeEditorViewModel.MoveCursorFlags.None);
+            if (endColumn != startColumn || endLine != startLine)
+                viewModel.MoveCursorTo(endLine, endColumn, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+
+            Assert.That(viewModel.HandleKey(Key.C, ModifierKeys.Control), Is.True);
+            Assert.That(clipboardText, Is.EqualTo(expectedText));
+        }
+
+        [Test]
+        [TestCase(4, 9, 4, 15, "param1", "    if ( == 1)")]
+        public void TestKeyCtrlX(int startLine, int startColumn, int endLine, int endColumn, string expectedText, string remainingText)
+        {
+            string clipboardText = null;
+            mockClipboardService.Setup(c => c.SetData(It.IsAny<string>())).Callback<string>((t) => clipboardText = t);
+
+            viewModel.MoveCursorTo(startLine, startColumn, CodeEditorViewModel.MoveCursorFlags.None);
+            if (endColumn != startColumn || endLine != startLine)
+                viewModel.MoveCursorTo(endLine, endColumn, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+
+            Assert.That(viewModel.HandleKey(Key.X, ModifierKeys.Control), Is.True);
+            Assert.That(clipboardText, Is.EqualTo(expectedText));
+            Assert.That(viewModel.Lines[3].Text, Is.EqualTo(remainingText));
+        }
+
+        [Test]
+        public void TestReplaceTextWord()
+        {
+            viewModel.MoveCursorTo(1, 6, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(1, 19, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+            viewModel.ReplaceSelection("orange");
+
+            Assert.That(viewModel.Lines[0].Text, Is.EqualTo("bool orange(int param1, string param2)"));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(12));
+        }
+
+        [Test]
+        public void TestReplaceTextWordWithMultipleLines()
+        {
+            viewModel.MoveCursorTo(1, 6, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(1, 19, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+            viewModel.ReplaceSelection("orange\r\nbanana");
+
+            Assert.That(viewModel.Lines[0].Text, Is.EqualTo("bool orange"));
+            Assert.That(viewModel.Lines[1].Text, Is.EqualTo("banana(int param1, string param2)"));
+
+            Assert.That(viewModel.Lines[0].Line, Is.EqualTo(1));
+            Assert.That(viewModel.Lines[1].Line, Is.EqualTo(2));
+            Assert.That(viewModel.Lines[2].Line, Is.EqualTo(3));
+            Assert.That(viewModel.Lines[10].Line, Is.EqualTo(11));
+
+            Assert.That(viewModel.CursorLine, Is.EqualTo(2));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(7));
+        }
+
+        [Test]
+        public void TestReplaceMultipleLinesWithWord()
+        {
+            viewModel.MoveCursorTo(5, 18, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(7, 22, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+            viewModel.ReplaceSelection("6");
+
+            Assert.That(viewModel.Lines[4].Text, Is.EqualTo("        param2 = 6;"));
+            Assert.That(viewModel.Lines[5].Text, Is.EqualTo("")); // used to be line 8
+
+            Assert.That(viewModel.Lines[4].Line, Is.EqualTo(5));
+            Assert.That(viewModel.Lines[5].Line, Is.EqualTo(6));
+            Assert.That(viewModel.Lines[7].Line, Is.EqualTo(8));
+            Assert.That(viewModel.Lines.Count, Is.EqualTo(8));
+
+            Assert.That(viewModel.CursorLine, Is.EqualTo(5));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(19));
+        }
+
+        [Test]
+        public void TestReplaceMultipleLinesWithMultipleLines()
+        {
+            viewModel.MoveCursorTo(3, 1, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(4, 21, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+            viewModel.ReplaceSelection("    // New\n    if (param2 == 2)");
+
+            Assert.That(viewModel.Lines[2].Text, Is.EqualTo("    // New"));
+            Assert.That(viewModel.Lines[3].Text, Is.EqualTo("    if (param2 == 2)"));
+
+            Assert.That(viewModel.Lines[2].Line, Is.EqualTo(3));
+            Assert.That(viewModel.Lines[3].Line, Is.EqualTo(4));
+            Assert.That(viewModel.Lines[4].Line, Is.EqualTo(5));
+            Assert.That(viewModel.Lines.Count, Is.EqualTo(10));
+
+            Assert.That(viewModel.CursorLine, Is.EqualTo(4));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(21));
+        }
+
+        [Test]
+        public void TestReplaceTextWordNoSelection()
+        {
+            viewModel.MoveCursorTo(1, 19, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.ReplaceSelection("_2");
+
+            Assert.That(viewModel.Lines[0].Text, Is.EqualTo("bool test_function_2(int param1, string param2)"));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(21));
+        }
+
+        [Test]
+        public void TestKeyCtrlV()
+        {
+            mockClipboardService.Setup(c => c.GetText()).Returns("orange");
+
+            viewModel.MoveCursorTo(1, 6, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(1, 19, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+
+            Assert.That(viewModel.HandleKey(Key.V, ModifierKeys.Control), Is.True);
+
+            Assert.That(viewModel.Lines[0].Text, Is.EqualTo("bool orange(int param1, string param2)"));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(12));
+        }
+
     }
 }

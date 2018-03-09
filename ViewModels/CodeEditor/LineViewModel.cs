@@ -1,9 +1,8 @@
 ﻿using Jamiras.DataModels;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
-using System;
-using System.Linq;
 
 namespace Jamiras.ViewModels.CodeEditor
 {
@@ -18,7 +17,14 @@ namespace Jamiras.ViewModels.CodeEditor
 
         private readonly CodeEditorViewModel _owner;
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="Line"/>
+        /// </summary>
         public static readonly ModelProperty LineProperty = ModelProperty.Register(typeof(LineViewModel), "Line", typeof(int), 1);
+
+        /// <summary>
+        /// Gets the line number for this line.
+        /// </summary>
         public int Line
         {
             get { return (int)GetValue(LineProperty); }
@@ -26,6 +32,13 @@ namespace Jamiras.ViewModels.CodeEditor
         }
 
         private static readonly ModelProperty SelectionStartProperty = ModelProperty.Register(typeof(LineViewModel), "SelectionStart", typeof(int), 0);
+
+        /// <summary>
+        /// Gets the first column of the selected text (0 if no selection).
+        /// </summary>
+        /// <remarks>
+        /// If "es" is selected in "Test", SelectionStart will be 2
+        /// </remarks>
         public int SelectionStart
         {
             get { return (int)GetValue(SelectionStartProperty); }
@@ -33,6 +46,13 @@ namespace Jamiras.ViewModels.CodeEditor
         }
 
         private static readonly ModelProperty SelectionEndProperty = ModelProperty.Register(typeof(LineViewModel), "SelectionEnd", typeof(int), 0);
+
+        /// <summary>
+        /// Gets the last column of the selected text (0 if no selection).
+        /// </summary>
+        /// <remarks>
+        /// If "es" is selected in "Test", SelectionEnd will be 3
+        /// </remarks>
         public int SelectionEnd
         {
             get { return (int)GetValue(SelectionEndProperty); }
@@ -41,6 +61,11 @@ namespace Jamiras.ViewModels.CodeEditor
 
         private static readonly ModelProperty SelectionLocationProperty =
             ModelProperty.RegisterDependant(typeof(LineViewModel), "SelectionLocation", typeof(Thickness), new[] { SelectionStartProperty }, GetSelectionLocation);
+
+        /// <summary>
+        /// Gets the left render edge of the selection rectangle (for UI binding only).
+        /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public Thickness SelectionLocation
         {
             get { return (Thickness)GetValue(SelectionLocationProperty); }
@@ -48,12 +73,21 @@ namespace Jamiras.ViewModels.CodeEditor
         private static object GetSelectionLocation(ModelBase model)
         {
             var viewModel = (LineViewModel)model;
-            var offset = (viewModel.SelectionStart - 1) * viewModel.Resources.CharacterWidth;
+            var selectionStart = viewModel.SelectionStart;
+            if (selectionStart == 0)
+                return new Thickness();
+
+            var offset = (selectionStart - 1) * viewModel.Resources.CharacterWidth;
             return new Thickness(offset, 0.0, 0.0, 0.0);
         }
 
         private static readonly ModelProperty SelectionWidthProperty =
             ModelProperty.RegisterDependant(typeof(LineViewModel), "SelectionWidth", typeof(double), new[] { SelectionStartProperty, SelectionEndProperty }, GetSelectionWidth);
+
+        /// <summary>
+        /// Gets the render width of the selection rectangle (for UI binding only).
+        /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public double SelectionWidth
         {
             get { return (double)GetValue(SelectionWidthProperty); }
@@ -61,10 +95,18 @@ namespace Jamiras.ViewModels.CodeEditor
         private static object GetSelectionWidth(ModelBase model)
         {
             var viewModel = (LineViewModel)model;
-            return (viewModel.SelectionEnd - viewModel.SelectionStart) * viewModel.Resources.CharacterWidth;
+            var selectionStart = viewModel.SelectionStart;
+            if (selectionStart == 0)
+                return 0.0;
+
+            return (viewModel.SelectionEnd - selectionStart + 1) * viewModel.Resources.CharacterWidth;
         }
 
         private static readonly ModelProperty CursorColumnProperty = ModelProperty.Register(typeof(LineViewModel), "CursorColumn", typeof(int), 0);
+
+        /// <summary>
+        /// Gets the column where the cursor is currently located (0 if the cursor is not on this line).
+        /// </summary>
         public int CursorColumn
         {
             get { return (int)GetValue(CursorColumnProperty); }
@@ -73,6 +115,11 @@ namespace Jamiras.ViewModels.CodeEditor
 
         private static readonly ModelProperty CursorLocationProperty = 
             ModelProperty.RegisterDependant(typeof(LineViewModel), "CursorLocation", typeof(Thickness), new[] { CursorColumnProperty }, GetCursorLocation);
+
+        /// <summary>
+        /// Gets the left render edge of the cursor (for UI binding only).
+        /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public Thickness CursorLocation
         {
             get { return (Thickness)GetValue(CursorLocationProperty); }
@@ -84,12 +131,19 @@ namespace Jamiras.ViewModels.CodeEditor
             return new Thickness((int)offset, 0, 0, 0);
         }
 
+        /// <summary>
+        /// Gets the <see cref="EditorResources"/> for this line (for UI binding only).
+        /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public EditorResources Resources
         {
             get { return _owner.Resources; }
         }
 
-        public int LineLength
+        /// <summary>
+        /// Gets the number of characters in the line
+        /// </summary>
+        internal int LineLength
         {
             get
             {
@@ -98,22 +152,57 @@ namespace Jamiras.ViewModels.CodeEditor
             }
         }
 
+        /// <summary>
+        /// Commits the <see cref="PendingText"/>.
+        /// </summary>
+        public void CommitPending()
+        {
+            var pendingText = PendingText;
+            if (pendingText != null)
+            {
+                PendingText = null;
+                Text = pendingText;
+            }
+        }
+
         internal static readonly ModelProperty PendingTextProperty = ModelProperty.Register(typeof(LineViewModel), "PendingText", typeof(string), null);
+
+        /// <summary>
+        /// Gets or sets text being typed.
+        /// </summary>
         internal string PendingText
         {
             get { return (string)GetValue(PendingTextProperty); }
             set { SetValue(PendingTextProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="Text"/>
+        /// </summary>
         public static readonly ModelProperty TextProperty = ModelProperty.Register(typeof(LineViewModel), "Text", typeof(string), string.Empty);
+
+        /// <summary>
+        /// Gets the text in the line.
+        /// </summary>
+        /// <remarks>
+        /// May not be updated if the user is in the middle of typing.
+        /// </remarks>
         public string Text
         {
             get { return (string)GetValue(TextProperty); }
-            set { SetValue(TextProperty, value); }
+            internal set { SetValue(TextProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="TextPieces"/>
+        /// </summary>
         public static readonly ModelProperty TextPiecesProperty = 
             ModelProperty.RegisterDependant(typeof(LineViewModel), "TextPieces", typeof(IEnumerable<TextPiece>), new[] { TextProperty }, GetTextPieces);
+
+        /// <summary>
+        /// Gets the <see cref="TextPiece"/>s for this line (for UI binding only).
+        /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public IEnumerable<TextPiece> TextPieces
         {
             get { return (IEnumerable<TextPiece>)GetValue(TextPiecesProperty); }
@@ -129,7 +218,11 @@ namespace Jamiras.ViewModels.CodeEditor
             return e.BuildTextPieces();
         }
 
-        public TextPieceLocation GetTextPiece(int column)
+        /// <summary>
+        /// Gets the text piece containing the specified column.
+        /// </summary>
+        /// <param name="column">The column.</param>
+        internal TextPieceLocation GetTextPiece(int column)
         {
             if (column >= 1)
             {
@@ -146,7 +239,15 @@ namespace Jamiras.ViewModels.CodeEditor
             return new TextPieceLocation();
         }
 
-        public void Insert(int column, string str)
+        /// <summary>
+        /// Inserts the provided text at the specified column.
+        /// </summary>
+        /// <param name="column">The column to insert at.</param>
+        /// <param name="str">The string to insert.</param>
+        /// <remarks>
+        /// Columns are 1-based, so inserting "a" at column 3 of "Test" would result in "Teast".
+        /// </remarks>
+        internal void Insert(int column, string str)
         {
             // cursor between characters 1 and 2 is inserting at column 2, but since the string is indexed via 0-based indexing, adjust the insert location
             column--;
@@ -191,6 +292,14 @@ namespace Jamiras.ViewModels.CodeEditor
             _owner.RaiseLineChanged(new LineEventArgs(this));
         }
 
+        /// <summary>
+        /// Removes the text from <paramref name="startColumn"/> to <paramref name="endColumn"/> (inclusive)
+        /// </summary>
+        /// <param name="startColumn">The first column to remove.</param>
+        /// <param name="endColumn">The last column to remove.</param>
+        /// <remarks>
+        /// Columns are 1-based, so removing columns 2 through 3 of "Test" would result in "Tt".
+        /// </remarks>
         internal void Remove(int startColumn, int endColumn)
         {
             Debug.Assert(endColumn >= startColumn);
@@ -205,10 +314,12 @@ namespace Jamiras.ViewModels.CodeEditor
             endColumn--;
             Debug.Assert(endColumn <= text.Length);
 
+            // update text
             int removeCount = endColumn - startColumn + 1;
             text = text.Remove(startColumn, removeCount);
             PendingText = text;
 
+            // update the text pieces
             var index = startColumn;
             var pieceIndex = 0;
             while (pieceIndex < newPieces.Count)
@@ -229,12 +340,14 @@ namespace Jamiras.ViewModels.CodeEditor
                     }
                 }
 
-                if (removeCount >= piece.Text.Length)
+                if (index + removeCount >= piece.Text.Length)
                 {
                     if (index > 0)
                     {
                         removeCount -= (piece.Text.Length - index);
                         piece.Text = piece.Text.Substring(0, index);
+                        if (removeCount == 0)
+                            break;
 
                         Debug.Assert(pieceIndex < newPieces.Count);
                         piece = newPieces[pieceIndex++];
@@ -262,21 +375,73 @@ namespace Jamiras.ViewModels.CodeEditor
 
             SetValue(TextPiecesProperty, newPieces.ToArray());
 
+            // update selection
+            int newSelectionStart = SelectionStart;
+            if (newSelectionStart != 0)
+            {
+                // reset values for comparisons
+                removeCount = endColumn - startColumn + 1;
+                startColumn++;
+                endColumn++;
+
+                if (newSelectionStart > startColumn)
+                {
+                    if (newSelectionStart <= endColumn)
+                        newSelectionStart = startColumn;
+                    else
+                        newSelectionStart -= removeCount;
+                }
+
+                int newSelectionEnd = SelectionEnd;
+                if (newSelectionEnd >= startColumn)
+                {
+                    if (newSelectionEnd < endColumn)
+                    {
+                        if (SelectionStart > startColumn)
+                            newSelectionStart = 0;
+                        newSelectionEnd = newSelectionStart;
+                    }
+                    else
+                    {
+                        newSelectionEnd -= removeCount;
+                    }
+                }
+
+                if (newSelectionStart > newSelectionEnd)
+                    ClearSelection();
+                else
+                    Select(newSelectionStart, newSelectionEnd);
+            }
+
+            // notify line updated
             _owner.RaiseLineChanged(new LineEventArgs(this));
         }
 
+        /// <summary>
+        /// Clears the selection.
+        /// </summary>
         internal void ClearSelection()
         {
             Select(0, 0);
         }
 
+        /// <summary>
+        /// Selects the text from <paramref name="startColumn"/> to <paramref name="endColumn"/> (inclusive).
+        /// </summary>
         internal void Select(int startColumn, int endColumn)
         {
-            // framework trickery to update both values before raising property changed events
             var oldStartColumn = SelectionStart;
-            SetValueCore(SelectionStartProperty, startColumn);
-            SelectionEnd = endColumn;
-            OnModelPropertyChanged(new ModelPropertyChangedEventArgs(SelectionStartProperty, oldStartColumn, startColumn));
+            if (startColumn != oldStartColumn)
+            {
+                // framework trickery to update both values before raising property changed events
+                SetValueCore(SelectionStartProperty, startColumn);
+                SelectionEnd = endColumn;
+                OnModelPropertyChanged(new ModelPropertyChangedEventArgs(SelectionStartProperty, oldStartColumn, startColumn));
+            }
+            else
+            {
+                SelectionEnd = endColumn;
+            }
         }
     }
 }

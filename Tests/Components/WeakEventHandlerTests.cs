@@ -32,6 +32,14 @@ namespace Jamiras.Core.Tests.Components
 
         private bool _eventRaised;
 
+        // local capture scope is sometimes shared between local captures, which causes issues where the
+        // unsubscribe callback is in the same scope as the callback handler, using this helper method creates
+        // a separate capture scope for the callback
+        private EventHandler<EventArgs> GetCallback()
+        {
+            return (o, e) => _eventRaised = true;
+        }
+
         [Test]
         public void TestSubscription_Simple()
         {
@@ -40,7 +48,7 @@ namespace Jamiras.Core.Tests.Components
             Assert.AreEqual(0, observed.SubscriptionCount);
 
             _eventRaised = false;
-            observed.Event += new WeakEventHandler<EventArgs>((o, e) => _eventRaised = true).Handler;
+            observed.Event += new WeakEventHandler<EventArgs>(GetCallback()).Handler;
 
             // subscription should have occurred
             Assert.AreEqual(1, observed.SubscriptionCount);
@@ -55,7 +63,7 @@ namespace Jamiras.Core.Tests.Components
             EventRaisingClass observed = new EventRaisingClass();
 
             _eventRaised = false;
-            var handler = new WeakEventHandler<EventArgs>((o, e) => _eventRaised = true, h => observed.Event -= h);
+            var handler = new WeakEventHandler<EventArgs>(GetCallback(), h => observed.Event -= h);
             observed.Event += handler.Handler;
             Assert.AreEqual(1, observed.SubscriptionCount);
 
@@ -102,7 +110,8 @@ namespace Jamiras.Core.Tests.Components
             EventRaisingClass observed = new EventRaisingClass();
 
             _eventRaised = false;
-            var weakEventHandler = new WeakEventHandler<EventArgs>((o, e) => _eventRaised = true, h => observed.Event -= h);
+            
+            var weakEventHandler = new WeakEventHandler<EventArgs>(GetCallback(), h => observed.Event -= h);
             observed.Event += weakEventHandler.Handler;
             Assert.AreEqual(1, observed.SubscriptionCount);
 
@@ -124,7 +133,7 @@ namespace Jamiras.Core.Tests.Components
             EventRaisingClass observed = new EventRaisingClass();
 
             _eventRaised = false;
-            var weakEventHandler = new WeakEventHandler<EventArgs>((o, e) => _eventRaised = true, h => observed.Event -= h);
+            var weakEventHandler = new WeakEventHandler<EventArgs>(GetCallback(), h => observed.Event -= h);
             observed.Event += weakEventHandler;
             Assert.AreEqual(1, observed.SubscriptionCount);
 
@@ -146,7 +155,7 @@ namespace Jamiras.Core.Tests.Components
             EventRaisingClass observed = new EventRaisingClass();
 
             _eventRaised = false;
-            var handler = new EventHandler<EventArgs>((o, e) => _eventRaised = true).MakeWeak(h => observed.Event -= h);
+            var handler = new EventHandler<EventArgs>(GetCallback()).MakeWeak(h => observed.Event -= h);
             observed.Event += handler;
             Assert.AreEqual(1, observed.SubscriptionCount);
 
@@ -188,7 +197,7 @@ namespace Jamiras.Core.Tests.Components
             Assert.AreEqual(0, observed.SubscriptionCount);
 
             _eventRaised = false;
-            observed.Event += new WeakEventHandler<EventHandler<EventArgs>, EventArgs>((o, e) => _eventRaised = true).Handler;
+            observed.Event += new WeakEventHandler<EventHandler<EventArgs>, EventArgs>(GetCallback()).Handler;
 
             // subscription should have occurred
             Assert.AreEqual(1, observed.SubscriptionCount);
@@ -203,7 +212,7 @@ namespace Jamiras.Core.Tests.Components
             EventRaisingClass observed = new EventRaisingClass();
 
             _eventRaised = false;
-            var handler = new WeakEventHandler<EventHandler<EventArgs>, EventArgs>((o, e) => _eventRaised = true, h => observed.Event -= h);
+            var handler = new WeakEventHandler<EventHandler<EventArgs>, EventArgs>(GetCallback(), h => observed.Event -= h);
             observed.Event += handler.Handler;
             Assert.AreEqual(1, observed.SubscriptionCount);
 
@@ -243,7 +252,7 @@ namespace Jamiras.Core.Tests.Components
             EventRaisingClass observed = new EventRaisingClass();
 
             _eventRaised = false;
-            var weakEventHandler = new WeakEventHandler<EventHandler<EventArgs>, EventArgs>((o, e) => _eventRaised = true, h => observed.Event -= h);
+            var weakEventHandler = new WeakEventHandler<EventHandler<EventArgs>, EventArgs>(GetCallback(), h => observed.Event -= h);
             observed.Event += weakEventHandler.Handler;
             Assert.AreEqual(1, observed.SubscriptionCount);
 
