@@ -70,6 +70,7 @@
     <Compile Include="Components\EnumerableExtensions.cs" />
     <Compile Include="Components\FileLogger.cs" />
     <Compile Include="Components\PositionalTokenizer.cs" />
+    <Compile Include="Components\FixedSizeStack.cs" />
     <Compile Include="Components\Token.cs" />
     <Compile Include="Components\Tokenizer.cs" />
     <Compile Include="Components\Trendline.cs" />

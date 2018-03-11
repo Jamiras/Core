@@ -140,7 +140,7 @@ namespace Jamiras.Controls
             }));
         }
 
-        private LineViewModel GetLine(Point point)
+        private LineViewModel GetLineInternal(Point point)
         {
             var item = VisualTreeHelper.HitTest(this, point).VisualHit;
 
@@ -160,10 +160,25 @@ namespace Jamiras.Controls
             return null;
         }
 
+        private LineViewModel GetLine(Point point)
+        {
+            var line = GetLineInternal(point);
+            if (line == null)
+            {
+                // some of the area around the border between the line number and the content doesn't locate a LineViewModel
+                // check a few pixels to the right in case we're in that zone.
+                line = GetLineInternal(new Point(point.X + 10, point.Y));
+            }
+
+            return line;
+        }
+
         private static int GetColumn(CodeEditorViewModel viewModel, Point mousePosition)
         {
             var characterWidth = viewModel.Resources.CharacterWidth;
             int column = (int)((mousePosition.X - 2 - viewModel.LineNumberColumnWidth + 1) / characterWidth) + 1;
+            if (column < 1)
+                column = 1;
             return column;
         }
 
@@ -218,7 +233,7 @@ namespace Jamiras.Controls
                         var line = GetLine(position);
                         if (line != null)
                             ViewModel.MoveCursorTo(line.Line, GetColumn(ViewModel, position), CodeEditorViewModel.MoveCursorFlags.Highlighting);
-                        else
+                        else //if (!CodeLinesScrollViewer.IsVisible)
                             ViewModel.MoveCursorTo(ViewModel.LineCount, Int32.MaxValue, CodeEditorViewModel.MoveCursorFlags.Highlighting);
                     }
                 }

@@ -27,6 +27,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
                           "}\n";                                              // 10
 
             var mockTimerService = new Mock<ITimerService>();
+            mockTimerService.Setup(t => t.WaitForTyping(It.IsAny<Action>())).Callback((Action a) => typingCallback = a);
             mockClipboardService = new Mock<IClipboardService>();
             viewModel = new CodeEditorViewModel(mockClipboardService.Object, mockTimerService.Object);
             viewModel.SetContent(content);
@@ -35,6 +36,13 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
 
         CodeEditorViewModel viewModel;
         Mock<IClipboardService> mockClipboardService;
+        Action typingCallback;
+
+        private void CompleteTyping()
+        {
+            if (typingCallback != null)
+                typingCallback();
+        }
 
         private void FormatLine(object sender, LineFormatEventArgs e)
         {
@@ -667,5 +675,170 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             Assert.That(viewModel.CursorColumn, Is.EqualTo(12));
         }
 
+        [Test]
+        public void TestKeyCtrlZ()
+        {
+            viewModel.MoveCursorTo(1, 6, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(1, 19, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+
+            Assert.That(viewModel.HandleKey(Key.X, ModifierKeys.Control), Is.True);
+            Assert.That(viewModel.HandleKey(Key.Z, ModifierKeys.Control), Is.True);
+
+            Assert.That(viewModel.Lines[0].Text, Is.EqualTo("bool test_function(int param1, string param2)"));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(19));
+        }
+
+        [Test]
+        public void TestKeyCtrlY()
+        {
+            mockClipboardService.Setup(c => c.GetText()).Returns("orange");
+
+            viewModel.MoveCursorTo(1, 6, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(1, 19, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+
+            Assert.That(viewModel.HandleKey(Key.V, ModifierKeys.Control), Is.True);
+            Assert.That(viewModel.HandleKey(Key.Z, ModifierKeys.Control), Is.True);
+            Assert.That(viewModel.HandleKey(Key.Y, ModifierKeys.Control), Is.True);
+
+            Assert.That(viewModel.Lines[0].Text, Is.EqualTo("bool orange(int param1, string param2)"));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(12));
+        }
+
+        [Test]
+        public void TestUndoTyping()
+        {
+            viewModel.MoveCursorTo(9, 16, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.HandleKey(Key.Back, ModifierKeys.None);
+            viewModel.HandleKey(Key.Back, ModifierKeys.None);
+            viewModel.HandleKey(Key.Back, ModifierKeys.None);
+            viewModel.HandleKey(Key.Back, ModifierKeys.None);
+
+            CompleteTyping();
+
+            viewModel.HandleKey(Key.F, ModifierKeys.None);
+            viewModel.HandleKey(Key.A, ModifierKeys.None);
+            viewModel.HandleKey(Key.L, ModifierKeys.None);
+            viewModel.HandleKey(Key.S, ModifierKeys.None);
+            viewModel.HandleKey(Key.E, ModifierKeys.None);
+
+            CompleteTyping();
+
+            Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return false;"));
+
+            viewModel.HandleKey(Key.Z, ModifierKeys.Control);
+            Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return ;"));
+
+            viewModel.HandleKey(Key.Z, ModifierKeys.Control);
+            Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return true;"));
+        }
+
+        [Test]
+        public void TestUndoTypingImplicitStopWhenChangingDirections()
+        {
+            viewModel.MoveCursorTo(9, 16, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.HandleKey(Key.Back, ModifierKeys.None);
+            viewModel.HandleKey(Key.Back, ModifierKeys.None);
+            viewModel.HandleKey(Key.Back, ModifierKeys.None);
+            viewModel.HandleKey(Key.Back, ModifierKeys.None);
+
+            // no CompleteTyping here - change in direction forces new undo block
+
+            viewModel.HandleKey(Key.F, ModifierKeys.None);
+            viewModel.HandleKey(Key.A, ModifierKeys.None);
+            viewModel.HandleKey(Key.L, ModifierKeys.None);
+            viewModel.HandleKey(Key.S, ModifierKeys.None);
+            viewModel.HandleKey(Key.E, ModifierKeys.None);
+
+            CompleteTyping();
+
+            Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return false;"));
+
+            viewModel.HandleKey(Key.Z, ModifierKeys.Control);
+            Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return ;"));
+
+            viewModel.HandleKey(Key.Z, ModifierKeys.Control);
+            Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return true;"));
+        }
+
+        [Test]
+        public void TestUndoTypingDeleted()
+        {
+            viewModel.MoveCursorTo(9, 12, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.HandleKey(Key.Delete, ModifierKeys.None);
+            viewModel.HandleKey(Key.Delete, ModifierKeys.None);
+            viewModel.HandleKey(Key.Delete, ModifierKeys.None);
+            viewModel.HandleKey(Key.Delete, ModifierKeys.None);
+
+            // no change in direction, can merge undo block
+
+            viewModel.HandleKey(Key.F, ModifierKeys.None);
+            viewModel.HandleKey(Key.A, ModifierKeys.None);
+            viewModel.HandleKey(Key.L, ModifierKeys.None);
+            viewModel.HandleKey(Key.S, ModifierKeys.None);
+            viewModel.HandleKey(Key.E, ModifierKeys.None);
+
+            CompleteTyping();
+
+            Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return false;"));
+
+            viewModel.HandleKey(Key.Z, ModifierKeys.Control);
+            Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return true;"));
+        }
+
+        [Test]
+        public void TestUndoTypingReplacingSelection()
+        {
+            viewModel.MoveCursorTo(9, 12, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(9, 16, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+
+            viewModel.HandleKey(Key.F, ModifierKeys.None);
+            viewModel.HandleKey(Key.A, ModifierKeys.None);
+            viewModel.HandleKey(Key.L, ModifierKeys.None);
+            viewModel.HandleKey(Key.S, ModifierKeys.None);
+            viewModel.HandleKey(Key.E, ModifierKeys.None);
+
+            CompleteTyping();
+
+            Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return false;"));
+
+            viewModel.HandleKey(Key.Z, ModifierKeys.Control);
+            Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return true;"));
+        }
+
+        [Test]
+        public void TestUndoTypingDeleteAcrossLines()
+        {
+            viewModel.MoveCursorTo(9, 16, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.HandleKey(Key.Delete, ModifierKeys.None);
+            viewModel.HandleKey(Key.Delete, ModifierKeys.None);
+
+            CompleteTyping();
+
+            Assert.That(viewModel.LineCount, Is.EqualTo(9));
+            Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return true}"));
+
+            viewModel.HandleKey(Key.Z, ModifierKeys.Control);
+            Assert.That(viewModel.LineCount, Is.EqualTo(10));
+            Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return true;"));
+            Assert.That(viewModel.Lines[9].Text, Is.EqualTo("}"));
+        }
+
+        [Test]
+        public void TestUndoTypingBackspaceAcrossLines()
+        {
+            viewModel.MoveCursorTo(10, 1, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.HandleKey(Key.Back, ModifierKeys.None);
+            viewModel.HandleKey(Key.Back, ModifierKeys.None);
+
+            CompleteTyping();
+
+            Assert.That(viewModel.LineCount, Is.EqualTo(9));
+            Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return true}"));
+
+            viewModel.HandleKey(Key.Z, ModifierKeys.Control);
+            Assert.That(viewModel.LineCount, Is.EqualTo(10));
+            Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return true;"));
+            Assert.That(viewModel.Lines[9].Text, Is.EqualTo("}"));
+        }
     }
 }

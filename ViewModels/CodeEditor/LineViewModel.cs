@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Text;
 using System.Windows;
 
 namespace Jamiras.ViewModels.CodeEditor
 {
-    [DebuggerDisplay("{Text}")]
     public class LineViewModel : ViewModelBase
     {
         public LineViewModel(CodeEditorViewModel owner, int line)
@@ -442,6 +442,20 @@ namespace Jamiras.ViewModels.CodeEditor
             {
                 SelectionEnd = endColumn;
             }
+        }
+
+        /// <summary>
+        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// </summary>
+        public override string ToString()
+        {
+            var builder = new StringBuilder();
+            builder.Append(Line);
+            if (PendingText != null)
+                builder.Append('*');
+            builder.Append(": ");
+            builder.Append(PendingText ?? Text);
+            return builder.ToString();
         }
     }
 }
