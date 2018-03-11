@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -239,6 +240,60 @@ namespace Jamiras.Controls
                 if (binding != null)
                     binding.UpdateSource();
             }
+        }
+
+
+        /// <summary>
+        /// Property for <see cref="TextBox"/> that causes the contents to be selected whenever the TextBox gets focused.
+        /// </summary>
+        public static readonly DependencyProperty SelectAllOnFocusProperty =
+            DependencyProperty.RegisterAttached("SelectAllOnFocus", typeof(bool), typeof(CommandBinding),
+                new FrameworkPropertyMetadata(OnSelectAllOnFocusChanged));
+
+        /// <summary>
+        /// Gets whether the SelectAllOnFocus attached property is <c>true</c> for the <see cref="TextBox"/>.
+        /// </summary>
+        public static bool GetSelectAllOnFocus(TextBox target)
+        {
+            return (bool)target.GetValue(SelectAllOnFocusProperty);
+        }
+
+        /// <summary>
+        /// Sets the SelectAllOnFocus attached property for the <see cref="TextBox"/>.
+        /// </summary>
+        public static void SetSelectAllOnFocus(TextBox target, bool value)
+        {
+            target.SetValue(SelectAllOnFocusProperty, value);
+        }
+
+        private static void OnSelectAllOnFocusChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            var textBox = sender as TextBox;
+            if (textBox != null)
+            {
+                if ((bool)e.NewValue)
+                {
+                    textBox.GotKeyboardFocus += TextBox_SelectAllOnFocus;
+
+                    if (textBox.IsKeyboardFocusWithin)
+                        SelectAll(textBox);
+                }
+                else
+                    textBox.GotKeyboardFocus -= TextBox_SelectAllOnFocus;
+            }
+        }
+
+        private static void TextBox_SelectAllOnFocus(object sender, RoutedEventArgs e)
+        {
+            SelectAll((TextBox)sender);
+        }
+
+        private static void SelectAll(TextBox textBox)
+        {
+            textBox.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                textBox.SelectAll();
+            }), System.Windows.Threading.DispatcherPriority.Background);
         }
     }
 }

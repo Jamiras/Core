@@ -1,6 +1,7 @@
 ﻿using Jamiras.Components;
 using Jamiras.DataModels;
 using Jamiras.Services;
+using Jamiras.ViewModels.CodeEditor.ToolWindows;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -78,6 +79,44 @@ namespace Jamiras.ViewModels.CodeEditor
         {
             get { return (int)GetValue(CursorColumnProperty); }
             private set { SetValue(CursorColumnProperty, value); }
+        }
+
+        /// <summary>
+        /// Gets the currentl visible tool window.
+        /// </summary>
+        private static readonly ModelProperty ToolWindowProperty = ModelProperty.Register(typeof(CodeEditorViewModel), "ToolWindow", typeof(ToolWindowViewModel), null);
+        public ToolWindowViewModel ToolWindow
+        {
+            get { return (ToolWindowViewModel)GetValue(ToolWindowProperty); }
+            private set { SetValue(ToolWindowProperty, value); }
+        }
+
+        public static readonly ModelProperty IsToolWindowVisibleProperty = ModelProperty.Register(typeof(CodeEditorViewModel), "IsToolWindowVisible", typeof(bool), false);
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public bool IsToolWindowVisible
+        {
+            get { return (bool)GetValue(IsToolWindowVisibleProperty); }
+            private set { SetValue(IsToolWindowVisibleProperty, value); }
+        }
+
+        protected void ShowToolWindow(ToolWindowViewModel toolWindow)
+        {
+            if (ToolWindow != null)
+            {
+                IsToolWindowVisible = false;
+                _timerService.Schedule(() => {
+                    ToolWindow = null;
+                    ShowToolWindow(toolWindow);
+                }, TimeSpan.FromMilliseconds(200));
+            }
+
+            ToolWindow = toolWindow;
+            IsToolWindowVisible = (toolWindow != null);
+        }
+
+        internal void CloseToolWindow()
+        {
+            ShowToolWindow(null);
         }
 
         /// <summary>
@@ -444,6 +483,18 @@ namespace Jamiras.ViewModels.CodeEditor
                     if ((e.Modifiers & ModifierKeys.Control) != 0)
                     {
                         HandleRedo();
+                        e.Handled = true;
+                    }
+                    else
+                    {
+                        goto default;
+                    }
+                    break;
+
+                case Key.G:
+                    if ((e.Modifiers & ModifierKeys.Control) != 0)
+                    {
+                        HandleGotoLine();
                         e.Handled = true;
                     }
                     else
@@ -1480,6 +1531,24 @@ namespace Jamiras.ViewModels.CodeEditor
             Debug.Assert(CursorColumn == item.After.EndColumn);
 
             Refresh();
+        }
+
+        private void HandleGotoLine()
+        {
+            bool isVisible = true;
+
+            var toolWindow = ToolWindow as GotoLineToolWindowViewModel;
+            if (toolWindow == null)
+            {
+                toolWindow = new GotoLineToolWindowViewModel(this);
+                isVisible = false;
+            }
+
+            toolWindow.LineNumber.Value = CursorLine;
+            toolWindow.ShouldFocusLineNumber = true;
+
+            if (!isVisible)
+                ShowToolWindow(toolWindow);
         }
     }
 }

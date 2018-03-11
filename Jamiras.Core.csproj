@@ -226,10 +226,12 @@
     <Compile Include="ViewModels\CodeEditor\CodeEditorViewModel.cs" />
     <Compile Include="ViewModels\CodeEditor\EditorProperties.cs" />
     <Compile Include="ViewModels\CodeEditor\EditorResources.cs" />
+    <Compile Include="ViewModels\CodeEditor\ToolWindows\GotoLineToolWindowViewModel.cs" />
     <Compile Include="ViewModels\CodeEditor\LineEventArgs.cs" />
     <Compile Include="ViewModels\CodeEditor\LineFormatEventArgs.cs" />
     <Compile Include="ViewModels\CodeEditor\LineViewModel.cs" />
     <Compile Include="ViewModels\CodeEditor\TextPiece.cs" />
+    <Compile Include="ViewModels\CodeEditor\ToolWindowViewModel.cs" />
     <Compile Include="ViewModels\CommandViewModel.cs" />
     <Compile Include="ViewModels\Converters\FloatToCurrencyConverter.cs" />
     <Compile Include="ViewModels\Converters\DateToDateTimeConverter.cs" />

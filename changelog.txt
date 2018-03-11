@@ -1,2 +1,7 @@
+v1.1 - 10 Mar 2018
+* add CodeEditor (view/viewmodel/supporting classes)
+* add FixedSizeStack
+* add ITimerService
+
 v1.0 - 28 Nov 2017
 * initial public release build candidate

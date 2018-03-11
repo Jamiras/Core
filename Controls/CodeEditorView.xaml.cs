@@ -88,6 +88,7 @@ namespace Jamiras.Controls
                     {
                         _viewModel.RemovePropertyChangedHandler(CodeEditorViewModel.CursorLineProperty, OnCursorLineChanged);
                         _viewModel.RemovePropertyChangedHandler(CodeEditorViewModel.CursorColumnProperty, OnCursorColumnChanged);
+                        _viewModel.RemovePropertyChangedHandler(CodeEditorViewModel.IsToolWindowVisibleProperty, OnIsToolWindowVisibleChanged);
                     }
 
                     _viewModel = value;
@@ -96,6 +97,7 @@ namespace Jamiras.Controls
                     {
                         _viewModel.AddPropertyChangedHandler(CodeEditorViewModel.CursorLineProperty, OnCursorLineChanged);
                         _viewModel.AddPropertyChangedHandler(CodeEditorViewModel.CursorColumnProperty, OnCursorColumnChanged);
+                        _viewModel.AddPropertyChangedHandler(CodeEditorViewModel.IsToolWindowVisibleProperty, OnIsToolWindowVisibleChanged);
 
                         RestoreScrollOffset();
                         EnsureCursorVisible();
@@ -114,6 +116,12 @@ namespace Jamiras.Controls
         private void OnCursorColumnChanged(object sender, ModelPropertyChangedEventArgs e)
         {
             EnsureCursorVisible();
+        }
+
+        private void OnIsToolWindowVisibleChanged(object sender, ModelPropertyChangedEventArgs e)
+        {
+            if ((bool)e.NewValue == false)
+                Focus();
         }
 
         private void EnsureCursorVisible()
@@ -138,6 +146,43 @@ namespace Jamiras.Controls
 
                 scrollViewer.ScrollToVerticalOffset(newOffset);
             }));
+        }
+
+        private bool IsCursorInToolWindow()
+        {
+            if (ViewModel == null || !ViewModel.IsToolWindowVisible)
+                return false;
+
+            var input = Keyboard.FocusedElement as FrameworkElement;
+            if (input.DataContext != ViewModel)
+                return true;
+
+            return false;
+        }
+
+        private bool IsCursorInToolWindow(Point point)
+        {
+            if (ViewModel == null || !ViewModel.IsToolWindowVisible)
+                return false;
+
+            var item = VisualTreeHelper.HitTest(this, point).VisualHit;
+
+            do
+            {
+                var frameworkElement = item as FrameworkElement;
+                if (frameworkElement != null)
+                {
+                    if (frameworkElement.DataContext is ToolWindowViewModel)
+                        return true;
+
+                    if (frameworkElement.DataContext is CodeEditorViewModel)
+                        return false;
+                }
+
+                item = VisualTreeHelper.GetParent(item);
+            } while (item != null);
+
+            return false;
         }
 
         private LineViewModel GetLineInternal(Point point)
@@ -189,14 +234,17 @@ namespace Jamiras.Controls
             if (e.ClickCount == 1 && ViewModel != null)
             {
                 var position = e.GetPosition(this);
-                var line = GetLine(position);
-                if (line != null)
+                if (!IsCursorInToolWindow(position))
                 {
-                    var moveCursorFlags = ((Keyboard.Modifiers & ModifierKeys.Shift) != 0) ? CodeEditorViewModel.MoveCursorFlags.Highlighting : CodeEditorViewModel.MoveCursorFlags.None;
-                    ViewModel.MoveCursorTo(line.Line, GetColumn(ViewModel, position), moveCursorFlags);
-                }
+                    var line = GetLine(position);
+                    if (line != null)
+                    {
+                        var moveCursorFlags = ((Keyboard.Modifiers & ModifierKeys.Shift) != 0) ? CodeEditorViewModel.MoveCursorFlags.Highlighting : CodeEditorViewModel.MoveCursorFlags.None;
+                        ViewModel.MoveCursorTo(line.Line, GetColumn(ViewModel, position), moveCursorFlags);
+                    }
 
-                Focus();
+                    Focus();
+                }
             }
 
             base.OnMouseLeftButtonDown(e);
@@ -207,14 +255,17 @@ namespace Jamiras.Controls
             if (ViewModel != null)
             {
                 var position = e.GetPosition(this);
-                var line = GetLine(position);
-                if (line != null)
+                if (!IsCursorInToolWindow(position))
                 {
-                    ViewModel.HighlightWordAt(line.Line, GetColumn(ViewModel, position));
-                    e.Handled = true;
-                }
+                    var line = GetLine(position);
+                    if (line != null)
+                    {
+                        ViewModel.HighlightWordAt(line.Line, GetColumn(ViewModel, position));
+                        e.Handled = true;
+                    }
 
-                doubleClickTime = DateTime.UtcNow;
+                    doubleClickTime = DateTime.UtcNow;
+                }
             }
 
             base.OnMouseDoubleClick(e);
@@ -222,18 +273,17 @@ namespace Jamiras.Controls
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed && ViewModel != null)
+            if (e.LeftButton == MouseButtonState.Pressed && ViewModel != null && IsFocused)
             {
                 if (!(e.OriginalSource is System.Windows.Controls.Primitives.Thumb)) // ignore when the user is dragging the scrollbar
                 {
                     if (DateTime.UtcNow - doubleClickTime > TimeSpan.FromSeconds(1)) // prevent trigger when mouse moves during double click
                     {
                         var position = e.GetPosition(this);
-
                         var line = GetLine(position);
                         if (line != null)
                             ViewModel.MoveCursorTo(line.Line, GetColumn(ViewModel, position), CodeEditorViewModel.MoveCursorFlags.Highlighting);
-                        else //if (!CodeLinesScrollViewer.IsVisible)
+                        else
                             ViewModel.MoveCursorTo(ViewModel.LineCount, Int32.MaxValue, CodeEditorViewModel.MoveCursorFlags.Highlighting);
                     }
                 }
@@ -244,10 +294,27 @@ namespace Jamiras.Controls
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            if (ViewModel != null && ViewModel.HandleKey(e.Key, Keyboard.Modifiers))
-                e.Handled = true;
-            else
-                base.OnKeyDown(e);
+            if (ViewModel != null)
+            {
+                if (IsCursorInToolWindow())
+                {
+                    if (ViewModel.ToolWindow.HandleKey(e.Key, Keyboard.Modifiers))
+                    {
+                        e.Handled = true;
+                        return;
+                    }
+                }
+                else
+                {
+                    if (ViewModel.HandleKey(e.Key, Keyboard.Modifiers))
+                    {
+                        e.Handled = true;
+                        return;
+                    }
+                }
+            }
+
+            base.OnKeyDown(e);
         }
     }
 }
