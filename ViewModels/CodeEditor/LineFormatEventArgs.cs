@@ -153,6 +153,7 @@ namespace Jamiras.ViewModels.CodeEditor
                 MergeErrorRanges();
 
             var newPieces = new TextPiece[_ranges.Count];
+            Debug.Assert(newPieces.Length > 0);
             for (int i = 0; i < _ranges.Count; i++)
             {
                 var range = _ranges[i];

@@ -477,7 +477,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
 
         [Test]
         [TestCase(1, 11, "f")]
-        [TestCase(2, 2, "\r\n")]
+        [TestCase(2, 2, "\n")]
         public void TestHighlightKeyRight(int line, int column, string expectedText)
         {
             viewModel.MoveCursorTo(line, column, CodeEditorViewModel.MoveCursorFlags.None);
@@ -487,7 +487,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
 
         [Test]
         [TestCase(1, 11, "_")]
-        [TestCase(3, 1, "\r\n")]
+        [TestCase(3, 1, "\n")]
         public void TestHighlightKeyLeft(int line, int column, string expectedText)
         {
             viewModel.MoveCursorTo(line, column, CodeEditorViewModel.MoveCursorFlags.None);
@@ -496,8 +496,8 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         }
 
         [Test]
-        [TestCase(4, 12, " is an unnecessary comment\r\n    if (par")]
-        [TestCase(9, 7, "\r\n    re")]
+        [TestCase(4, 12, " is an unnecessary comment\n    if (par")]
+        [TestCase(9, 7, "\n    re")]
         public void TestHighlightKeyUp(int line, int column, string expectedText)
         {
             viewModel.MoveCursorTo(line, column, CodeEditorViewModel.MoveCursorFlags.None);
@@ -506,8 +506,8 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         }
 
         [Test]
-        [TestCase(4, 12, "am1 == 1)\r\n        par")]
-        [TestCase(9, 7, "turn true;\r\n}")]
+        [TestCase(4, 12, "am1 == 1)\n        par")]
+        [TestCase(9, 7, "turn true;\n}")]
         public void TestHighlightKeyDown(int line, int column, string expectedText)
         {
             viewModel.MoveCursorTo(line, column, CodeEditorViewModel.MoveCursorFlags.None);
@@ -542,7 +542,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         {
             viewModel.MoveCursorTo(5, 20, CodeEditorViewModel.MoveCursorFlags.None);
             Assert.That(viewModel.HandleKey(Key.A, ModifierKeys.Control), Is.True);
-            Assert.That(viewModel.GetSelectedText().Length, Is.EqualTo(201));
+            Assert.That(viewModel.GetSelectedText().Length, Is.EqualTo(192));
 
             // trim Content() since SelectedText doesn't contain the trailing newline
             Assert.That(viewModel.GetSelectedText(), Is.EqualTo(viewModel.GetContent().TrimEnd()));
@@ -552,8 +552,8 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         [TestCase(4, 9, 4, 15, "param1")]
         [TestCase(4, 9, 4, 5, "if (")]
         [TestCase(4, 9, 4, 9, "")]
-        [TestCase(9, 12, 10, 2, "true;\r\n}")]
-        [TestCase(10, 2, 9, 12, "true;\r\n}")]
+        [TestCase(9, 12, 10, 2, "true;\n}")]
+        [TestCase(10, 2, 9, 12, "true;\n}")]
         public void TestKeyCtrlC(int startLine, int startColumn, int endLine, int endColumn, string expectedText)
         {
             string clipboardText = null;
@@ -839,6 +839,98 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             Assert.That(viewModel.LineCount, Is.EqualTo(10));
             Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return true;"));
             Assert.That(viewModel.Lines[9].Text, Is.EqualTo("}"));
+        }
+
+        [Test]
+        public void TestIndentLine()
+        {
+            viewModel.MoveCursorTo(9, 1, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(9, 17, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+
+            viewModel.HandleKey(Key.Tab, ModifierKeys.None);
+            Assert.That(viewModel.Lines[8].Text, Is.EqualTo("        return true;"));
+            Assert.That(viewModel.GetSelectedText(), Is.EqualTo("        return true;\n"));
+            Assert.That(viewModel.CursorLine, Is.EqualTo(10));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TestIndentMultipleLines()
+        {
+            viewModel.MoveCursorTo(7, 9, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(9, 9, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+
+            viewModel.HandleKey(Key.Tab, ModifierKeys.None);
+            Assert.That(viewModel.Lines[6].Text, Is.EqualTo("            param2 = NULL;"));
+            Assert.That(viewModel.Lines[7].Text, Is.EqualTo("")); // whitepsace only line shouldn't be affected
+            Assert.That(viewModel.Lines[8].Text, Is.EqualTo("        return true;"));
+            Assert.That(viewModel.GetSelectedText(), Is.EqualTo("            param2 = NULL;\n\n" +
+                                                                "        return true;\n"));
+            Assert.That(viewModel.CursorLine, Is.EqualTo(10));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TestUndoIndentMultipleLines()
+        {
+            viewModel.MoveCursorTo(7, 9, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(9, 9, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+
+            viewModel.HandleKey(Key.Tab, ModifierKeys.None);
+            viewModel.HandleKey(Key.Z, ModifierKeys.Control);
+
+            Assert.That(viewModel.Lines[6].Text, Is.EqualTo("        param2 = NULL;"));
+            Assert.That(viewModel.Lines[7].Text, Is.EqualTo(""));
+            Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return true;"));
+            Assert.That(viewModel.GetSelectedText(), Is.EqualTo(""));
+            Assert.That(viewModel.CursorLine, Is.EqualTo(10));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TestUnindentLine()
+        {
+            viewModel.MoveCursorTo(9, 1, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(9, 17, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+
+            viewModel.HandleKey(Key.Tab, ModifierKeys.Shift);
+            Assert.That(viewModel.Lines[8].Text, Is.EqualTo("return true;"));
+            Assert.That(viewModel.GetSelectedText(), Is.EqualTo("return true;\n"));
+            Assert.That(viewModel.CursorLine, Is.EqualTo(10));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TestUnindentMultipleLines()
+        {
+            viewModel.MoveCursorTo(7, 9, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(9, 9, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+
+            viewModel.HandleKey(Key.Tab, ModifierKeys.Shift);
+            Assert.That(viewModel.Lines[6].Text, Is.EqualTo("    param2 = NULL;"));
+            Assert.That(viewModel.Lines[7].Text, Is.EqualTo("")); // whitepsace only line shouldn't be affected
+            Assert.That(viewModel.Lines[8].Text, Is.EqualTo("return true;"));
+            Assert.That(viewModel.GetSelectedText(), Is.EqualTo("    param2 = NULL;\n\n" +
+                                                                "return true;\n"));
+            Assert.That(viewModel.CursorLine, Is.EqualTo(10));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TestUndoUnindentMultipleLines()
+        {
+            viewModel.MoveCursorTo(7, 9, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(9, 9, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+
+            viewModel.HandleKey(Key.Tab, ModifierKeys.Shift);
+            viewModel.HandleKey(Key.Z, ModifierKeys.Control);
+
+            Assert.That(viewModel.Lines[6].Text, Is.EqualTo("        param2 = NULL;"));
+            Assert.That(viewModel.Lines[7].Text, Is.EqualTo(""));
+            Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return true;"));
+            Assert.That(viewModel.GetSelectedText(), Is.EqualTo(""));
+            Assert.That(viewModel.CursorLine, Is.EqualTo(10));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(1));
         }
     }
 }

@@ -161,7 +161,15 @@ namespace Jamiras.ViewModels.CodeEditor
             if (pendingText != null)
             {
                 PendingText = null;
-                Text = pendingText;
+                if (Text == pendingText)
+                {
+                    // force update of dependent property TextPieces, even if Text didn't really change
+                    OnModelPropertyChanged(new ModelPropertyChangedEventArgs(TextProperty, pendingText, pendingText));
+                }
+                else
+                {
+                    Text = pendingText;
+                }
             }
         }
 
@@ -287,6 +295,7 @@ namespace Jamiras.ViewModels.CodeEditor
                 break;
             }
 
+            Debug.Assert(newPieces.Count > 0);
             SetValue(TextPiecesProperty, newPieces.ToArray());
 
             _owner.RaiseLineChanged(new LineEventArgs(this));
@@ -358,7 +367,11 @@ namespace Jamiras.ViewModels.CodeEditor
                     {
                         removeCount -= piece.Text.Length;
 
-                        newPieces.RemoveAt(pieceIndex - 1);
+                        if (newPieces.Count > 1)
+                            newPieces.RemoveAt(pieceIndex - 1);
+                        else
+                            newPieces[pieceIndex - 1].Text = "";
+
                         if (removeCount == 0)
                             break;
 
@@ -373,6 +386,7 @@ namespace Jamiras.ViewModels.CodeEditor
                 break;
             }
 
+            Debug.Assert(newPieces.Count > 0);
             SetValue(TextPiecesProperty, newPieces.ToArray());
 
             // update selection

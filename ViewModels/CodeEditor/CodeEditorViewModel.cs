@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using System.Windows.Input;
 
@@ -100,7 +101,10 @@ namespace Jamiras.ViewModels.CodeEditor
         {
             var builder = new StringBuilder();
             foreach (var line in _lines)
-                builder.AppendLine(line.Text);
+            {
+                builder.Append(line.Text);
+                builder.Append('\n');
+            }
 
             return builder.ToString();
         }
@@ -186,7 +190,6 @@ namespace Jamiras.ViewModels.CodeEditor
         internal void RaiseLineChanged(LineEventArgs e)
         {
             OnLineChanged(e);
-            WaitForTyping();
         }
 
         /// <summary>
@@ -373,7 +376,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     break;
 
                 case Key.Tab:
-                    HandleTab();
+                    HandleTab((e.Modifiers & ModifierKeys.Shift) != 0);
                     e.Handled = true;
                     break;
 
@@ -657,7 +660,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     for (int i = orderedSelection.StartLine; i <= orderedSelection.EndLine; ++i)
                     {
                         if (i != orderedSelection.StartLine)
-                            builder.AppendLine();
+                            builder.Append('\n');
 
                         var line = _lines[i - 1];
                         var text = line.PendingText ?? line.Text;
@@ -779,7 +782,8 @@ namespace Jamiras.ViewModels.CodeEditor
                     line.Remove(selection.StartColumn, line.LineLength);
 
                 line = _lines[selection.EndLine - 1];
-                line.Remove(1, selection.EndColumn - 1);
+                if (selection.EndColumn > 1)
+                    line.Remove(1, selection.EndColumn - 1);
 
                 for (int i = selection.EndLine - 2; i >= selection.StartLine; --i)
                 {
@@ -798,7 +802,8 @@ namespace Jamiras.ViewModels.CodeEditor
             {
                 selection.EndColumn = line.LineLength + 1;
 
-                line.Insert(line.LineLength + 1, _lines[selection.StartLine].PendingText);
+                var startLine = _lines[selection.StartLine];
+                line.Insert(line.LineLength + 1, startLine.PendingText ?? startLine.Text);
 
                 _lines.RemoveAt(selection.StartLine);
                 linesAdded--;
@@ -1011,12 +1016,37 @@ namespace Jamiras.ViewModels.CodeEditor
             MoveCursorTo(newLine, newColumn, flags);
         }
 
-        private void HandleTab()
+        private void HandleTab(bool isShift)
         {
-            if (HasSelection()) {
-                // TODO: if entire line is selected, indent instead of delete
+            if (HasSelection())
+            {
+                var selection = GetOrderedSelection();
+                if (isShift)
+                {
+                    Indent(selection, false);
+                    return;
+                }
+
+                if (selection.StartLine != selection.EndLine)
+                {
+                    Indent(selection, true);
+                    return;
+                }
+                if (selection.StartLine == selection.EndLine)
+                {
+                    var line = _lines[selection.StartLine - 1];
+                    if (selection.StartColumn == 1 && selection.EndColumn == line.LineLength + 1)
+                    {
+                        Indent(selection, true);
+                        return;
+                    }
+                }
+
                 DeleteSelection();
             }
+
+            if (isShift)
+                return;
 
             var cursorLine = CursorLine;
             var cursorColumn = CursorColumn;
@@ -1024,6 +1054,47 @@ namespace Jamiras.ViewModels.CodeEditor
             _lines[cursorLine - 1].Insert(cursorColumn, new string(' ', newColumn - cursorColumn));
             MoveCursorTo(cursorLine, newColumn, MoveCursorFlags.None);
             CursorColumn = newColumn;
+        }
+
+        private void Indent(Selection orderedSelection, bool isIndent)
+        {
+            var endLine = orderedSelection.EndLine;
+            if (orderedSelection.EndColumn == 1)
+                endLine--;
+
+            MoveCursorTo(orderedSelection.StartLine, 1, MoveCursorFlags.None);
+            MoveCursorTo(endLine + 1, 1, MoveCursorFlags.Highlighting);
+
+            BeginUndo();
+
+            for (int i = orderedSelection.StartLine; i <= endLine; i++)
+            {
+                var line = _lines[i - 1];
+                var text = line.PendingText ?? line.Text;
+                if (isIndent)
+                {
+                    if (!text.All(c => Char.IsWhiteSpace(c)))
+                        line.Insert(1, "    ");
+                }
+                else
+                {
+                    if (text.StartsWith("    "))
+                        line.Remove(1, 4);
+                    else if (text.StartsWith("   "))
+                        line.Remove(1, 3);
+                    else if (text.StartsWith("  "))
+                        line.Remove(1, 2);
+                    else if (text.StartsWith(" "))
+                        line.Remove(1, 1);
+                }
+            }
+
+            MoveCursorTo(orderedSelection.StartLine, 1, MoveCursorFlags.None);
+            MoveCursorTo(endLine + 1, 1, MoveCursorFlags.Highlighting);
+
+            EndUndo(GetSelectedText());
+
+            Refresh();
         }
 
         private void MergeNextLine()
