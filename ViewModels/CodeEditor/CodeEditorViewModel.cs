@@ -1,4 +1,5 @@
-﻿using Jamiras.Components;
+﻿using Jamiras.Commands;
+using Jamiras.Components;
 using Jamiras.DataModels;
 using Jamiras.Services;
 using Jamiras.ViewModels.CodeEditor.ToolWindows;
@@ -40,6 +41,13 @@ namespace Jamiras.ViewModels.CodeEditor
 
             Style = new EditorProperties();
             Resources = new EditorResources(Style);
+
+            GotoLineCommand = new DelegateCommand(HandleGotoLine);
+            UndoCommand = new DelegateCommand(HandleUndo);
+            RedoCommand = new DelegateCommand(HandleRedo);
+            CutCommand = new DelegateCommand(CutSelection);
+            CopyCommand = new DelegateCommand(CopySelection);
+            PasteCommand = new DelegateCommand(HandlePaste);
         }
 
         private readonly ITimerService _timerService;
@@ -52,6 +60,36 @@ namespace Jamiras.ViewModels.CodeEditor
 
         // remebers the cursor column when moving up or down even if the line doesn't have that many columns
         private int? _virtualCursorColumn;
+
+        /// <summary>
+        /// Gets the goto line command.
+        /// </summary>
+        public CommandBase GotoLineCommand { get; private set; }
+
+        /// <summary>
+        /// Gets the undo command.
+        /// </summary>
+        public CommandBase UndoCommand { get; private set; }
+
+        /// <summary>
+        /// Gets the redo command.
+        /// </summary>
+        public CommandBase RedoCommand { get; private set; }
+
+        /// <summary>
+        /// Gets the cut command.
+        /// </summary>
+        public CommandBase CutCommand { get; private set; }
+
+        /// <summary>
+        /// Gets the copy command.
+        /// </summary>
+        public CommandBase CopyCommand { get; private set; }
+
+        /// <summary>
+        /// Gets the paste command.
+        /// </summary>
+        public CommandBase PasteCommand { get; private set; }
 
         /// <summary>
         /// <see cref="ModelProperty"/> for <see cref="AreLineNumbersVisible"/>

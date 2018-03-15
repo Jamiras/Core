@@ -27,11 +27,12 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <Button HorizontalAlignment="Left"
                                 AutomationProperties.AutomationId="extraButton"
-                                Content="{Binding ExtraButtonText}"
-                                Command="{Binding ExtraButtonCommand}"
+                                Content="{Binding ExtraButtonText, FallbackValue={x:Null}}"
+                                Command="{Binding ExtraButtonCommand, FallbackValue={x:Null}}"
                                 MinWidth="80"
                                 Margin="4,5,5,5">
                             <Button.Style>
@@ -54,8 +55,28 @@
                                 IsDefault="True"
                                 MinWidth="80"
                                 Margin="5,5,4,5" />
-                        
+
                         <Button Grid.Column="3" HorizontalAlignment="Right"
+                                AutomationProperties.AutomationId="okButton"
+                                Content="{Binding NoButtonText, FallbackValue={x:Null}}"
+                                Command="{Binding NoCommand, FallbackValue={x:Null}}"
+                                IsDefault="True"
+                                MinWidth="80"
+                                Margin="0,5,4,5">
+                            <Button.Style>
+                                <Style TargetType="{x:Type Button}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding NoButtonText}"
+                                                     Value="{x:Null}">
+                                            <Setter Property="Visibility"
+                                                    Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <Button Grid.Column="4" HorizontalAlignment="Right"
                                 AutomationProperties.AutomationId="cancelButton"
                                 Content="{Binding CancelButtonText}"
                                 Command="{Binding CancelCommand}"

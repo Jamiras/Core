@@ -1,8 +1,11 @@
-﻿using Jamiras.DataModels;
+﻿using Jamiras.Components;
+using Jamiras.DataModels;
+using Jamiras.Services;
 using Jamiras.ViewModels.CodeEditor;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;

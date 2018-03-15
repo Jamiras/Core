@@ -1,8 +1,11 @@
-﻿using System;
+﻿using Jamiras.Commands;
+using System;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace Jamiras.Controls
 {
@@ -242,7 +245,6 @@ namespace Jamiras.Controls
             }
         }
 
-
         /// <summary>
         /// Property for <see cref="TextBox"/> that causes the contents to be selected whenever the TextBox gets focused.
         /// </summary>
@@ -294,6 +296,78 @@ namespace Jamiras.Controls
             {
                 textBox.SelectAll();
             }), System.Windows.Threading.DispatcherPriority.Background);
+        }
+
+
+        /// <summary>
+        /// Property for <see cref="TextBox"/> that causes the contents to be selected whenever the TextBox gets focused.
+        /// </summary>
+        public static readonly DependencyProperty InputGestureProperty =
+            DependencyProperty.RegisterAttached("InputGesture", typeof(string), typeof(CommandBinding),
+                new FrameworkPropertyMetadata(OnInputGestureChanged));
+
+        /// <summary>
+        /// Gets whether the InputGesture attached property is <c>true</c> for the <see cref="MenuItem"/>.
+        /// </summary>
+        public static string GetInputGesture(MenuItem target)
+        {
+            return (string)target.GetValue(InputGestureProperty);
+        }
+
+        /// <summary>
+        /// Sets the InputGesture attached property for the <see cref="MenuItem"/>.
+        /// </summary>
+        public static void SetInputGesture(MenuItem target, string value)
+        {
+            target.SetValue(InputGestureProperty, value);
+        }
+
+        private static void OnInputGestureChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            var menuItem = (MenuItem)sender;
+            var gestureText = (String)e.NewValue;
+            KeyGesture gesture = null;
+
+            if (String.IsNullOrEmpty(gestureText))
+            {
+                menuItem.InputGestureText = null;
+            }
+            else
+            {
+                menuItem.InputGestureText = gestureText;
+                gesture = (KeyGesture)new KeyGestureConverter().ConvertFrom(null, System.Globalization.CultureInfo.CurrentUICulture, gestureText);
+            }
+
+            var uiElement = sender;
+            while (uiElement != null)
+            {
+                var window = uiElement as Window;
+                if (window != null)
+                {
+                    var bindings = window.InputBindings.OfType<KeyBinding>();
+                    var binding = bindings.FirstOrDefault(b => b.Key == gesture.Key && b.Modifiers == gesture.Modifiers);
+                    if (binding == null)
+                    {
+                        if (gesture == null)
+                            return;
+
+                        binding = new KeyBinding { Gesture = gesture };
+                        window.InputBindings.Add(binding);
+                    }
+
+                    binding.Command = new DelegateCommand<MenuItem>(ActivateMenuItem);
+                    binding.CommandParameter = menuItem;
+                }
+
+                uiElement = LogicalTreeHelper.GetParent(uiElement);
+            }
+        }
+
+        private static void ActivateMenuItem(MenuItem item)
+        {
+            var command = item.Command;
+            if (command != null && command.CanExecute(item.CommandParameter))
+                command.Execute(item.CommandParameter);
         }
     }
 }
