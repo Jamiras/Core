@@ -79,6 +79,7 @@
       <DependentUpon>CodeEditorView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Controls\CodeEditorTextBlock.cs" />
+    <Compile Include="Controls\ListViewUtils.cs" />
     <Compile Include="Controls\TreeUtils.cs" />
     <Compile Include="Controls\Gallery.xaml.cs">
       <DependentUpon>Gallery.xaml</DependentUpon>
@@ -224,8 +225,10 @@
     <Compile Include="Services\SoundPlayer.cs" />
     <Compile Include="Services\WindowSettingsRepository.cs" />
     <Compile Include="ViewModels\CodeEditor\CodeEditorViewModel.cs" />
+    <Compile Include="ViewModels\CodeEditor\CodeReferenceViewModel.cs" />
     <Compile Include="ViewModels\CodeEditor\EditorProperties.cs" />
     <Compile Include="ViewModels\CodeEditor\EditorResources.cs" />
+    <Compile Include="ViewModels\CodeEditor\ToolWindows\CodeReferencesToolWindowViewModel.cs" />
     <Compile Include="ViewModels\CodeEditor\ToolWindows\GotoLineToolWindowViewModel.cs" />
     <Compile Include="ViewModels\CodeEditor\LineEventArgs.cs" />
     <Compile Include="ViewModels\CodeEditor\LineFormatEventArgs.cs" />

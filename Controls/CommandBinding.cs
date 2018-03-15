@@ -130,28 +130,63 @@ namespace Jamiras.Controls
         private static void OnDoubleClickCommandChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
         {
             var element = (UIElement)sender;
-            if (e.NewValue != null)
+            var binding = element.InputBindings.OfType<InputBinding>().FirstOrDefault(b =>
             {
-                element.InputBindings.Add(new InputBinding((ICommand)e.NewValue, new MouseGesture(MouseAction.LeftDoubleClick)));
+                var gesture = b.Gesture as MouseGesture;
+                return (gesture != null && gesture.MouseAction == MouseAction.LeftDoubleClick);
+            });
+
+            if (binding == null)
+            {
+                if (e.NewValue != null)
+                {
+                    binding = new InputBinding((ICommand)e.NewValue, new MouseGesture(MouseAction.LeftDoubleClick));
+                    element.InputBindings.Add(binding);
+                }
             }
             else
             {
-                var binding = element.InputBindings.OfType<InputBinding>().FirstOrDefault(b =>
-                {
-                    var gesture = b.Gesture as MouseGesture;
-                    return (gesture != null && gesture.MouseAction == MouseAction.LeftDoubleClick);
-                });
-
-                if (binding != null)
+                if (e.NewValue != null)
+                    binding.Command = (ICommand)e.NewValue;
+                else
                     element.InputBindings.Remove(binding);
             }
         }
 
-        private static void OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
+        /// <summary>
+        /// Property for binding an <see cref="ICommand"/> to the <see cref="MouseAction.LeftDoubleClick"/> gesture.
+        /// </summary>
+        public static readonly DependencyProperty DoubleClickCommandParameterProperty =
+            DependencyProperty.RegisterAttached("DoubleClickCommandParameter", typeof(object), typeof(CommandBinding),
+        new FrameworkPropertyMetadata(OnDoubleClickCommandParameterChanged));
+
+        /// <summary>
+        /// Gets the <see cref="ICommand"/> bound to the <see cref="MouseAction.LeftDoubleClick"/> gesture for the provided <see cref="UIElement"/>.
+        /// </summary>
+        public static object GetDoubleClickCommandParameter(UIElement target)
         {
-            var command = GetClickCommand((UIElement)sender);
-            if (command != null && command.CanExecute(e))
-                command.Execute(e);
+            return target.GetValue(DoubleClickCommandParameterProperty);
+        }
+
+        /// <summary>
+        /// Binds a <see cref="ICommand"/> to the <see cref="MouseAction.LeftDoubleClick"/> gesture for the provided <see cref="UIElement"/>.
+        /// </summary>
+        public static void SetDoubleClickCommandParameter(UIElement target, object value)
+        {
+            target.SetValue(DoubleClickCommandParameterProperty, value);
+        }
+
+        private static void OnDoubleClickCommandParameterChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            var element = (UIElement)sender;
+            var binding = element.InputBindings.OfType<InputBinding>().FirstOrDefault(b =>
+            {
+                var gesture = b.Gesture as MouseGesture;
+                return (gesture != null && gesture.MouseAction == MouseAction.LeftDoubleClick);
+            });
+
+            if (binding != null)
+                binding.CommandParameter = e.NewValue;
         }
 
         /// <summary>

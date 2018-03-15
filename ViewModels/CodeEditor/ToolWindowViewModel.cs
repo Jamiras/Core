@@ -23,7 +23,7 @@ namespace Jamiras.ViewModels.CodeEditor
         }
 
         public CommandBase CloseCommand { get; private set; }
-        public void Close()
+        public virtual void Close()
         {
             Owner.CloseToolWindow();
         }

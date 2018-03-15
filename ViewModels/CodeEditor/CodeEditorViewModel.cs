@@ -934,10 +934,29 @@ namespace Jamiras.ViewModels.CodeEditor
         /// <param name="column">The column.</param>
         public void HighlightWordAt(int line, int column)
         {
+            var word = GetWordSelection(line, column);
+            if (word.StartLine == line)
+            {
+                MoveCursorTo(line, word.StartColumn, MoveCursorFlags.None);
+                MoveCursorTo(line, word.EndColumn, MoveCursorFlags.Highlighting);
+            }
+        }
+
+        protected string GetWordAt(int line, int column)
+        {
+            var word = GetWordSelection(line, column);
+            if (word.StartLine == line)
+                return GetText(word);
+
+            return null;
+        }
+
+        private Selection GetWordSelection(int line, int column)
+        { 
             var cursorLineViewModel = _lines[line - 1];
             var currentTextPiece = cursorLineViewModel.GetTextPiece(column);
             if (currentTextPiece.Piece == null) // column exceeds line length
-                return;
+                return new Selection();
 
             var text = currentTextPiece.Piece.Text;
             var offset = currentTextPiece.Offset;
@@ -978,8 +997,7 @@ namespace Jamiras.ViewModels.CodeEditor
                 wordEnd = column + (offset - currentTextPiece.Offset);
             }
 
-            MoveCursorTo(line, wordStart, MoveCursorFlags.None);
-            MoveCursorTo(line, wordEnd, MoveCursorFlags.Highlighting);
+            return new Selection { StartLine = line, StartColumn = wordStart, EndLine = line, EndColumn = wordEnd };
         }
 
         private void HandleLeft(MoveCursorFlags flags, bool nextWord)

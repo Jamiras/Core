@@ -47,7 +47,10 @@ namespace Jamiras.Controls
             }
         }
 
-        private static ScrollViewer FindScrollViewer(DependencyObject obj)
+        /// <summary>
+        /// Finds the scroll viewer for an object.
+        /// </summary>
+        public static ScrollViewer FindScrollViewer(DependencyObject obj)
         {
             var scrollViewer = obj as ScrollViewer;
             if (scrollViewer != null)

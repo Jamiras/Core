@@ -163,14 +163,25 @@ namespace Jamiras.ViewModels.CodeEditor
                 PendingText = null;
                 if (Text == pendingText)
                 {
-                    // force update of dependent property TextPieces, even if Text didn't really change
-                    OnModelPropertyChanged(new ModelPropertyChangedEventArgs(TextProperty, pendingText, pendingText));
+                    // force update of TextPieces, even if Text didn't really change
+                    Refresh();
                 }
                 else
                 {
                     Text = pendingText;
                 }
             }
+        }
+
+        /// <summary>
+        /// Reconstructs the syntax highlighting for the line.
+        /// </summary>
+        public override void Refresh()
+        {
+            var text = Text;
+
+            // framework trick to force update of dependent property TextPieces, even if Text didn't really change
+            OnModelPropertyChanged(new ModelPropertyChangedEventArgs(TextProperty, text, text));
         }
 
         internal static readonly ModelProperty PendingTextProperty = ModelProperty.Register(typeof(LineViewModel), "PendingText", typeof(string), null);
