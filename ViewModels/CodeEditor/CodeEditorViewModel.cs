@@ -39,6 +39,9 @@ namespace Jamiras.ViewModels.CodeEditor
             _undoStack = new FixedSizeStack<UndoItem>(128);
             _redoStack = new Stack<UndoItem>(32);
 
+            _braces = new TinyDictionary<char, char>();
+            _braceStack = new Stack<char>();
+
             Style = new EditorProperties();
             Resources = new EditorResources(Style);
 
@@ -57,6 +60,13 @@ namespace Jamiras.ViewModels.CodeEditor
 
         private FixedSizeStack<UndoItem> _undoStack;
         private Stack<UndoItem> _redoStack;
+
+        protected IDictionary<char, char> Braces
+        {
+            get { return _braces; }
+        }
+        private TinyDictionary<char, char> _braces;
+        private Stack<char> _braceStack;
 
         // remebers the cursor column when moving up or down even if the line doesn't have that many columns
         private int? _virtualCursorColumn;
@@ -545,7 +555,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     if ((e.Modifiers & ModifierKeys.Control) == 0)
                     {
                         char c = e.GetChar();
-                        if (c != '\0')
+                        if (c != '\0' && !Char.IsControl(c))
                         {
                             HandleCharacter(c);
                             e.Handled = true;
@@ -585,8 +595,6 @@ namespace Jamiras.ViewModels.CodeEditor
             var undoItem = _undoStack.Peek();
             if (undoItem.After != null && undoItem.After.Text == null)
             {
-                undoItem.After.EndLine = CursorLine;
-                undoItem.After.EndColumn = CursorColumn;
                 undoItem.After.Text = GetText(undoItem.After);
 
                 var beforeOrdered = undoItem.Before.GetOrderedSelection();
@@ -612,10 +620,28 @@ namespace Jamiras.ViewModels.CodeEditor
             var column = CursorColumn;
             var line = CursorLine;
             var lineViewModel = _lines[line - 1];
-            lineViewModel.Insert(column, c.ToString());
-            MoveCursorTo(line, column + 1, MoveCursorFlags.None);
+            char brace;
 
-            undoItem.After.EndColumn++;
+            if (_braceStack.Count > 0 && _braceStack.Peek() == c)
+            {
+                // typed the matching brace, just advance over it
+                _braceStack.Pop();
+            }
+            else if (_braces.TryGetValue(c, out brace))
+            {
+                // typed a brace, insert it and the matching character
+                lineViewModel.Insert(column, c.ToString() + brace.ToString());
+                undoItem.After.EndColumn += 2;
+                _braceStack.Push(brace);
+            }
+            else
+            {
+                // not a brace, just insert it
+                lineViewModel.Insert(column, c.ToString());
+                undoItem.After.EndColumn++;
+            }
+
+            MoveCursorTo(line, column + 1, MoveCursorFlags.Typing);
 
             WaitForTyping();
         }
@@ -643,6 +669,12 @@ namespace Jamiras.ViewModels.CodeEditor
                     var text = lineViewModel.PendingText ?? lineViewModel.Text;
                     undoItem.Before.EndColumn++;
                     undoItem.Before.Text += text[column - 1];
+
+                    if (_braceStack.Count > 0 && column < text.Length && text[column] == _braceStack.Peek())
+                    {
+                        // deleting closing brace
+                        _braceStack.Pop();
+                    }
 
                     lineViewModel.Remove(column, column);
                     WaitForTyping();
@@ -687,8 +719,19 @@ namespace Jamiras.ViewModels.CodeEditor
                     undoItem.After.StartColumn--;
                     undoItem.After.EndColumn--;
 
+                    if (_braceStack.Count > 0 && column < text.Length && text[column] == _braceStack.Peek())
+                    {
+                        char brace;
+                        if (_braces.TryGetValue(text[column - 1], out brace) && brace == _braceStack.Peek())
+                        {
+                            // erasing opening brace, also remove closing brace
+                            _braceStack.Pop();
+                            lineViewModel.Remove(column + 1, column + 1);
+                        }
+                    }
+
                     lineViewModel.Remove(column, column);
-                    MoveCursorTo(line, column, MoveCursorFlags.None);
+                    MoveCursorTo(line, column, MoveCursorFlags.Typing);
 
                     WaitForTyping();
                 }
@@ -703,7 +746,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     undoItem.After.StartLine = undoItem.After.EndLine = line;
                     undoItem.After.StartColumn = undoItem.After.EndColumn = column;
 
-                    MoveCursorTo(line, column, MoveCursorFlags.None);
+                    MoveCursorTo(line, column, MoveCursorFlags.Typing);
                     MergeNextLine();
                 }
             }
@@ -924,7 +967,7 @@ namespace Jamiras.ViewModels.CodeEditor
 
             LineCount += linesAdded;
 
-            MoveCursorTo(selection.EndLine, selection.EndColumn, MoveCursorFlags.None);
+            MoveCursorTo(selection.EndLine, selection.EndColumn, MoveCursorFlags.Typing);
         }
 
         /// <summary>
@@ -1272,7 +1315,6 @@ namespace Jamiras.ViewModels.CodeEditor
                 _lines[i].Line++;
 
             // update undo item
-            undoItem.After.Text += "\n";
             undoItem.After.EndLine++;
             undoItem.After.EndColumn = 1;
 
@@ -1299,6 +1341,11 @@ namespace Jamiras.ViewModels.CodeEditor
             /// Remember (or restore) the column value when changing lines.
             /// </summary>
             RememberColumn = 0x02,
+
+            /// <summary>
+            /// Indicates the cursor is being moved as the result of inserting or removing text.
+            /// </summary>
+            Typing = 0x04,
         }
 
         /// <summary>
@@ -1332,6 +1379,7 @@ namespace Jamiras.ViewModels.CodeEditor
             if (column < 1)
                 column = 1;
 
+            // update the virtual cursor column
             var maxColumn = _lines[line - 1].LineLength + 1;
 
             if ((flags & MoveCursorFlags.RememberColumn) != 0)
@@ -1347,6 +1395,10 @@ namespace Jamiras.ViewModels.CodeEditor
                 if (column > maxColumn)
                     column = maxColumn;
             }
+
+            // if the cursor moved and we're not typing, stop trying to match braces
+            if ((flags & MoveCursorFlags.Typing) == 0)
+                _braceStack.Clear();
 
             // update highlighting
             if ((flags & MoveCursorFlags.Highlighting) == 0)
