@@ -1258,8 +1258,11 @@ namespace Jamiras.ViewModels.CodeEditor
             LineCount++;
 
             // create TextPieces for the new line so it appears
-            var e = new LineFormatEventArgs(newLineViewModel);
-            newLineViewModel.SetValue(LineViewModel.TextPiecesProperty, e.BuildTextPieces());
+            if (right.Length > 0)
+            {
+                var e = new LineFormatEventArgs(newLineViewModel);
+                newLineViewModel.SetValue(LineViewModel.TextPiecesProperty, e.BuildTextPieces());
+            }
 
             // update the cursor position
             MoveCursorTo(cursorLine + 1, 1, MoveCursorFlags.None);

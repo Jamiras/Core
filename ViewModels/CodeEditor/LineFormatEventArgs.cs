@@ -29,8 +29,17 @@ namespace Jamiras.ViewModels.CodeEditor
         }
 
         private static void UpdateRange(List<ColorRange> ranges, int startColumn, int length, int color, string toolTip)
-        { 
+        {
+            var lineLength = ranges[ranges.Count - 1].EndColumn;
+            if (startColumn > lineLength)
+                return;
+
             var endColumn = startColumn + length - 1;
+            if (endColumn > lineLength)
+            {
+                endColumn = lineLength;
+                length = endColumn - startColumn + 1;
+            }
 
             // find the range containing startColumn
             int i = 0;

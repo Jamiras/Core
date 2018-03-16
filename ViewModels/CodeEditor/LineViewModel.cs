@@ -230,11 +230,16 @@ namespace Jamiras.ViewModels.CodeEditor
         private static object GetTextPieces(ModelBase model)
         {
             var viewModel = (LineViewModel)model;
+            if (viewModel.Text.Length == 0)
+                return new TextPiece[] { new TextPiece { Text = "" } };
 
-            var e = new LineFormatEventArgs(viewModel);
-            viewModel._owner.RaiseFormatLine(e);
+            lock (viewModel)
+            {
+                var e = new LineFormatEventArgs(viewModel);
+                viewModel._owner.RaiseFormatLine(e);
 
-            return e.BuildTextPieces();
+                return e.BuildTextPieces();
+            }
         }
 
         /// <summary>
