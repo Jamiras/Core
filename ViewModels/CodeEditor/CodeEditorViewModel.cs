@@ -992,9 +992,10 @@ namespace Jamiras.ViewModels.CodeEditor
                     _lines[i].Line -= linesRemoved;
             }
 
-            MoveCursorTo(_selectionStartLine, _selectionStartColumn, MoveCursorFlags.None);
-
+            // we've already deleted the selection, so prevent MoveCursorTo from trying to unselect it.
             _selectionStartColumn = _selectionEndColumn = _selectionStartLine = _selectionEndLine = 0;
+
+            MoveCursorTo(selection.StartLine, selection.StartColumn, MoveCursorFlags.None);
         }
 
         /// <summary>
@@ -1801,9 +1802,7 @@ namespace Jamiras.ViewModels.CodeEditor
 
             MoveCursorTo(item.After.StartLine, item.After.StartColumn, MoveCursorFlags.None);
             ReplaceText(item.After, item.Before.Text);
-
-            Debug.Assert(CursorLine == item.Before.EndLine);
-            Debug.Assert(CursorColumn == item.Before.EndColumn);
+            MoveCursorTo(item.Before.EndLine, item.Before.EndColumn, MoveCursorFlags.None);
 
             Refresh();
         }
@@ -1818,9 +1817,7 @@ namespace Jamiras.ViewModels.CodeEditor
 
             MoveCursorTo(item.Before.StartLine, item.Before.StartColumn, MoveCursorFlags.None);
             ReplaceText(item.Before, item.After.Text);
-
-            Debug.Assert(CursorLine == item.After.EndLine);
-            Debug.Assert(CursorColumn == item.After.EndColumn);
+            MoveCursorTo(item.After.EndLine, item.After.EndColumn, MoveCursorFlags.None);
 
             Refresh();
         }

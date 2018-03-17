@@ -959,6 +959,57 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             Assert.That(viewModel.CursorColumn, Is.EqualTo(1));
         }
 
+        [Test]
+        public void TestDeleteSelectionMidLine()
+        {
+            viewModel.MoveCursorTo(1, 20, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(1, 45, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+            viewModel.DeleteSelection();
+            Assert.That(viewModel.CursorLine, Is.EqualTo(1));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(20));
+            Assert.That(viewModel.Lines[0].Text, Is.EqualTo("bool test_function()"));
+            Assert.That(viewModel.GetSelectedText(), Is.EqualTo(""));
+        }
+
+        [Test]
+        public void TestDeleteSelectionEntireLine()
+        {
+            viewModel.MoveCursorTo(3, 1, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(4, 1, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+            viewModel.DeleteSelection();
+            Assert.That(viewModel.CursorLine, Is.EqualTo(3));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(1));
+            Assert.That(viewModel.LineCount, Is.EqualTo(9));
+            Assert.That(viewModel.Lines[2].Text, Is.EqualTo("    if (param1 == 1)"));
+            Assert.That(viewModel.GetSelectedText(), Is.EqualTo(""));
+        }
+
+        [Test]
+        public void TestDeleteSelectionMultiLine()
+        {
+            viewModel.MoveCursorTo(4, 5, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(7, 9, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+            viewModel.DeleteSelection();
+            Assert.That(viewModel.CursorLine, Is.EqualTo(4));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(5));
+            Assert.That(viewModel.LineCount, Is.EqualTo(7));
+            Assert.That(viewModel.Lines[3].Text, Is.EqualTo("    param2 = NULL;"));
+            Assert.That(viewModel.GetSelectedText(), Is.EqualTo(""));
+        }
+
+        [Test]
+        public void TestDeleteSelectionMultiLineReverse()
+        {
+            viewModel.MoveCursorTo(7, 9, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(4, 5, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+            viewModel.DeleteSelection();
+            Assert.That(viewModel.CursorLine, Is.EqualTo(4));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(5));
+            Assert.That(viewModel.LineCount, Is.EqualTo(7));
+            Assert.That(viewModel.Lines[3].Text, Is.EqualTo("    param2 = NULL;"));
+            Assert.That(viewModel.GetSelectedText(), Is.EqualTo(""));
+        }
+
         class BracingCodeEditorViewModel : CodeEditorViewModel
         {
             public BracingCodeEditorViewModel(IClipboardService clipboardService, ITimerService timerService, IBackgroundWorkerService backgroundWorkerService)
