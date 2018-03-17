@@ -72,6 +72,16 @@ namespace Jamiras.ViewModels.CodeEditor
                     Close();
                     e.Handled = true;
                     break;
+
+                case Key.F3:
+                    Owner.HandleKey(e.Key, e.Modifiers);
+                    break;
+
+                case Key.F:
+                case Key.G:
+                    if ((e.Modifiers & ModifierKeys.Control) != 0)
+                        Owner.HandleKey(e.Key, e.Modifiers);
+                    break;
             }
         }
     }

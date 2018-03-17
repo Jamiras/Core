@@ -25,9 +25,24 @@
 
             <DataTemplate DataType="{x:Type toolwindows:GotoLineToolWindowViewModel}">
                 <TextBox Text="{Binding LineNumber.Text}" Margin="0" MaxLength="{Binding LineNumber.MaxLength}" 
-                         FocusVisualStyle="{x:Null}"                         
+                         FocusVisualStyle="{x:Null}" BorderThickness="0"                         
                          jamiras:CommandBinding.SelectAllOnFocus="True"
                          jamiras:CommandBinding.FocusIfTrue="{Binding ShouldFocusLineNumber}" />
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type toolwindows:FindToolWindowViewModel}">
+                <Grid Width="400">
+                    <TextBox Text="{Binding SearchText.Text, UpdateSourceTrigger=PropertyChanged}" Margin="0" MaxLength="{Binding SearchText.MaxLength}" 
+                         FocusVisualStyle="{x:Null}" BorderThickness="0"                        
+                         jamiras:CommandBinding.SelectAllOnFocus="True"
+                         jamiras:CommandBinding.FocusIfTrue="{Binding ShouldFocusSearchText}" />
+
+                    <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="Gray" Margin="0,0,4,0">
+                        <TextBlock Text="{Binding Index}" Margin="0,0,-2,0" />
+                        <Run Text="/" />
+                        <TextBlock Text="{Binding MatchCount}" Margin="-2,0,0,0" />
+                    </TextBlock>
+                </Grid>
             </DataTemplate>
 
             <BooleanToVisibilityConverter x:Key="boolToVisConverter" />

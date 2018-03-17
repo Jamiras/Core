@@ -47,7 +47,10 @@ namespace Jamiras.ViewModels.CodeEditor
             Style = new EditorProperties();
             Resources = new EditorResources(Style);
 
+            _findWindow = new FindToolWindowViewModel(this);
+
             GotoLineCommand = new DelegateCommand(HandleGotoLine);
+            FindCommand = new DelegateCommand(HandleFind);
             UndoCommand = new DelegateCommand(HandleUndo);
             RedoCommand = new DelegateCommand(HandleRedo);
             CutCommand = new DelegateCommand(CutSelection);
@@ -65,6 +68,8 @@ namespace Jamiras.ViewModels.CodeEditor
 
         private FixedSizeStack<UndoItem> _undoStack;
         private Stack<UndoItem> _redoStack;
+
+        private FindToolWindowViewModel _findWindow;
 
         /// <summary>
         /// Gets the mapping of opening braces to closing braces.
@@ -86,6 +91,11 @@ namespace Jamiras.ViewModels.CodeEditor
         /// Gets the goto line command.
         /// </summary>
         public CommandBase GotoLineCommand { get; private set; }
+
+        /// <summary>
+        /// Gets the find command.
+        /// </summary>
+        public CommandBase FindCommand { get; private set; }
 
         /// <summary>
         /// Gets the undo command.
@@ -170,17 +180,20 @@ namespace Jamiras.ViewModels.CodeEditor
         /// </summary>
         protected void ShowToolWindow(ToolWindowViewModel toolWindow)
         {
-            if (ToolWindow != null)
+            if (toolWindow != null)
+            {
+                ToolWindow = toolWindow;
+                IsToolWindowVisible = true;
+            }
+            else
             {
                 IsToolWindowVisible = false;
-                _timerService.Schedule(() => {
-                    ToolWindow = null;
-                    ShowToolWindow(toolWindow);
-                }, TimeSpan.FromMilliseconds(200));
+                _timerService.Schedule(() =>
+                {
+                    if (!IsToolWindowVisible)
+                        ToolWindow = null;
+                }, TimeSpan.FromMilliseconds(300));
             }
-
-            ToolWindow = toolWindow;
-            IsToolWindowVisible = (toolWindow != null);
         }
 
         /// <summary>
@@ -695,6 +708,26 @@ namespace Jamiras.ViewModels.CodeEditor
                     {
                         goto default;
                     }
+                    break;
+
+                case Key.F:
+                    if ((e.Modifiers & ModifierKeys.Control) != 0)
+                    {
+                        HandleFind();
+                        e.Handled = true;
+                    }
+                    else
+                    {
+                        goto default;
+                    }
+                    break;
+
+                case Key.F3:
+                    if ((e.Modifiers & ModifierKeys.Shift) != 0)
+                        _findWindow.FindPrevious();
+                    else
+                        _findWindow.FindNext();
+                    e.Handled = true;
                     break;
 
                 default:
@@ -1838,6 +1871,21 @@ namespace Jamiras.ViewModels.CodeEditor
 
             if (!isVisible)
                 ShowToolWindow(toolWindow);
+        }
+
+        private void HandleFind()
+        {
+            if (_selectionStartLine == _selectionEndLine)
+            {
+                if (_selectionStartLine == 0)
+                    _findWindow.SearchText.Text = GetWordAt(CursorLine, CursorColumn);
+                else
+                    _findWindow.SearchText.Text = GetSelectedText();
+            }
+
+            _findWindow.ShouldFocusSearchText = true;
+
+            ShowToolWindow(_findWindow);
         }
     }
 }

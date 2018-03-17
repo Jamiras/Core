@@ -229,6 +229,7 @@
     <Compile Include="ViewModels\CodeEditor\EditorProperties.cs" />
     <Compile Include="ViewModels\CodeEditor\EditorResources.cs" />
     <Compile Include="ViewModels\CodeEditor\ToolWindows\CodeReferencesToolWindowViewModel.cs" />
+    <Compile Include="ViewModels\CodeEditor\ToolWindows\FindToolWindowViewModel.cs" />
     <Compile Include="ViewModels\CodeEditor\ToolWindows\GotoLineToolWindowViewModel.cs" />
     <Compile Include="ViewModels\CodeEditor\LineEventArgs.cs" />
     <Compile Include="ViewModels\CodeEditor\LineFormatEventArgs.cs" />
