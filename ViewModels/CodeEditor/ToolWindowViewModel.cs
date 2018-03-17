@@ -77,8 +77,9 @@ namespace Jamiras.ViewModels.CodeEditor
                     Owner.HandleKey(e.Key, e.Modifiers);
                     break;
 
-                case Key.F:
-                case Key.G:
+                case Key.F: // find
+                case Key.G: // goto line
+                case Key.H: // replace
                     if ((e.Modifiers & ModifierKeys.Control) != 0)
                         Owner.HandleKey(e.Key, e.Modifiers);
                     break;

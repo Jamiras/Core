@@ -229,6 +229,7 @@
     <Compile Include="ViewModels\CodeEditor\EditorProperties.cs" />
     <Compile Include="ViewModels\CodeEditor\EditorResources.cs" />
     <Compile Include="ViewModels\CodeEditor\ToolWindows\CodeReferencesToolWindowViewModel.cs" />
+    <Compile Include="ViewModels\CodeEditor\ToolWindows\ReplaceToolWindowViewModel.cs" />
     <Compile Include="ViewModels\CodeEditor\ToolWindows\FindToolWindowViewModel.cs" />
     <Compile Include="ViewModels\CodeEditor\ToolWindows\GotoLineToolWindowViewModel.cs" />
     <Compile Include="ViewModels\CodeEditor\LineEventArgs.cs" />
@@ -336,6 +337,12 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\Error10.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\LeftArrow14.png" />
+    <Resource Include="Resources\Replace14.png" />
+    <Resource Include="Resources\ReplaceAll14.png" />
+    <Resource Include="Resources\RightArrow14.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

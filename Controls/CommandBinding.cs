@@ -333,9 +333,8 @@ namespace Jamiras.Controls
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
-
         /// <summary>
-        /// Property for <see cref="TextBox"/> that causes the contents to be selected whenever the TextBox gets focused.
+        /// Property for a <see cref="MenuItem"/> that sets its InputGesture property and creates an InputBinding for it.
         /// </summary>
         public static readonly DependencyProperty InputGestureProperty =
             DependencyProperty.RegisterAttached("InputGesture", typeof(string), typeof(CommandBinding),

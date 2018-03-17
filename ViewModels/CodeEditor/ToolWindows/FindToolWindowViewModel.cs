@@ -1,4 +1,5 @@
-﻿using Jamiras.DataModels;
+﻿using Jamiras.Commands;
+using Jamiras.DataModels;
 using Jamiras.ViewModels.Fields;
 using System;
 using System.Collections.Generic;
@@ -24,10 +25,23 @@ namespace Jamiras.ViewModels.CodeEditor.ToolWindows
             SearchText = new TextFieldViewModel("Find", 255);
             SearchText.AddPropertyChangedHandler(TextFieldViewModel.TextProperty, OnTextChanged);
 
+            FindNextCommand = new DelegateCommand(FindNext);
+            FindPreviousCommand = new DelegateCommand(FindPrevious);
+
             _matches = new List<MatchLocation>();
         }
 
         private List<MatchLocation> _matches;
+
+        /// <summary>
+        /// Gets the command to move the selected highlight to the next match.
+        /// </summary>
+        public CommandBase FindNextCommand { get; private set; }
+
+        /// <summary>
+        /// Gets the command to move the selected highlight to the next match.
+        /// </summary>
+        public CommandBase FindPreviousCommand { get; private set; }
 
         /// <summary>
         /// Gets the view model for the search text field.
@@ -101,7 +115,7 @@ namespace Jamiras.ViewModels.CodeEditor.ToolWindows
 
                     if (nextIndex == -1)
                     {
-                        if (line.Line > cursorLine || (line.Line == cursorLine && index + searchText.Length >= cursorColumn))
+                        if (line.Line > cursorLine || (line.Line == cursorLine && index + 1 + searchText.Length >= cursorColumn))
                             nextIndex = _matches.Count;
                     }
 
@@ -167,6 +181,9 @@ namespace Jamiras.ViewModels.CodeEditor.ToolWindows
             public int Column;
         }
 
+        /// <summary>
+        /// Moves the selected highlight to the next match.
+        /// </summary>
         public void FindNext()
         {
             if (_matches.Count == 0)
@@ -178,6 +195,9 @@ namespace Jamiras.ViewModels.CodeEditor.ToolWindows
                 Index = Index + 1;
         }
 
+        /// <summary>
+        /// Moves the selected highlight to the previous match.
+        /// </summary>
         public void FindPrevious()
         {
             if (_matches.Count == 0)
@@ -187,6 +207,28 @@ namespace Jamiras.ViewModels.CodeEditor.ToolWindows
                 Index = _matches.Count;
             else
                 Index = Index - 1;
+        }
+
+        /// <summary>
+        /// Removes the current item from the matches list.
+        /// </summary>
+        protected void RemoveCurrentMatch()
+        {
+            if (_matches.Count == 0)
+                return;
+
+            var index = Index - 1;
+            _matches.RemoveAt(index);
+            MatchCount--;
+            Index = 0;
+
+            if (_matches.Count > 0)
+            {
+                if (Index == _matches.Count)
+                    Index = 1;
+                else
+                    Index = index + 1;
+            }
         }
     }
 }

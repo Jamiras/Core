@@ -51,6 +51,7 @@ namespace Jamiras.ViewModels.CodeEditor
 
             GotoLineCommand = new DelegateCommand(HandleGotoLine);
             FindCommand = new DelegateCommand(HandleFind);
+            ReplaceCommand = new DelegateCommand(HandleReplace);
             UndoCommand = new DelegateCommand(HandleUndo);
             RedoCommand = new DelegateCommand(HandleRedo);
             CutCommand = new DelegateCommand(CutSelection);
@@ -88,14 +89,19 @@ namespace Jamiras.ViewModels.CodeEditor
         private int? _virtualCursorColumn;
 
         /// <summary>
-        /// Gets the goto line command.
+        /// Gets the command to open the goto line tool window.
         /// </summary>
         public CommandBase GotoLineCommand { get; private set; }
 
         /// <summary>
-        /// Gets the find command.
+        /// Gets the command to open the find tool window.
         /// </summary>
         public CommandBase FindCommand { get; private set; }
+
+        /// <summary>
+        /// Gets the command to open the replace tool window.
+        /// </summary>
+        public CommandBase ReplaceCommand { get; private set; }
 
         /// <summary>
         /// Gets the undo command.
@@ -728,6 +734,18 @@ namespace Jamiras.ViewModels.CodeEditor
                     else
                         _findWindow.FindNext();
                     e.Handled = true;
+                    break;
+
+                case Key.H:
+                    if ((e.Modifiers & ModifierKeys.Control) != 0)
+                    {
+                        HandleReplace();
+                        e.Handled = true;
+                    }
+                    else
+                    {
+                        goto default;
+                    }
                     break;
 
                 default:
@@ -1886,6 +1904,31 @@ namespace Jamiras.ViewModels.CodeEditor
             _findWindow.ShouldFocusSearchText = true;
 
             ShowToolWindow(_findWindow);
+        }
+
+        private void HandleReplace()
+        {
+            bool isVisible = true;
+
+            var toolWindow = ToolWindow as ReplaceToolWindowViewModel;
+            if (toolWindow == null)
+            {
+                toolWindow = new ReplaceToolWindowViewModel(this);
+                isVisible = false;
+            }
+
+            if (_selectionStartLine == _selectionEndLine)
+            {
+                if (_selectionStartLine == 0)
+                    toolWindow.SearchText.Text = GetWordAt(CursorLine, CursorColumn);
+                else
+                    toolWindow.SearchText.Text = GetSelectedText();
+            }
+
+            toolWindow.ShouldFocusSearchText = true;
+
+            if (!isVisible)
+                ShowToolWindow(toolWindow);
         }
     }
 }
