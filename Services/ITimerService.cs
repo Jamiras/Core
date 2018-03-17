@@ -2,6 +2,9 @@
 
 namespace Jamiras.Services
 {
+    /// <summary>
+    /// Service for measuring and interacting with time.
+    /// </summary>
     public interface ITimerService
     {
         /// <summary>

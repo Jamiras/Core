@@ -7,8 +7,17 @@ using System.Windows;
 
 namespace Jamiras.ViewModels.CodeEditor
 {
+    /// <summary>
+    /// Defines a single line in the <see cref="CodeEditor"/>
+    /// </summary>
+    /// <seealso cref="Jamiras.ViewModels.ViewModelBase" />
     public class LineViewModel : ViewModelBase
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LineViewModel"/> class.
+        /// </summary>
+        /// <param name="owner">The editor the line is to be displayed in.</param>
+        /// <param name="line">The line number.</param>
         public LineViewModel(CodeEditorViewModel owner, int line)
         {
             _owner = owner;

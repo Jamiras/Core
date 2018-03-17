@@ -1,9 +1,6 @@
-﻿using Jamiras.Components;
-using Jamiras.Services;
-using Jamiras.ViewModels.CodeEditor;
+﻿using Jamiras.ViewModels.CodeEditor;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -11,8 +8,15 @@ using System.Windows.Media;
 
 namespace Jamiras.Controls
 {
+    /// <summary>
+    /// <see cref="TextBlock"/> for rendering <see cref="TextPiece"/>s.
+    /// </summary>
+    /// <seealso cref="System.Windows.Controls.TextBlock" />
     public class CodeEditorTextBlock : TextBlock
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CodeEditorTextBlock"/> class.
+        /// </summary>
         public CodeEditorTextBlock()
         {
             if (_wavyLine == null)

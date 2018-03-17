@@ -139,7 +139,7 @@ namespace Jamiras.ViewModels
         /// <summary>
         /// Shows the provided message in a simple ok/cancel dialog.
         /// </summary>
-        /// <returns><see cref="DialogResult.OK"/> if the OK button was pressed, <see cref="DialogResult.Cancel"/> if not.</returns>
+        /// <returns><see cref="DialogResult.Ok"/> if the OK button was pressed, <see cref="DialogResult.Cancel"/> if not.</returns>
         public DialogResult ShowOkCancelDialog()
         {
             CancelButtonText = "Cancel";

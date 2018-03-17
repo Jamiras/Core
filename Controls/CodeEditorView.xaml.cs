@@ -232,6 +232,10 @@ namespace Jamiras.Controls
 
         private DateTime doubleClickTime;
 
+        /// <summary>
+        /// Raises the <see cref="E:MouseLeftButtonDown" /> event.
+        /// </summary>
+        /// <param name="e">The <see cref="MouseButtonEventArgs"/> instance containing the event data.</param>
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
             if (e.ClickCount == 1 && ViewModel != null)
@@ -253,6 +257,10 @@ namespace Jamiras.Controls
             base.OnMouseLeftButtonDown(e);
         }
 
+        /// <summary>
+        /// Raises the <see cref="E:MouseDoubleClick" /> event.
+        /// </summary>
+        /// <param name="e">The <see cref="MouseButtonEventArgs"/> instance containing the event data.</param>
         protected override void OnMouseDoubleClick(MouseButtonEventArgs e)
         {
             if (ViewModel != null)
@@ -274,6 +282,10 @@ namespace Jamiras.Controls
             base.OnMouseDoubleClick(e);
         }
 
+        /// <summary>
+        /// Raises the <see cref="E:MouseMove" /> event.
+        /// </summary>
+        /// <param name="e">The <see cref="MouseEventArgs"/> instance containing the event data.</param>
         protected override void OnMouseMove(MouseEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed && ViewModel != null && IsFocused)
@@ -295,6 +307,10 @@ namespace Jamiras.Controls
             base.OnMouseMove(e);
         }
 
+        /// <summary>
+        /// Raises the <see cref="E:KeyDown" /> event.
+        /// </summary>
+        /// <param name="e">The <see cref="KeyEventArgs"/> instance containing the event data.</param>
         protected override void OnKeyDown(KeyEventArgs e)
         {
             if (ViewModel != null)

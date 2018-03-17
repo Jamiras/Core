@@ -3,8 +3,16 @@ using System.Diagnostics;
 
 namespace Jamiras.ViewModels.CodeEditor
 {
+    /// <summary>
+    /// Parameters associated with formatting a <see cref="LineViewModel"/>.
+    /// </summary>
+    /// <seealso cref="Jamiras.ViewModels.CodeEditor.LineEventArgs" />
     public class LineFormatEventArgs : LineEventArgs
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LineFormatEventArgs"/> class.
+        /// </summary>
+        /// <param name="line">The associated line.</param>
         public LineFormatEventArgs(LineViewModel line)
             : base(line)
         {
@@ -18,11 +26,24 @@ namespace Jamiras.ViewModels.CodeEditor
         private List<ColorRange> _ranges;
         private List<ColorRange> _errorRanges;
 
+        /// <summary>
+        /// Specifies a custom syntax color to apply to a portion of the line.
+        /// </summary>
+        /// <param name="startColumn">The first column to apply the color to.</param>
+        /// <param name="length">The number of columns to apply the color to.</param>
+        /// <param name="color">The unique identifier of the color to apply.</param>
+        /// <param name="toolTip">A tool tip to associate to the portion of the line, <c>null</c> for no tooltip.</param>
         public void SetColor(int startColumn, int length, int color, string toolTip = null)
         {
             UpdateRange(_ranges, startColumn, length, color, toolTip);
         }
 
+        /// <summary>
+        /// Applies an error indicator to a portion of the line.
+        /// </summary>
+        /// <param name="startColumn">The first column to apply the color to.</param>
+        /// <param name="length">The number of columns to apply the color to.</param>
+        /// <param name="toolTip">A tool tip to associate to the portion of the line, <c>null</c> for no tooltip.</param>
         public void SetError(int startColumn, int length, string toolTip = null)
         {
             UpdateRange(_errorRanges, startColumn, length, 1, toolTip);

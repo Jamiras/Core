@@ -59,11 +59,19 @@ namespace Jamiras.ViewModels.CodeEditor
         private readonly IClipboardService _clipboardService;
         private readonly IBackgroundWorkerService _backgroundWorkerService;
 
+        private int _version;
+
         private int _selectionStartLine, _selectionStartColumn, _selectionEndLine, _selectionEndColumn;
 
         private FixedSizeStack<UndoItem> _undoStack;
         private Stack<UndoItem> _redoStack;
 
+        /// <summary>
+        /// Gets the mapping of opening braces to closing braces.
+        /// </summary>
+        /// <remarks>
+        /// Must be populated by subclass to enable brace matching.
+        /// </remarks>
         protected IDictionary<char, char> Braces
         {
             get { return _braces; }
@@ -132,17 +140,24 @@ namespace Jamiras.ViewModels.CodeEditor
             private set { SetValue(CursorColumnProperty, value); }
         }
 
-        /// <summary>
-        /// Gets the currentl visible tool window.
-        /// </summary>
         private static readonly ModelProperty ToolWindowProperty = ModelProperty.Register(typeof(CodeEditorViewModel), "ToolWindow", typeof(ToolWindowViewModel), null);
+        /// <summary>
+        /// Gets the currently visible tool window.
+        /// </summary>
         public ToolWindowViewModel ToolWindow
         {
             get { return (ToolWindowViewModel)GetValue(ToolWindowProperty); }
             private set { SetValue(ToolWindowProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="IsToolWindowVisible"/>
+        /// </summary>
         public static readonly ModelProperty IsToolWindowVisibleProperty = ModelProperty.Register(typeof(CodeEditorViewModel), "IsToolWindowVisible", typeof(bool), false);
+
+        /// <summary>
+        /// Gets a value indicating whether the tool window is visible.
+        /// </summary>
         [EditorBrowsable(EditorBrowsableState.Never)]
         public bool IsToolWindowVisible
         {
@@ -150,6 +165,9 @@ namespace Jamiras.ViewModels.CodeEditor
             private set { SetValue(IsToolWindowVisibleProperty, value); }
         }
 
+        /// <summary>
+        /// Shows the specified tool window.
+        /// </summary>
         protected void ShowToolWindow(ToolWindowViewModel toolWindow)
         {
             if (ToolWindow != null)
@@ -165,6 +183,9 @@ namespace Jamiras.ViewModels.CodeEditor
             IsToolWindowVisible = (toolWindow != null);
         }
 
+        /// <summary>
+        /// Closes the current tool window.
+        /// </summary>
         internal void CloseToolWindow()
         {
             ShowToolWindow(null);
@@ -224,14 +245,24 @@ namespace Jamiras.ViewModels.CodeEditor
             CursorLine = 1;
             CursorColumn = 1;
 
-            OnContentChanged(new ContentChangedEventArgs(value, _version, this, _lines));
+            OnUpdateSyntax(new ContentChangedEventArgs(value, _version, this, _lines));
         }
 
+        /// <summary>
+        /// Information about changes to the editor content.
+        /// </summary>
         protected class ContentChangedEventArgs
         {
-            public ContentChangedEventArgs(string newValue, int version, CodeEditorViewModel editor, IEnumerable<LineViewModel> updatedLines)
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ContentChangedEventArgs"/> class.
+            /// </summary>
+            /// <param name="content">The new content of the editor.</param>
+            /// <param name="version">An internal counter indicating the revision.</param>
+            /// <param name="editor">A reference to the editor.</param>
+            /// <param name="updatedLines">The lines that were updated.</param>
+            public ContentChangedEventArgs(string content, int version, CodeEditorViewModel editor, IEnumerable<LineViewModel> updatedLines)
             {
-                Value = newValue;
+                Content = content;
                 _version = version;
                 _editor = editor;
                 UpdatedLines = updatedLines;
@@ -240,10 +271,19 @@ namespace Jamiras.ViewModels.CodeEditor
             private readonly int _version;
             private readonly CodeEditorViewModel _editor;
 
-            public string Value { get; private set; }
+            /// <summary>
+            /// Gets the new content of the editor.
+            /// </summary>
+            public string Content { get; private set; }
 
+            /// <summary>
+            /// Gets the lines that were updated.
+            /// </summary>
             public IEnumerable<LineViewModel> UpdatedLines { get; private set; }
 
+            /// <summary>
+            /// Gets a value indicating whether the content has been changed again and the current processing should be aborted.
+            /// </summary>
             public bool IsAborted
             {
                 get
@@ -257,9 +297,9 @@ namespace Jamiras.ViewModels.CodeEditor
         }
 
         /// <summary>
-        /// Called after <see cref="SetContent"/> has updated the <see cref="Lines"/>.
+        /// Called shortly after text changes to update the syntax highlighting
         /// </summary>
-        protected virtual void OnContentChanged(ContentChangedEventArgs e)
+        protected virtual void OnUpdateSyntax(ContentChangedEventArgs e)
         {
 
         }
@@ -272,8 +312,6 @@ namespace Jamiras.ViewModels.CodeEditor
                 Refresh();
             });
         }
-
-        private int _version;
 
         /// <summary>
         /// Commits and pending changes to the editor text.
@@ -333,7 +371,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     return;
 
                 // process the string
-                OnContentChanged(e);
+                OnUpdateSyntax(e);
 
                 if (e.IsAborted)
                     return;
@@ -663,7 +701,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     if ((e.Modifiers & ModifierKeys.Control) == 0)
                     {
                         char c = e.GetChar();
-                        if (c != '\0' && !Char.IsControl(c))
+                        if (c != '\0')
                         {
                             HandleCharacter(c);
                             e.Handled = true;
@@ -1093,6 +1131,12 @@ namespace Jamiras.ViewModels.CodeEditor
             }
         }
 
+        /// <summary>
+        /// Gets the word at the specified location.
+        /// </summary>
+        /// <param name="line">The line.</param>
+        /// <param name="column">The column.</param>
+        /// <returns>A string representing the portion of text believed to be a separate token at the specified location.</returns>
         protected string GetWordAt(int line, int column)
         {
             var word = GetWordSelection(line, column);
@@ -1460,7 +1504,7 @@ namespace Jamiras.ViewModels.CodeEditor
         }
 
         /// <summary>
-        /// Behavioral flags to pass to the <see cref="MoveCursorTo" method. />
+        /// Behavioral flags to pass to the <see cref="MoveCursorTo"/> method.
         /// </summary>
         public enum MoveCursorFlags
         {
