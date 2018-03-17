@@ -29,7 +29,9 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             mockTimerService = new Mock<ITimerService>();
             mockTimerService.Setup(t => t.WaitForTyping(It.IsAny<Action>())).Callback((Action a) => typingCallback = a);
             mockClipboardService = new Mock<IClipboardService>();
-            viewModel = new CodeEditorViewModel(mockClipboardService.Object, mockTimerService.Object);
+            mockBackgroundWorkerService = new Mock<IBackgroundWorkerService>();
+            mockBackgroundWorkerService.Setup(b => b.RunAsync(It.IsAny<Action>())).Callback((Action a) => a());
+            viewModel = new CodeEditorViewModel(mockClipboardService.Object, mockTimerService.Object, mockBackgroundWorkerService.Object);
             viewModel.SetContent(content);
             viewModel.FormatLine += FormatLine;
         }
@@ -37,6 +39,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         CodeEditorViewModel viewModel;
         Mock<IClipboardService> mockClipboardService;
         Mock<ITimerService> mockTimerService;
+        Mock<IBackgroundWorkerService> mockBackgroundWorkerService;
         Action typingCallback;
 
         private void CompleteTyping()
@@ -391,9 +394,9 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             viewModel.MoveCursorTo(6, 7, CodeEditorViewModel.MoveCursorFlags.None);
             Assert.That(viewModel.HandleKey(Key.Enter, ModifierKeys.None), Is.True);
             Assert.That(viewModel.CursorLine, Is.EqualTo(7));
-            Assert.That(viewModel.CursorColumn, Is.EqualTo(1));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(5));
             Assert.That(viewModel.Lines[5].PendingText, Is.EqualTo("    el"));
-            Assert.That(viewModel.Lines[6].PendingText, Is.EqualTo("se"));
+            Assert.That(viewModel.Lines[6].PendingText, Is.EqualTo("    se"));
             Assert.That(viewModel.Lines[7].Text, Is.EqualTo("        param2 = NULL;"));
             Assert.That(viewModel.Lines[5].Line, Is.EqualTo(6));
             Assert.That(viewModel.Lines[6].Line, Is.EqualTo(7));
@@ -423,10 +426,10 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             viewModel.MoveCursorTo(6, 9, CodeEditorViewModel.MoveCursorFlags.None);
             Assert.That(viewModel.HandleKey(Key.Enter, ModifierKeys.None), Is.True);
             Assert.That(viewModel.CursorLine, Is.EqualTo(7));
-            Assert.That(viewModel.CursorColumn, Is.EqualTo(1));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(5));
             Assert.That(viewModel.Lines[5].Text, Is.EqualTo("    else"));
             Assert.That(viewModel.Lines[5].PendingText, Is.Null);
-            Assert.That(viewModel.Lines[6].PendingText, Is.EqualTo(""));
+            Assert.That(viewModel.Lines[6].PendingText, Is.EqualTo("    "));
             Assert.That(viewModel.Lines[7].Text, Is.EqualTo("        param2 = NULL;"));
             Assert.That(viewModel.Lines[5].Line, Is.EqualTo(6));
             Assert.That(viewModel.Lines[6].Line, Is.EqualTo(7));
@@ -741,14 +744,13 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             viewModel.HandleCharacter('=');
             viewModel.HandleCharacter('3');
             viewModel.HandleKey(Key.Enter, ModifierKeys.None);
-            viewModel.HandleCharacter(' ');
-            viewModel.HandleCharacter(' ');
-            viewModel.HandleCharacter(' ');
+            viewModel.HandleCharacter('/');
+            viewModel.HandleCharacter('/');
             viewModel.HandleCharacter(' ');
             CompleteTyping();
 
             Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    a=3"));
-            Assert.That(viewModel.Lines[9].Text, Is.EqualTo("    return true;"));
+            Assert.That(viewModel.Lines[9].Text, Is.EqualTo("    // return true;"));
             Assert.That(viewModel.LineCount, Is.EqualTo(11));
 
             viewModel.HandleKey(Key.Z, ModifierKeys.Control);
@@ -959,8 +961,8 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
 
         class BracingCodeEditorViewModel : CodeEditorViewModel
         {
-            public BracingCodeEditorViewModel(IClipboardService clipboardService, ITimerService timerService)
-                : base(clipboardService, timerService)
+            public BracingCodeEditorViewModel(IClipboardService clipboardService, ITimerService timerService, IBackgroundWorkerService backgroundWorkerService)
+                : base(clipboardService, timerService, backgroundWorkerService)
             {
                 Braces['('] = ')';
 
@@ -968,10 +970,15 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             }
         }
 
+        private BracingCodeEditorViewModel CreateBracingCodeEditorViewModel()
+        {
+            return new BracingCodeEditorViewModel(mockClipboardService.Object, mockTimerService.Object, mockBackgroundWorkerService.Object);
+        }
+
         [Test]
         public void TestBraceMatching()
         {
-            var bracingViewModel = new BracingCodeEditorViewModel(mockClipboardService.Object, mockTimerService.Object);
+            var bracingViewModel = CreateBracingCodeEditorViewModel();
             bracingViewModel.HandleCharacter('f');
             bracingViewModel.HandleCharacter('(');
             CompleteTyping();
@@ -992,7 +999,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         [Test]
         public void TestBraceMatchingDelete()
         {
-            var bracingViewModel = new BracingCodeEditorViewModel(mockClipboardService.Object, mockTimerService.Object);
+            var bracingViewModel = CreateBracingCodeEditorViewModel();
             bracingViewModel.HandleCharacter('f');
             bracingViewModel.HandleCharacter('(');
             CompleteTyping();
@@ -1008,7 +1015,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         [Test]
         public void TestBraceMatchingBackspace()
         {
-            var bracingViewModel = new BracingCodeEditorViewModel(mockClipboardService.Object, mockTimerService.Object);
+            var bracingViewModel = CreateBracingCodeEditorViewModel();
             bracingViewModel.HandleCharacter('f');
             bracingViewModel.HandleCharacter('(');
             CompleteTyping();
@@ -1024,7 +1031,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         [Test]
         public void TestBraceMatchingUndo()
         {
-            var bracingViewModel = new BracingCodeEditorViewModel(mockClipboardService.Object, mockTimerService.Object);
+            var bracingViewModel = CreateBracingCodeEditorViewModel();
             bracingViewModel.HandleCharacter('f');
             CompleteTyping();
             bracingViewModel.HandleCharacter('(');
@@ -1040,7 +1047,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         [Test]
         public void TestBraceMatchingStoppedByCursorMovement()
         {
-            var bracingViewModel = new BracingCodeEditorViewModel(mockClipboardService.Object, mockTimerService.Object);
+            var bracingViewModel = CreateBracingCodeEditorViewModel();
             bracingViewModel.HandleCharacter('f');
             bracingViewModel.HandleCharacter('(');
             CompleteTyping();
@@ -1054,6 +1061,32 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             CompleteTyping();
             Assert.That(bracingViewModel.Lines[0].Text, Is.EqualTo("f())"));
             Assert.That(bracingViewModel.CursorColumn, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void TestBraceMatchingNewLine()
+        {
+            var bracingViewModel = CreateBracingCodeEditorViewModel();
+            bracingViewModel.HandleCharacter('f');
+            bracingViewModel.HandleCharacter('(');
+            CompleteTyping();
+            Assert.That(bracingViewModel.Lines[0].Text, Is.EqualTo("f()"));
+            Assert.That(bracingViewModel.CursorColumn, Is.EqualTo(3));
+
+            bracingViewModel.HandleKey(Key.Enter, ModifierKeys.None);
+            CompleteTyping();
+            Assert.That(bracingViewModel.LineCount, Is.EqualTo(3));
+            Assert.That(bracingViewModel.Lines[0].Text, Is.EqualTo("f("));
+            Assert.That(bracingViewModel.Lines[1].Text, Is.EqualTo("    "));
+            Assert.That(bracingViewModel.Lines[2].Text, Is.EqualTo(")"));
+            Assert.That(bracingViewModel.CursorLine, Is.EqualTo(2));
+            Assert.That(bracingViewModel.CursorColumn, Is.EqualTo(5));
+
+            bracingViewModel.HandleCharacter(')');
+            CompleteTyping();
+            Assert.That(bracingViewModel.Lines[1].Text, Is.EqualTo("    )"));
+            Assert.That(bracingViewModel.Lines[2].Text, Is.EqualTo(")"));
+            Assert.That(bracingViewModel.CursorColumn, Is.EqualTo(6));
         }
     }
 }

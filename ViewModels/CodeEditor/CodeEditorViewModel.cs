@@ -24,14 +24,16 @@ namespace Jamiras.ViewModels.CodeEditor
         /// </summary>
         public CodeEditorViewModel()
             : this(ServiceRepository.Instance.FindService<IClipboardService>(),
-                   ServiceRepository.Instance.FindService<ITimerService>())
+                   ServiceRepository.Instance.FindService<ITimerService>(),
+                   ServiceRepository.Instance.FindService<IBackgroundWorkerService>())
         {
         }
 
-        internal CodeEditorViewModel(IClipboardService clipboardService, ITimerService timerService)
+        internal CodeEditorViewModel(IClipboardService clipboardService, ITimerService timerService, IBackgroundWorkerService backgroundWorkerService)
         {
             _clipboardService = clipboardService;
             _timerService = timerService;
+            _backgroundWorkerService = backgroundWorkerService;
 
             _lines = new ObservableCollection<LineViewModel>();
             _linesWrapper = new ReadOnlyObservableCollection<LineViewModel>(_lines);
@@ -55,6 +57,7 @@ namespace Jamiras.ViewModels.CodeEditor
 
         private readonly ITimerService _timerService;
         private readonly IClipboardService _clipboardService;
+        private readonly IBackgroundWorkerService _backgroundWorkerService;
 
         private int _selectionStartLine, _selectionStartColumn, _selectionEndLine, _selectionEndColumn;
 
@@ -221,14 +224,42 @@ namespace Jamiras.ViewModels.CodeEditor
             CursorLine = 1;
             CursorColumn = 1;
 
-            OnContentChanged(value);
+            OnContentChanged(new ContentChangedEventArgs(value, _version, this, _lines));
+        }
+
+        protected class ContentChangedEventArgs
+        {
+            public ContentChangedEventArgs(string newValue, int version, CodeEditorViewModel editor, IEnumerable<LineViewModel> updatedLines)
+            {
+                Value = newValue;
+                _version = version;
+                _editor = editor;
+                UpdatedLines = updatedLines;
+            }
+
+            private readonly int _version;
+            private readonly CodeEditorViewModel _editor;
+
+            public string Value { get; private set; }
+
+            public IEnumerable<LineViewModel> UpdatedLines { get; private set; }
+
+            public bool IsAborted
+            {
+                get
+                {
+                    lock (_editor._lines)
+                    {
+                        return (_editor._version != _version);
+                    }
+                }
+            }
         }
 
         /// <summary>
         /// Called after <see cref="SetContent"/> has updated the <see cref="Lines"/>.
         /// </summary>
-        /// <param name="newValue">The value passed to <see cref="SetContent"/>.</param>
-        protected virtual void OnContentChanged(string newValue)
+        protected virtual void OnContentChanged(ContentChangedEventArgs e)
         {
 
         }
@@ -242,32 +273,109 @@ namespace Jamiras.ViewModels.CodeEditor
             });
         }
 
+        private int _version;
+
         /// <summary>
         /// Commits and pending changes to the editor text.
         /// </summary>
         public override void Refresh()
         {
-            var updatedLines = new List<LineViewModel>();
-
-            var newContent = new StringBuilder();
-            foreach (var line in _lines)
+            _backgroundWorkerService.RunAsync(() =>
             {
-                var pendingText = line.PendingText;
-                if (pendingText != null)
+                var updatedLines = new List<LineViewModel>();
+
+                int version;
+                lock (_lines)
                 {
-                    newContent.AppendLine(pendingText);
-                    updatedLines.Add(line);
+                    // capture a version, if it changes while we're processing, we'll abort and let the new version proceed
+                    version = ++_version;
                 }
-                else
+
+                var newContent = new StringBuilder();
+                for (int i = 0; i < _lines.Count; i++)
                 {
-                    newContent.AppendLine(line.Text);
+                    var line = _lines[i];
+
+                    var pendingText = line.PendingText;
+                    if (pendingText != null)
+                    {
+                        newContent.AppendLine(pendingText);
+                        updatedLines.Add(line);
+                        line.CommitPending();
+                    }
+                    else
+                    {
+                        newContent.AppendLine(line.Text);
+                    }
+
+                    if ((i & 127) == 127)
+                    {
+                        // every 128 lines, check to see if more changes have been made
+                        lock (_lines)
+                        {
+                            if (_version != version)
+                                return;
+                        }
+                    }
                 }
+
+                // final check to see if more changes have been made before converting the builder to a string
+                lock (_lines)
+                {
+                    if (_version != version)
+                        return;
+                }
+
+                var e = new ContentChangedEventArgs(newContent.ToString(), version, this, updatedLines);
+
+                // string converted, make another check before processing it
+                if (e.IsAborted)
+                    return;
+
+                // process the string
+                OnContentChanged(e);
+
+                if (e.IsAborted)
+                    return;
+
+                UpdateSyntaxHighlighting(e);
+            });
+        }
+
+        private void UpdateSyntaxHighlighting(ContentChangedEventArgs e)
+        {
+            // repaint the affected lines
+            foreach (var line in e.UpdatedLines)
+                line.Refresh();
+
+            // repaint ten lines on either side of each updated line
+            var nearbyLines = new byte[_lines.Count];
+            foreach (var line in e.UpdatedLines)
+            {
+                var index = _lines.IndexOf(line);
+                if (index == -1)
+                    continue;
+
+                var start = Math.Max(index - 10, 0);
+                var end = Math.Min(index + 10, nearbyLines.Length);
+                for (int i = start; i < end; i++)
+                    nearbyLines[i] = 1;
+            }
+            for (int i = 0; i < Math.Min(nearbyLines.Length, _lines.Count); i++)
+            {
+                if (nearbyLines[i] != 0)
+                    _lines[i].Refresh();
             }
 
-            OnContentChanged(newContent.ToString());
+            if (e.IsAborted)
+                return;
 
-            foreach (var line in updatedLines)
-                line.CommitPending();
+            // repaint remaining lines
+            for (int i = 0; i < Math.Min(nearbyLines.Length, _lines.Count); i++)
+            {
+                if (nearbyLines[i] == 0)
+                    _lines[i].Refresh();
+            }
         }
 
         /// <summary>
@@ -1295,10 +1403,17 @@ namespace Jamiras.ViewModels.CodeEditor
             if (right.Length > 0)
                 cursorLineViewModel.Remove(cursorColumn + 1, text.Length);
 
+            // indent
+            var indent = 0;
+            while (indent < text.Length && Char.IsWhiteSpace(text[indent]))
+                indent++;
+            if (indent > 0)
+                right = new string(' ', indent) + right.TrimStart();
+
             // add a new line
+            int newLines = 1;
             var newLineViewModel = new LineViewModel(this, cursorLine + 1) { PendingText = right };
             _lines.Insert(cursorLine, newLineViewModel);
-            LineCount++;
 
             // create TextPieces for the new line so it appears
             if (right.Length > 0)
@@ -1307,16 +1422,38 @@ namespace Jamiras.ViewModels.CodeEditor
                 newLineViewModel.SetValue(LineViewModel.TextPiecesProperty, e.BuildTextPieces());
             }
 
-            // update the cursor position
-            MoveCursorTo(cursorLine + 1, 1, MoveCursorFlags.None);
-
-            // update the line numbers
-            for (int i = CursorLine; i < _lines.Count; i++)
-                _lines[i].Line++;
-
             // update undo item
             undoItem.After.EndLine++;
-            undoItem.After.EndColumn = 1;
+            undoItem.After.EndColumn = indent + 1;
+
+            // if breaking apart braces, insert an extra newline indented an additional level
+            if (_braceStack.Count > 0 && cursorColumn < text.Length && text[cursorColumn] == _braceStack.Peek())
+            {
+                _braceStack.Clear();            // no longer try to match the closing brace
+                undoItem.After.EndLine++;       // ensure closing brace included in undo information
+                newLineViewModel.Line++;        // adjust the closing brace line number
+
+                indent += 4;
+                newLineViewModel = new LineViewModel(this, cursorLine + 1) { PendingText = new string(' ', indent) };
+                _lines.Insert(cursorLine, newLineViewModel);
+                newLines++;
+            }
+            else if (indent > cursorColumn)
+            {
+                // enter pressed in the indent margin (or more likely at the start of line)
+                // keep cursor in the column where it was
+                indent = cursorColumn;
+            }
+
+            // update line count (have to do before moving cursor)
+            LineCount += newLines;
+
+            // update the cursor position
+            MoveCursorTo(cursorLine + 1, indent + 1, MoveCursorFlags.None);
+
+            // update the line numbers
+            for (int i = CursorLine + newLines - 1; i < _lines.Count; i++)
+                _lines[i].Line += newLines;
 
             // schedule a refresh to update the syntax highlighting
             WaitForTyping();

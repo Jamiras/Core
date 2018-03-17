@@ -155,7 +155,7 @@ namespace Jamiras.ViewModels.CodeEditor
         /// <summary>
         /// Commits the <see cref="PendingText"/>.
         /// </summary>
-        public void CommitPending()
+        internal void CommitPending()
         {
             var pendingText = PendingText;
             if (pendingText != null)
@@ -178,22 +178,14 @@ namespace Jamiras.ViewModels.CodeEditor
         /// </summary>
         public override void Refresh()
         {
-            var text = Text;
-
-            // framework trick to force update of dependent property TextPieces, even if Text didn't really change
-            OnModelPropertyChanged(new ModelPropertyChangedEventArgs(TextProperty, text, text));
+            // reset dependent property to uninitialized value - if it triggers a PropertyChanged event, bound record will ask for the updated value and it will be re-evaluated.
+            SetValue(TextPiecesProperty, TextPiecesProperty.DefaultValue);
         }
-
-        internal static readonly ModelProperty PendingTextProperty = ModelProperty.Register(typeof(LineViewModel), "PendingText", typeof(string), null);
 
         /// <summary>
         /// Gets or sets text being typed.
         /// </summary>
-        internal string PendingText
-        {
-            get { return (string)GetValue(PendingTextProperty); }
-            set { SetValue(PendingTextProperty, value); }
-        }
+        internal string PendingText { get; set; }
 
         /// <summary>
         /// <see cref="ModelProperty"/> for <see cref="Text"/>
@@ -231,15 +223,12 @@ namespace Jamiras.ViewModels.CodeEditor
         {
             var viewModel = (LineViewModel)model;
             if (viewModel.Text.Length == 0)
-                return new TextPiece[] { new TextPiece { Text = "" } };
+                return new TextPiece[] { new TextPiece { Text = "", Foreground = viewModel.Resources.Foreground.Brush } };
 
-            lock (viewModel)
-            {
-                var e = new LineFormatEventArgs(viewModel);
-                viewModel._owner.RaiseFormatLine(e);
+            var e = new LineFormatEventArgs(viewModel);
+            viewModel._owner.RaiseFormatLine(e);
 
-                return e.BuildTextPieces();
-            }
+            return e.BuildTextPieces();
         }
 
         /// <summary>

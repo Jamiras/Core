@@ -2,9 +2,7 @@
 using Jamiras.ViewModels.CodeEditor;
 using Moq;
 using NUnit.Framework;
-using System;
 using System.Text;
-using System.Windows.Input;
 
 namespace Jamiras.Core.Tests.ViewModels.CodeEditor
 {
@@ -16,7 +14,8 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         {
             var mockClipboard = new Mock<IClipboardService>();
             var mockTimer = new Mock<ITimerService>();
-            codeEditor = new CodeEditorViewModel(mockClipboard.Object, mockTimer.Object);
+            var mockBackgroundWorkerService = new Mock<IBackgroundWorkerService>();
+            codeEditor = new CodeEditorViewModel(mockClipboard.Object, mockTimer.Object, mockBackgroundWorkerService.Object);
             viewModel = new LineViewModel(codeEditor, 1);
         }
 

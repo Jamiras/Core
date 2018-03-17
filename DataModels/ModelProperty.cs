@@ -222,6 +222,10 @@ namespace Jamiras.DataModels
         /// <returns><c>true</c> if the value is valid for the property type, <c>false</c> if not.</returns>
         public bool IsValueValid(object value)
         {
+            // UninitializedValue can only be assigned to a property registered using RegisterDependent, which sets the DefaultValue to an UninitializedValue
+            if (value is UnitializedValue)
+                return (DefaultValue is UnitializedValue);
+
             // null is not valid for value types (except Nullable<ValueType>)
             if (value == null)
                 return !PropertyType.IsValueType || PropertyType.Name == "Nullable`1";
