@@ -911,10 +911,20 @@ namespace Jamiras.ViewModels.CodeEditor
 
                     var lineViewModel = _lines[line - 1];
                     var text = lineViewModel.PendingText ?? lineViewModel.Text;
-                    undoItem.Before.EndColumn--;
-                    undoItem.Before.Text = text[column - 1] + undoItem.Before.Text;
-                    undoItem.After.StartColumn--;
-                    undoItem.After.EndColumn--;
+
+                    if (!undoItem.After.IsEmpty())
+                    {
+                        // if the after selection is not empty, the user has been typing, just remove the most recent character
+                        undoItem.After.EndColumn--;
+                    }
+                    else
+                    {
+                        // after is empty, consume a character from before and update the location of the after selection
+                        undoItem.Before.EndColumn--;
+                        undoItem.Before.Text = text[column - 1] + undoItem.Before.Text;
+                        undoItem.After.StartColumn--;
+                        undoItem.After.EndColumn--;
+                    }
 
                     if (_braceStack.Count > 0 && column < text.Length && text[column] == _braceStack.Peek())
                     {
@@ -1738,6 +1748,11 @@ namespace Jamiras.ViewModels.CodeEditor
             public int EndLine { get; set; }
             public int EndColumn { get; set; }
             public string Text { get; set; }
+
+            public bool IsEmpty()
+            {
+                return (StartColumn == EndColumn && StartLine == EndLine);
+            }
 
             public bool IsStartBeforeEnd()
             {

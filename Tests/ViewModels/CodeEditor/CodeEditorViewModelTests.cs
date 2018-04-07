@@ -356,6 +356,21 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         }
 
         [Test]
+        public void TestKeyBackspaceAfterTypingAtStartOfLine()
+        {
+            // a negative cursor index was causing an exception when the Undo is finalized by CompleteTyping
+            viewModel.MoveCursorTo(8, 1, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.HandleCharacter('m');
+            viewModel.HandleCharacter('y');
+            viewModel.HandleCharacter('_');
+            Assert.That(viewModel.HandleKey(Key.Back, ModifierKeys.None), Is.True);
+            Assert.That(viewModel.CursorLine, Is.EqualTo(8));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(3));
+            Assert.That(viewModel.Lines[7].PendingText, Is.EqualTo("my"));
+            CompleteTyping();
+        }
+
+        [Test]
         public void TestKeyDeleteMidLine()
         {
             viewModel.MoveCursorTo(6, 7, CodeEditorViewModel.MoveCursorFlags.None);
