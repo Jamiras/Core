@@ -73,6 +73,7 @@
     <Compile Include="Components\FixedSizeStack.cs" />
     <Compile Include="Components\Token.cs" />
     <Compile Include="Components\Tokenizer.cs" />
+    <Compile Include="Components\StandardDeviation.cs" />
     <Compile Include="Components\Trendline.cs" />
     <Compile Include="Components\WeightedList.cs" />
     <Compile Include="Controls\CodeEditorView.xaml.cs">
