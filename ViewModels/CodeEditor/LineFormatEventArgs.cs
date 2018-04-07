@@ -165,6 +165,9 @@ namespace Jamiras.ViewModels.CodeEditor
                     range = newRange;
                 }
 
+                while (range.EndColumn < error.EndColumn)
+                    range = _ranges[++rangeIndex];
+
                 if (range.EndColumn > error.EndColumn)
                 {
                     var newRange = new ColorRange(error.EndColumn + 1, range.EndColumn - error.EndColumn, range.Color, range.ToolTip);
