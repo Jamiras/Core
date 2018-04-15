@@ -264,7 +264,7 @@ namespace Jamiras.ViewModels.CodeEditor
             CursorLine = 1;
             CursorColumn = 1;
 
-            OnUpdateSyntax(new ContentChangedEventArgs(value, _version, this, _lines));
+            OnUpdateSyntax(new ContentChangedEventArgs(value, _version, this, _lines, false));
         }
 
         /// <summary>
@@ -279,12 +279,14 @@ namespace Jamiras.ViewModels.CodeEditor
             /// <param name="version">An internal counter indicating the revision.</param>
             /// <param name="editor">A reference to the editor.</param>
             /// <param name="updatedLines">The lines that were updated.</param>
-            public ContentChangedEventArgs(string content, int version, CodeEditorViewModel editor, IEnumerable<LineViewModel> updatedLines)
+            /// <param name="isWhitespaceOnly">Flag indicating that the changes did not affect syntax.</param>
+            public ContentChangedEventArgs(string content, int version, CodeEditorViewModel editor, IEnumerable<LineViewModel> updatedLines, bool isWhitespaceOnly)
             {
                 Content = content;
                 _version = version;
                 _editor = editor;
                 UpdatedLines = updatedLines;
+                IsWhitespaceOnlyChange = isWhitespaceOnly;
             }
 
             private readonly int _version;
@@ -299,6 +301,11 @@ namespace Jamiras.ViewModels.CodeEditor
             /// Gets the lines that were updated.
             /// </summary>
             public IEnumerable<LineViewModel> UpdatedLines { get; private set; }
+
+            /// <summary>
+            /// Gets whether or not the change was only whitespace.
+            /// </summary>    
+            public bool IsWhitespaceOnlyChange { get; private set; }
 
             /// <summary>
             /// Gets a value indicating whether the content has been changed again and the current processing should be aborted.
@@ -348,6 +355,8 @@ namespace Jamiras.ViewModels.CodeEditor
                     version = ++_version;
                 }
 
+                bool isWhitespaceOnly = true;
+
                 var newContent = new StringBuilder();
                 for (int i = 0; i < _lines.Count; i++)
                 {
@@ -358,7 +367,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     {
                         newContent.AppendLine(pendingText);
                         updatedLines.Add(line);
-                        line.CommitPending();
+                        line.CommitPending(ref isWhitespaceOnly);
                     }
                     else
                     {
@@ -383,7 +392,7 @@ namespace Jamiras.ViewModels.CodeEditor
                         return;
                 }
 
-                var e = new ContentChangedEventArgs(newContent.ToString(), version, this, updatedLines);
+                var e = new ContentChangedEventArgs(newContent.ToString(), version, this, updatedLines, isWhitespaceOnly);
 
                 // string converted, make another check before processing it
                 if (e.IsAborted)
@@ -986,6 +995,15 @@ namespace Jamiras.ViewModels.CodeEditor
 
             var selection = GetOrderedSelection();
             return GetText(selection);
+        }
+
+        /// <summary>
+        /// Builds a string containing the text for the specified region of the editor.
+        /// </summary>
+        protected string GetText(int startLine, int startColumn, int endLine, int endColumn)
+        {
+            var selection = new Selection { StartLine = startLine, StartColumn = startColumn, EndLine = endLine, EndColumn = endColumn };
+            return GetText(selection.GetOrderedSelection());
         }
 
         private string GetText(Selection selection)

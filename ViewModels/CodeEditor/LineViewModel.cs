@@ -1,7 +1,9 @@
 ﻿using Jamiras.DataModels;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using System.Windows;
 
@@ -164,7 +166,7 @@ namespace Jamiras.ViewModels.CodeEditor
         /// <summary>
         /// Commits the <see cref="PendingText"/>.
         /// </summary>
-        internal void CommitPending()
+        internal void CommitPending(ref bool isWhitespaceOnly)
         {
             var pendingText = PendingText;
             if (pendingText != null)
@@ -177,9 +179,84 @@ namespace Jamiras.ViewModels.CodeEditor
                 }
                 else
                 {
+                    // if another line has already indicated a non-whitespace change has occurred, we don't have to check
+                    if (isWhitespaceOnly)
+                        isWhitespaceOnly = DifferOnlyByWhitespace(Text, pendingText);
+
                     Text = pendingText;
                 }
             }
+        }
+
+        private static bool IsWhitespaceOnlyChange(string str, int startIndex, int endIndex)
+        {
+            // if any non-whitespace character present in the changed portion of the string, return false
+            for (int i = startIndex; i <= endIndex; i++)
+            {
+                if (!Char.IsWhiteSpace(str[i]))
+                    return false;
+            }
+
+            // if the preceeding character is whitespace, return true
+            if (startIndex == 0 || Char.IsWhiteSpace(str[startIndex - 1]))
+                return true;
+
+            // if the following character is whitespace, return true
+            if (endIndex == str.Length - 1 || Char.IsWhiteSpace(str[endIndex + 1]))
+                return true;
+
+            // entire change is whitespace, but not neighbored by whitespace
+            // indicates that a token was split, return false
+            return false;
+        }
+
+        private static bool DifferOnlyByWhitespace(string left, string right)
+        {
+            var leftIndex = 0;
+            var rightIndex = 0;
+            var leftStop = left.Length - 1;
+            var rightStop = right.Length - 1;
+
+            while (leftIndex <= leftStop && rightIndex <= rightStop && left[leftIndex] == right[rightIndex])
+            {
+                leftIndex++;
+                rightIndex++;
+            }
+
+            while (leftIndex <= leftStop && rightIndex <= rightStop && left[leftStop] == right[rightStop])
+            {
+                leftStop--;
+                rightStop--;
+            }
+
+            // text added to right string, or removed from left string
+            if (leftIndex > leftStop)
+            {
+                // no differences
+                if (rightIndex > rightStop)
+                    return true;
+
+                return IsWhitespaceOnlyChange(right, rightIndex, rightStop);
+            }
+
+            // text added to left string, or removed from right string
+            if (rightIndex > rightStop)
+                return IsWhitespaceOnlyChange(left, leftIndex, leftStop);
+
+            // text changed, both sides must be whitespace only
+            for (int i = leftIndex; i <= leftStop; i++)
+            {
+                if (!Char.IsWhiteSpace(left[i]))
+                    return false;
+            }
+            for (int i = rightIndex; i <= rightStop; i++)
+            {
+                if (!Char.IsWhiteSpace(right[i]))
+                    return false;
+            }
+
+            // text changed, but only from one form of whitespace to another
+            return true;
         }
 
         /// <summary>
@@ -249,12 +326,17 @@ namespace Jamiras.ViewModels.CodeEditor
             if (column >= 1)
             {
                 column--;
-                foreach (var textPiece in TextPieces)
-                {
-                    if (textPiece.Text.Length > column)
-                        return new TextPieceLocation { Piece = textPiece, Offset = column };
 
-                    column -= textPiece.Text.Length;
+                var textPieces = TextPieces;
+                if (textPieces != null)
+                {
+                    foreach (var textPiece in textPieces)
+                    {
+                        if (textPiece.Text.Length > column)
+                            return new TextPieceLocation { Piece = textPiece, Offset = column };
+
+                        column -= textPiece.Text.Length;
+                    }
                 }
             }
 
@@ -280,6 +362,7 @@ namespace Jamiras.ViewModels.CodeEditor
                 text = Text;
 
             Debug.Assert(column <= text.Length);
+
             text = text.Insert(column, str);
             PendingText = text;
 

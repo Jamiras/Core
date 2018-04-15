@@ -130,5 +130,39 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             Assert.That(viewModel.SelectionStart, Is.EqualTo(expectedSelectionStartColumn));
             Assert.That(viewModel.SelectionEnd, Is.EqualTo(expectedSelectionEndColumn));
         }
+
+        [Test]
+        [TestCase("foo bar", null, true)]
+        [TestCase("foo bar", "foo bar", true)]
+        [TestCase("foo bar", "foo  bar", true)]
+        [TestCase("foo bar", " foo bar", true)]
+        [TestCase("foo bar", "foo bar ", true)]
+        [TestCase("foo bar", " foo  bar ", false)] // multiple changes in a single line confuse algorithm
+        [TestCase("foo bar", "fo o bar", false)]
+        [TestCase("foo bar", "foo ba r", false)]
+        [TestCase("foo bar", "fooo bar", false)]
+        [TestCase("foo bar", "ffoo bar", false)]
+        [TestCase("foo bar", "foo barr", false)]
+        [TestCase("foo bar", "foobar", false)]
+        [TestCase("foo  bar", "foo bar", true)]
+        [TestCase("foo bar", "for bar", false)]
+        [TestCase("foo", "", false)]
+        [TestCase("", "foo", false)]
+        public void TestCommitPending(string text, string pending, bool expectedWhitespace)
+        {
+            viewModel.Text = text;
+            viewModel.PendingText = pending;
+
+            bool isWhitespaceOnly = true;
+            viewModel.CommitPending(ref isWhitespaceOnly);
+
+            if (pending == null)
+                Assert.That(viewModel.Text, Is.EqualTo(text));
+            else
+                Assert.That(viewModel.Text, Is.EqualTo(pending));
+
+            Assert.That(viewModel.PendingText, Is.Null);
+            Assert.That(isWhitespaceOnly, Is.EqualTo(expectedWhitespace));
+        }
     }
 }

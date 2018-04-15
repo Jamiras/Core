@@ -153,7 +153,7 @@ namespace Jamiras.ViewModels.CodeEditor.ToolWindows
                 return;
 
             index--;
-            if (index > vm._matches.Count)
+            if (index >= vm._matches.Count)
                 return;
 
             var match = vm._matches[index];
