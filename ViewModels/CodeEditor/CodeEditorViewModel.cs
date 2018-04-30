@@ -1055,11 +1055,19 @@ namespace Jamiras.ViewModels.CodeEditor
             var line = _lines[selection.StartLine - 1];
             line.Remove(line.SelectionStart, line.SelectionEnd);
 
-            if (selection.StartLine != selection.EndLine)
+            if (selection.StartLine == selection.EndLine)
+            {
+                // update the cursor location
+                MoveCursorTo(selection.StartLine, selection.StartColumn, MoveCursorFlags.None);
+            }
+            else
             {
                 var lastLine = _lines[selection.EndLine - 1];
                 if (lastLine.SelectionEnd < lastLine.LineLength)
                     line.Insert(line.LineLength + 1, lastLine.Text.Substring(lastLine.SelectionEnd, lastLine.LineLength - lastLine.SelectionEnd));
+
+                // relocate the cursor before we remove any lines
+                MoveCursorTo(selection.StartLine, selection.StartColumn, MoveCursorFlags.None);
 
                 for (int i = selection.EndLine - 1; i >= selection.StartLine; --i)
                     _lines.RemoveAt(i);
@@ -1070,11 +1078,6 @@ namespace Jamiras.ViewModels.CodeEditor
                 for (int i = selection.StartLine; i < _lines.Count; ++i)
                     _lines[i].Line -= linesRemoved;
             }
-
-            // we've already deleted the selection, so prevent MoveCursorTo from trying to unselect it.
-            _selectionStartColumn = _selectionEndColumn = _selectionStartLine = _selectionEndLine = 0;
-
-            MoveCursorTo(selection.StartLine, selection.StartColumn, MoveCursorFlags.None);
         }
 
         /// <summary>
@@ -1283,7 +1286,7 @@ namespace Jamiras.ViewModels.CodeEditor
             if (nextWord)
             {
                 var cursorLineViewModel = _lines[newLine - 1];
-                var text = cursorLineViewModel.Text;
+                var text = cursorLineViewModel.PendingText ?? cursorLineViewModel.Text;
                 var count = 0;
                 var offset = CursorColumn - 2;
                 while (offset >= 0 && Char.IsWhiteSpace(text[offset]))
