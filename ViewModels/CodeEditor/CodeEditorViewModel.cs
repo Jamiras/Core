@@ -323,9 +323,17 @@ namespace Jamiras.ViewModels.CodeEditor
         }
 
         /// <summary>
-        /// Called shortly after text changes to update the syntax highlighting
+        /// Called shortly after text is loaded or changes to update the syntax highlighting.
         /// </summary>
         protected virtual void OnUpdateSyntax(ContentChangedEventArgs e)
+        {
+
+        }
+
+        /// <summary>
+        /// Called shortly after text changes for processing that should not occur when text is initially loaded.
+        /// </summary>
+        protected virtual void OnContentChanged(ContentChangedEventArgs e)
         {
 
         }
@@ -405,6 +413,12 @@ namespace Jamiras.ViewModels.CodeEditor
                     return;
 
                 UpdateSyntaxHighlighting(e);
+
+                if (e.IsAborted)
+                    return;
+
+                // processing that should not occur on initial load
+                OnContentChanged(e);
             });
         }
 

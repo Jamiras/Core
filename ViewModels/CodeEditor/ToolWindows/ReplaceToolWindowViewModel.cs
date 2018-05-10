@@ -42,7 +42,7 @@ namespace Jamiras.ViewModels.CodeEditor.ToolWindows
         public TextFieldViewModel ReplaceText { get; private set; }
 
         /// <summary>
-        /// <see cref="ModelProperty"/> for <see cref="ShouldFocusSearchText"/>
+        /// <see cref="ModelProperty"/> for <see cref="IsReplaceTextFocused"/>
         /// </summary>
         public static readonly ModelProperty IsReplaceTextFocusedProperty = ModelProperty.Register(typeof(FindToolWindowViewModel), "IsReplaceTextFocused", typeof(bool), false);
 
