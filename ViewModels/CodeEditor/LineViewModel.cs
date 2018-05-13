@@ -1,4 +1,6 @@
-﻿using Jamiras.DataModels;
+﻿using Jamiras.Components;
+using Jamiras.DataModels;
+using Jamiras.Services;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -312,7 +314,15 @@ namespace Jamiras.ViewModels.CodeEditor
                 return new TextPiece[] { new TextPiece { Text = "", Foreground = viewModel.Resources.Foreground.Brush } };
 
             var e = new LineFormatEventArgs(viewModel);
-            viewModel._owner.RaiseFormatLine(e);
+            try
+            {
+                viewModel._owner.RaiseFormatLine(e);
+            }
+            catch (Exception ex)
+            {
+                if (!ServiceRepository.Instance.FindService<IExceptionDispatcher>().TryHandleException(ex))
+                    throw;
+            }
 
             return e.BuildTextPieces();
         }
