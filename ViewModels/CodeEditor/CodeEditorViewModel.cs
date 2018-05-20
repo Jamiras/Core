@@ -1037,7 +1037,17 @@ namespace Jamiras.ViewModels.CodeEditor
                         var text = line.PendingText ?? line.Text;
 
                         var firstChar = (i == orderedSelection.StartLine) ? orderedSelection.StartColumn - 1 : 0;
-                        var lastChar = (i == orderedSelection.EndLine) ? orderedSelection.EndColumn - 1 : text.Length;
+                        int lastChar;
+                        if (i == orderedSelection.EndLine)
+                        {
+                            lastChar = orderedSelection.EndColumn - 1;
+                            if (lastChar > text.Length)
+                                lastChar = text.Length;
+                        }
+                        else
+                        {
+                            lastChar = text.Length;
+                        }
                         builder.Append(text, firstChar, lastChar - firstChar);
                     }
                 }
@@ -1067,7 +1077,8 @@ namespace Jamiras.ViewModels.CodeEditor
             var selection = GetOrderedSelection();
 
             var line = _lines[selection.StartLine - 1];
-            line.Remove(line.SelectionStart, line.SelectionEnd);
+            if (line.SelectionEnd >= line.SelectionStart)
+                line.Remove(line.SelectionStart, line.SelectionEnd);
 
             if (selection.StartLine == selection.EndLine)
             {
