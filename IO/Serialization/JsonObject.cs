@@ -319,7 +319,7 @@ namespace Jamiras.IO.Serialization
             {
                 ParseArray("items", tokenizer);
             }
-            else
+            else if (tokenizer.NextChar != '\0')
             {
                 ParseObject("root", tokenizer);
             }

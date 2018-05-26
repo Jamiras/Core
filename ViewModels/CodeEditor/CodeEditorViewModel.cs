@@ -355,71 +355,98 @@ namespace Jamiras.ViewModels.CodeEditor
             _backgroundWorkerService.RunAsync(() =>
             {
                 var updatedLines = new List<LineViewModel>();
-
-                int version;
-                lock (_lines)
+                if (!PerformUpdate(updatedLines))
                 {
-                    // capture a version, if it changes while we're processing, we'll abort and let the new version proceed
-                    version = ++_version;
+                    // more changes occurred while updating, quickly repaint only the affected lines for this change, then let the new change do the full update
+                    foreach (var line in updatedLines)
+                        line.Refresh();
+                }
+            });
+        }
+
+        private bool PerformUpdate(List<LineViewModel> updatedLines)
+        {
+            int version;
+            lock (_lines)
+            {
+                // capture a version, if it changes while we're processing, we'll abort and let the new version proceed
+                version = ++_version;
+            }
+
+            bool isWhitespaceOnly = true;
+
+            var allLines = new List<string>(_lines.Count);
+            int newContentLength = _lines.Count * 2; // crlf for each line
+            for (int i = 0; i < _lines.Count; i++)
+            {
+                var line = _lines[i];
+
+                var pendingText = line.PendingText;
+                if (pendingText != null)
+                {
+                    newContentLength += pendingText.Length;
+                    allLines.Add(pendingText);
+
+                    updatedLines.Add(line);
+                    line.CommitPending(ref isWhitespaceOnly);
+                }
+                else
+                {
+                    pendingText = line.Text;
+                    allLines.Add(pendingText);
+                    newContentLength += pendingText.Length;
                 }
 
-                bool isWhitespaceOnly = true;
-
-                var newContent = new StringBuilder();
-                for (int i = 0; i < _lines.Count; i++)
+                if ((i & 127) == 127)
                 {
-                    var line = _lines[i];
-
-                    var pendingText = line.PendingText;
-                    if (pendingText != null)
+                    // every 128 lines, check to see if more changes have been made
+                    lock (_lines)
                     {
-                        newContent.AppendLine(pendingText);
-                        updatedLines.Add(line);
-                        line.CommitPending(ref isWhitespaceOnly);
-                    }
-                    else
-                    {
-                        newContent.AppendLine(line.Text);
-                    }
-
-                    if ((i & 127) == 127)
-                    {
-                        // every 128 lines, check to see if more changes have been made
-                        lock (_lines)
-                        {
-                            if (_version != version)
-                                return;
-                        }
+                        if (_version != version)
+                            return false;
                     }
                 }
+            }
 
-                // final check to see if more changes have been made before converting the builder to a string
-                lock (_lines)
-                {
-                    if (_version != version)
-                        return;
-                }
+            // see if changes have been made while committing
+            lock (_lines)
+            {
+                if (_version != version)
+                    return false;
+            }
 
-                var e = new ContentChangedEventArgs(newContent.ToString(), version, this, updatedLines, isWhitespaceOnly);
+            var newContent = new StringBuilder(newContentLength);
+            foreach (var line in allLines)
+                newContent.AppendLine(line);
 
-                // string converted, make another check before processing it
-                if (e.IsAborted)
-                    return;
+            // final check to see if more changes have been made before converting the builder to a string
+            lock (_lines)
+            {
+                if (_version != version)
+                    return false;
+            }
 
-                // process the string
-                OnUpdateSyntax(e);
+            var e = new ContentChangedEventArgs(newContent.ToString(), version, this, updatedLines, isWhitespaceOnly);
 
-                if (e.IsAborted)
-                    return;
+            // string converted, make another check before processing it
+            if (e.IsAborted)
+                return false;
 
-                UpdateSyntaxHighlighting(e);
+            // process the string
+            OnUpdateSyntax(e);
 
-                if (e.IsAborted)
-                    return;
+            if (e.IsAborted)
+                return false;
 
+            UpdateSyntaxHighlighting(e);
+
+            if (!e.IsAborted)
+            {
                 // processing that should not occur on initial load
                 OnContentChanged(e);
-            });
+            }
+
+            return true;
         }
 
         private void UpdateSyntaxHighlighting(ContentChangedEventArgs e)
@@ -441,6 +468,7 @@ namespace Jamiras.ViewModels.CodeEditor
                 for (int i = start; i < end; i++)
                     nearbyLines[i] = 1;
             }
+
             for (int i = 0; i < Math.Min(nearbyLines.Length, _lines.Count); i++)
             {
                 if (nearbyLines[i] != 0)
