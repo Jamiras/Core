@@ -109,7 +109,7 @@ namespace Jamiras.ViewModels.CodeEditor.ToolWindows
                 int start = 0;
                 do
                 {
-                    var index = lineText.IndexOf(searchText, start);
+                    var index = lineText.IndexOf(searchText, start, StringComparison.OrdinalIgnoreCase);
                     if (index == -1)
                         break;
 
