@@ -1,6 +1,7 @@
 ﻿using Jamiras.Commands;
 using Jamiras.DataModels;
 using Jamiras.ViewModels.Fields;
+using System;
 using System.Windows.Input;
 
 namespace Jamiras.ViewModels.CodeEditor.ToolWindows
@@ -81,7 +82,7 @@ namespace Jamiras.ViewModels.CodeEditor.ToolWindows
         /// </summary>
         public void Replace()
         {
-            if (Owner.GetSelectedText() == SearchText.Text)
+            if (String.Compare(Owner.GetSelectedText(), SearchText.Text, StringComparison.OrdinalIgnoreCase) == 0)
             {
                 Owner.ReplaceSelection(ReplaceText.Text);
                 RemoveCurrentMatch();
@@ -94,16 +95,29 @@ namespace Jamiras.ViewModels.CodeEditor.ToolWindows
         public void ReplaceAll()
         {
             int replaceCount = MatchCount;
-            int matchCount = replaceCount;
-            while (matchCount > 0)
+            if (replaceCount > 0)
             {
+                int matchCount = replaceCount;
+                while (matchCount > 1)
+                {
+                    Replace();
+                    matchCount--;
+                }
+
+                var line = Owner.CursorLine;
+                var column = Owner.CursorColumn;
                 Replace();
 
-                matchCount--;
+
+                if (MatchCount == 0)
+                    Owner.MoveCursorTo(line, column + SearchText.Text.Length, CodeEditorViewModel.MoveCursorFlags.None);
+                else
+                    replaceCount -= MatchCount;
             }
 
-            replaceCount -= MatchCount;
             MessageBoxViewModel.ShowMessage(string.Format("Replaced {0} occurrances", replaceCount));
+
+            Owner.IsFocusRequested = true;
         }
     }
 }

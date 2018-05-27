@@ -6,8 +6,10 @@
              xmlns:jamiras="clr-namespace:Jamiras.Controls"
              xmlns:toolwindows="clr-namespace:Jamiras.ViewModels.CodeEditor.ToolWindows"
              SnapsToDevicePixels="True"
+             IsTabStop="True"
              Focusable="True"
              FocusVisualStyle="{x:Null}"
+             jamiras:CommandBinding.FocusIfTrue="{Binding IsFocusRequested}"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
     <UserControl.Resources>
@@ -182,7 +184,8 @@
                           VirtualizingStackPanel.VirtualizationMode="Recycling"
                           ScrollViewer.CanContentScroll="True"
                           ItemTemplate="{StaticResource lineTemplate}"
-                          HorizontalContentAlignment="Stretch">
+                          HorizontalContentAlignment="Stretch"
+                          IsTabStop="False">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <VirtualizingStackPanel />

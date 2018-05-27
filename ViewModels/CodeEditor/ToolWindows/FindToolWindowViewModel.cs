@@ -218,16 +218,47 @@ namespace Jamiras.ViewModels.CodeEditor.ToolWindows
                 return;
 
             var index = Index - 1;
+            var matchLine = _matches[index].Line;
             _matches.RemoveAt(index);
             MatchCount--;
+
+            // quickly set index to invalid so setting it back to the current index raises a property changed event
             Index = 0;
 
             if (_matches.Count > 0)
             {
-                if (Index == _matches.Count)
+                if (index == _matches.Count)
+                {
+                    // move to the first match
                     Index = 1;
+                }
                 else
+                {
+                    // if any other matches are on current line, make sure their offsets are still correct
+                    if (_matches[index].Line == matchLine)
+                    {
+                        var searchText = SearchText.Text;
+                        var lineViewModel = Owner.Lines[matchLine - 1];
+                        var lineText = lineViewModel.PendingText ?? lineViewModel.Text;
+                        var offset = lineText.IndexOf(searchText, StringComparison.OrdinalIgnoreCase);
+                        if (offset > 0)
+                        {
+                            offset = offset - _matches[index].Column + 1;
+                            if (offset != 0)
+                            {
+                                var index2 = index;
+                                do
+                                {
+                                    _matches[index2] = new MatchLocation { Line = matchLine, Column = _matches[index2].Column + offset };
+                                    index2++;
+                                } while (index2 < _matches.Count && _matches[index2].Line == matchLine);
+                            }
+                        }
+                    }
+
+                    // move to the next match
                     Index = index + 1;
+                }
             }
         }
     }

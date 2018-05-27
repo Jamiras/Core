@@ -156,6 +156,21 @@ namespace Jamiras.ViewModels.CodeEditor
             private set { SetValue(CursorColumnProperty, value); }
         }
 
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="IsFocusRequested"/>
+        /// </summary>
+        public static readonly ModelProperty IsFocusRequestedProperty = ModelProperty.Register(typeof(CodeEditorViewModel), "IsFocusRequested", typeof(bool), false);
+
+        /// <summary>
+        /// Gets or sets whether the code editor should be focused (used by tool windows to move the cursor back to the editor).
+        /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public bool IsFocusRequested
+        {
+            get { return (bool)GetValue(IsFocusRequestedProperty); }
+            set { SetValue(IsFocusRequestedProperty, value); }
+        }
+
         private static readonly ModelProperty ToolWindowProperty = ModelProperty.Register(typeof(CodeEditorViewModel), "ToolWindow", typeof(ToolWindowViewModel), null);
         /// <summary>
         /// Gets the currently visible tool window.

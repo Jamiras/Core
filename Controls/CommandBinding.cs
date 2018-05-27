@@ -194,7 +194,7 @@ namespace Jamiras.Controls
         /// </summary>
         public static readonly DependencyProperty FocusIfTrueProperty =
             DependencyProperty.RegisterAttached("FocusIfTrue", typeof(bool), typeof(CommandBinding),
-                new FrameworkPropertyMetadata(OnFocusIfTrueChanged));
+                new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnFocusIfTrueChanged));
 
         /// <summary>
         /// Gets whether the FocusIfTrue attached property is <c>true</c> for the <see cref="UIElement"/>.
@@ -217,7 +217,13 @@ namespace Jamiras.Controls
             if ((bool)e.NewValue)
             {
                 ((IInputElement)sender).Focus();
-                SetFocusIfTrue((UIElement)sender, false);
+
+                // asynchronously set the value back to false. trying to update the source property from wihtin the property changed handler gets swallowed by the WPF framework
+                var uiElement = (UIElement)sender;
+                uiElement.Dispatcher.BeginInvoke(new Action<UIElement>((UIElement element) =>
+                {
+                    SetFocusIfTrue(element, false);
+                }), uiElement);
             }
         }
 
