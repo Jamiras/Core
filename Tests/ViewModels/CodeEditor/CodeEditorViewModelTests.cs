@@ -557,6 +557,25 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         }
 
         [Test]
+        public void TestHighlightMultiLine()
+        {
+            viewModel.MoveCursorTo(5, 12, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(4, 12, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+            Assert.That(viewModel.GetSelectedText(), Is.EqualTo("am1 == 1)\n        par"));
+            Assert.That(viewModel.Lines[3].SelectionStart, Is.EqualTo(12));
+            Assert.That(viewModel.Lines[3].SelectionEnd, Is.EqualTo(20));
+            Assert.That(viewModel.Lines[4].SelectionStart, Is.EqualTo(1));
+            Assert.That(viewModel.Lines[4].SelectionEnd, Is.EqualTo(11));
+
+            viewModel.MoveCursorTo(5, 14, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+            Assert.That(viewModel.GetSelectedText(), Is.EqualTo("am"));
+            Assert.That(viewModel.Lines[3].SelectionStart, Is.EqualTo(0));
+            Assert.That(viewModel.Lines[3].SelectionEnd, Is.EqualTo(0));
+            Assert.That(viewModel.Lines[4].SelectionStart, Is.EqualTo(12));
+            Assert.That(viewModel.Lines[4].SelectionEnd, Is.EqualTo(13));
+        }
+
+        [Test]
         public void TestKeyCtrlA()
         {
             viewModel.MoveCursorTo(5, 20, CodeEditorViewModel.MoveCursorFlags.None);

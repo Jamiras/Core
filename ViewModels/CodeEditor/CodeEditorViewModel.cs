@@ -1760,7 +1760,7 @@ namespace Jamiras.ViewModels.CodeEditor
                 // update highlighted region
                 if (_selectionEndLine != 0)
                 {
-                    for (int i = _selectionEndLine + 1; i < line; i++)
+                    for (int i = _selectionEndLine; i < line; i++)
                         _lines[i - 1].ClearSelection();
                     for (int i = line + 1; i <= _selectionEndLine; i++)
                         _lines[i - 1].ClearSelection();
