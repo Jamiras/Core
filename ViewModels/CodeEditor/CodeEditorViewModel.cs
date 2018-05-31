@@ -608,11 +608,18 @@ namespace Jamiras.ViewModels.CodeEditor
             return characterWidth * 7;
         }
 
-        internal static readonly ModelProperty VisibleLinesProperty = ModelProperty.Register(typeof(CodeEditorViewModel), "VisibleLines", typeof(int), 20);
-        internal int VisibleLines
+        /// <summary>
+        /// <see cref="ModelProperty"/> for <see cref="LineCount"/>
+        /// </summary>
+        public static readonly ModelProperty VisibleLinesProperty = ModelProperty.Register(typeof(CodeEditorViewModel), "VisibleLines", typeof(int), 20);
+
+        /// <summary>
+        /// Gets the number of lines being rendered.
+        /// </summary>
+        public int VisibleLines
         {
             get { return (int)GetValue(VisibleLinesProperty); }
-            set { SetValue(VisibleLinesProperty, value); }
+            internal set { SetValue(VisibleLinesProperty, value); }
         }
 
         internal bool HandleKey(Key key, ModifierKeys modifiers)

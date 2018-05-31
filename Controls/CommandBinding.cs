@@ -216,14 +216,32 @@ namespace Jamiras.Controls
         {
             if ((bool)e.NewValue)
             {
-                ((IInputElement)sender).Focus();
+                var uiElement = (FrameworkElement)sender;
+                if (!uiElement.IsLoaded)
+                {
+                    uiElement.Loaded += OnFocusRequestedElementLoaded;
+                    return;
+                }
+
+                uiElement.Focus();
 
                 // asynchronously set the value back to false. trying to update the source property from wihtin the property changed handler gets swallowed by the WPF framework
-                var uiElement = (UIElement)sender;
                 uiElement.Dispatcher.BeginInvoke(new Action<UIElement>((UIElement element) =>
                 {
                     SetFocusIfTrue(element, false);
                 }), uiElement);
+            }
+        }
+
+        private static void OnFocusRequestedElementLoaded(object sender, RoutedEventArgs e)
+        {
+            var uiElement = (FrameworkElement)sender;
+            uiElement.Loaded -= OnFocusRequestedElementLoaded;
+
+            if (GetFocusIfTrue(uiElement))
+            {
+                uiElement.Focus();
+                SetFocusIfTrue(uiElement, false);
             }
         }
 

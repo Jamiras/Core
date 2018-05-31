@@ -129,12 +129,12 @@ namespace Jamiras.Controls
 
         private void EnsureCursorVisible()
         {
-            if (!IsLoaded)
-                return;
-
             // do this asynchronously in case the cursor position is being updated rapidly
             Dispatcher.BeginInvoke(new Action(() =>
             {
+                if (!IsLoaded)
+                    return;
+
                 var scrollViewer = CodeLinesScrollViewer;
                 var newOffset = (double)(ViewModel.CursorLine - 1);
                 var firstVisibleOffset = scrollViewer.VerticalOffset;
