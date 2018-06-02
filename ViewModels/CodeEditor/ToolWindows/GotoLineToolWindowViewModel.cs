@@ -57,7 +57,7 @@ namespace Jamiras.ViewModels.CodeEditor.ToolWindows
                     Jamiras.Controls.CommandBinding.ForceLostFocusBinding();
                     if (LineNumber.Value.GetValueOrDefault() >= 1)
                     {
-                        Owner.MoveCursorTo(LineNumber.Value.GetValueOrDefault(), 1, CodeEditorViewModel.MoveCursorFlags.None);
+                        Owner.GotoLine(LineNumber.Value.GetValueOrDefault());
                         Close();
                     }
                     e.Handled = true;

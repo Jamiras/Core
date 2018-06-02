@@ -157,6 +157,7 @@ namespace Jamiras.ViewModels.CodeEditor.ToolWindows
                 return;
 
             var match = vm._matches[index];
+            vm.Owner.GotoLine(match.Line);
             vm.Owner.MoveCursorTo(match.Line, match.Column, CodeEditorViewModel.MoveCursorFlags.None);
             vm.Owner.MoveCursorTo(match.Line, match.Column + vm.SearchText.Text.Length, CodeEditorViewModel.MoveCursorFlags.Highlighting);
         }

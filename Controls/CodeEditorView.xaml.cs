@@ -45,6 +45,9 @@ namespace Jamiras.Controls
             OnViewportHeightChanged(CodeLinesScrollViewer, EventArgs.Empty);
             RestoreScrollOffset();
             EnsureCursorVisible();
+
+            if (ViewModel != null && ViewModel.IsCenterOnLineRequested)
+                CenterOnLine();
         }
 
         private ScrollViewer CodeLinesScrollViewer
@@ -92,6 +95,7 @@ namespace Jamiras.Controls
                         _viewModel.RemovePropertyChangedHandler(CodeEditorViewModel.CursorLineProperty, OnCursorLineChanged);
                         _viewModel.RemovePropertyChangedHandler(CodeEditorViewModel.CursorColumnProperty, OnCursorColumnChanged);
                         _viewModel.RemovePropertyChangedHandler(CodeEditorViewModel.IsToolWindowVisibleProperty, OnIsToolWindowVisibleChanged);
+                        _viewModel.RemovePropertyChangedHandler(CodeEditorViewModel.IsCenterOnLineRequestedProperty, OnIsCenterOnLineRequestedChanged);
                     }
 
                     _viewModel = value;
@@ -101,6 +105,7 @@ namespace Jamiras.Controls
                         _viewModel.AddPropertyChangedHandler(CodeEditorViewModel.CursorLineProperty, OnCursorLineChanged);
                         _viewModel.AddPropertyChangedHandler(CodeEditorViewModel.CursorColumnProperty, OnCursorColumnChanged);
                         _viewModel.AddPropertyChangedHandler(CodeEditorViewModel.IsToolWindowVisibleProperty, OnIsToolWindowVisibleChanged);
+                        _viewModel.AddPropertyChangedHandler(CodeEditorViewModel.IsCenterOnLineRequestedProperty, OnIsCenterOnLineRequestedChanged);
 
                         RestoreScrollOffset();
                         EnsureCursorVisible();
@@ -127,8 +132,33 @@ namespace Jamiras.Controls
                 Focus();
         }
 
+        private void OnIsCenterOnLineRequestedChanged(object sender, ModelPropertyChangedEventArgs e)
+        {
+            if ((bool)e.NewValue == true)
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (IsLoaded)
+                        CenterOnLine();
+                }));
+            }
+        }
+
+        private void CenterOnLine()
+        {
+            var scrollViewer = CodeLinesScrollViewer;
+            var newOffset = (double)ViewModel.CursorLine - (int)(scrollViewer.ViewportHeight / 2);
+            scrollViewer.ScrollToVerticalOffset(newOffset);
+
+            ViewModel.IsCenterOnLineRequested = false;
+        }
+
         private void EnsureCursorVisible()
         {
+            // if center on line is requested, it takes precedence.
+            if (ViewModel.IsCenterOnLineRequested)
+                return;
+
             // do this asynchronously in case the cursor position is being updated rapidly
             Dispatcher.BeginInvoke(new Action(() =>
             {

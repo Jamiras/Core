@@ -2002,6 +2002,34 @@ namespace Jamiras.ViewModels.CodeEditor
                 ShowToolWindow(toolWindow);
         }
 
+        /// <summary>
+        /// Moves the cursor to the first character of the specified line and centers the line in the editor
+        /// </summary>
+        /// <param name="lineNumber">The line number.</param>
+        public void GotoLine(int lineNumber)
+        {
+            var column = 0;
+            if (lineNumber >= 1 && lineNumber <= _lines.Count)
+            {
+                var lineViewModel = _lines[lineNumber - 1];
+                var text = lineViewModel.PendingText ?? lineViewModel.Text;
+
+                while (column < text.Length && Char.IsWhiteSpace(text[column]))
+                    column++;
+            }
+
+            MoveCursorTo(lineNumber, column, MoveCursorFlags.None);
+            IsCenterOnLineRequested = true;
+        }
+
+        internal static readonly ModelProperty IsCenterOnLineRequestedProperty = ModelProperty.Register(typeof(CodeEditorViewModel), "IsCenterOnLineRequested", typeof(bool), false);
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        internal bool IsCenterOnLineRequested
+        {
+            get { return (bool)GetValue(IsCenterOnLineRequestedProperty); }
+            set { SetValue(IsCenterOnLineRequestedProperty, value); }
+        }
+
         private void HandleFind()
         {
             if (_selectionStartLine == _selectionEndLine)

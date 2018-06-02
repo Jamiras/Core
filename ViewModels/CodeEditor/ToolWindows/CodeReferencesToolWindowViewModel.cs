@@ -58,6 +58,7 @@ namespace Jamiras.ViewModels.CodeEditor.ToolWindows
 
         private void GotoReference(CodeReferenceViewModel reference)
         {
+            Owner.GotoLine(reference.StartLine);
             Owner.MoveCursorTo(reference.StartLine, reference.StartColumn, CodeEditorViewModel.MoveCursorFlags.None);
             Owner.MoveCursorTo(reference.EndLine, reference.EndColumn + 1, CodeEditorViewModel.MoveCursorFlags.Highlighting);
         }
