@@ -1,7 +1,12 @@
-v1.1 - 10 Mar 2018
+v1.1 - 23 Jun 2018
 * add CodeEditor (view/viewmodel/supporting classes)
 * add FixedSizeStack
 * add ITimerService
+* add StandardDeviation
+* add ListViewUtils.AutoSizeColumn
+* add IClipboardService.GetText
+* minor improvements to FocusIfTrue attached property
+* add SelectAllOnFocus attached property
 
 v1.0 - 28 Nov 2017
 * initial public release build candidate
