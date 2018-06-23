@@ -71,16 +71,6 @@
         }
 
         /// <summary>
-        /// Matches a quoted string.
-        /// </summary>
-        public override Token ReadQuotedString()
-        {
-            Token quotedString = baseTokenizer.ReadQuotedString();
-            NextChar = baseTokenizer.NextChar;
-            return quotedString;
-        }
-
-        /// <summary>
         /// Attempts to match as much of the provided token as possible.
         /// </summary>
         /// <param name="token">The token to match</param>

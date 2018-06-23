@@ -119,7 +119,7 @@ namespace Jamiras.Controls
             if (frameworkElement != null)
             {
                 DoubleAnimation animation;
-                var container = GetContainer(frameworkElement);
+                var container = GetContainer(frameworkElement) ?? frameworkElement;
 
                 if ((bool)e.NewValue)
                 {
@@ -129,12 +129,8 @@ namespace Jamiras.Controls
                     double visibleSize = (double)frameworkElement.GetValue(VisibleSizeProperty);
                     if (Double.IsNaN(visibleSize))
                     {
+                        frameworkElement.UpdateLayout();
                         visibleSize = GetOrientation(frameworkElement) == Orientation.Vertical ? frameworkElement.ActualHeight : frameworkElement.ActualWidth;
-                        if (visibleSize == 0.0)
-                        {
-                            frameworkElement.UpdateLayout();
-                            visibleSize = GetOrientation(frameworkElement) == Orientation.Vertical ? frameworkElement.ActualHeight : frameworkElement.ActualWidth;
-                        }
                     }
 
                     animation = new DoubleAnimation(0.0, visibleSize, GetDuration(frameworkElement));

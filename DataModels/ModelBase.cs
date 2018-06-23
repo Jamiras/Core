@@ -39,6 +39,8 @@ namespace Jamiras.DataModels
                 var uninitializedValue = value as ModelProperty.UnitializedValue;
                 if (uninitializedValue != null)
                 {
+                    _values = _values.AddOrUpdate(property.Key, null); // set a temporary placeholder to prevent infinite recursion
+
                     value = uninitializedValue.GetValue(this);
                     SetValueCore(property, value);
                 }

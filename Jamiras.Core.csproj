@@ -70,10 +70,17 @@
     <Compile Include="Components\EnumerableExtensions.cs" />
     <Compile Include="Components\FileLogger.cs" />
     <Compile Include="Components\PositionalTokenizer.cs" />
+    <Compile Include="Components\FixedSizeStack.cs" />
     <Compile Include="Components\Token.cs" />
     <Compile Include="Components\Tokenizer.cs" />
+    <Compile Include="Components\StandardDeviation.cs" />
     <Compile Include="Components\Trendline.cs" />
     <Compile Include="Components\WeightedList.cs" />
+    <Compile Include="Controls\CodeEditorView.xaml.cs">
+      <DependentUpon>CodeEditorView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\CodeEditorTextBlock.cs" />
+    <Compile Include="Controls\ListViewUtils.cs" />
     <Compile Include="Controls\TreeUtils.cs" />
     <Compile Include="Controls\Gallery.xaml.cs">
       <DependentUpon>Gallery.xaml</DependentUpon>
@@ -210,12 +217,27 @@
     <Compile Include="Components\ILogTarget.cs" />
     <Compile Include="Services\IPersistantDataRepository.cs" />
     <Compile Include="Services\ISoundPlayer.cs" />
+    <Compile Include="Services\ITimerService.cs" />
     <Compile Include="Services\IWindowSettingsRepository.cs" />
     <Compile Include="Components\Logger.cs" />
+    <Compile Include="Services\TimerService.cs" />
     <Compile Include="Services\LogService.cs" />
     <Compile Include="Services\PersistantDataRepository.cs" />
     <Compile Include="Services\SoundPlayer.cs" />
     <Compile Include="Services\WindowSettingsRepository.cs" />
+    <Compile Include="ViewModels\CodeEditor\CodeEditorViewModel.cs" />
+    <Compile Include="ViewModels\CodeEditor\CodeReferenceViewModel.cs" />
+    <Compile Include="ViewModels\CodeEditor\EditorProperties.cs" />
+    <Compile Include="ViewModels\CodeEditor\EditorResources.cs" />
+    <Compile Include="ViewModels\CodeEditor\ToolWindows\CodeReferencesToolWindowViewModel.cs" />
+    <Compile Include="ViewModels\CodeEditor\ToolWindows\ReplaceToolWindowViewModel.cs" />
+    <Compile Include="ViewModels\CodeEditor\ToolWindows\FindToolWindowViewModel.cs" />
+    <Compile Include="ViewModels\CodeEditor\ToolWindows\GotoLineToolWindowViewModel.cs" />
+    <Compile Include="ViewModels\CodeEditor\LineEventArgs.cs" />
+    <Compile Include="ViewModels\CodeEditor\LineFormatEventArgs.cs" />
+    <Compile Include="ViewModels\CodeEditor\LineViewModel.cs" />
+    <Compile Include="ViewModels\CodeEditor\TextPiece.cs" />
+    <Compile Include="ViewModels\CodeEditor\ToolWindowViewModel.cs" />
     <Compile Include="ViewModels\CommandViewModel.cs" />
     <Compile Include="ViewModels\Converters\FloatToCurrencyConverter.cs" />
     <Compile Include="ViewModels\Converters\DateToDateTimeConverter.cs" />
@@ -251,6 +273,7 @@
     <Compile Include="ViewModels\Fields\IntegerFieldViewModel.cs" />
     <Compile Include="ViewModels\Grid\Summarization.cs" />
     <Compile Include="ViewModels\ICompositeViewModel.cs" />
+    <Compile Include="ViewModels\KeyPressedEventArgs.cs" />
     <Compile Include="ViewModels\ModelBinding.cs" />
     <Compile Include="ViewModels\TabSetViewModel.cs" />
     <Compile Include="ViewModels\ValidatedViewModelBase.cs" />
@@ -276,6 +299,10 @@
     <Page Include="Controls\Gallery.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\CodeEditorView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Controls\GridView.xaml">
       <SubType>Designer</SubType>
@@ -311,6 +338,12 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\Error10.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\LeftArrow14.png" />
+    <Resource Include="Resources\Replace14.png" />
+    <Resource Include="Resources\ReplaceAll14.png" />
+    <Resource Include="Resources\RightArrow14.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

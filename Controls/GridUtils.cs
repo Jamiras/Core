@@ -26,7 +26,7 @@ namespace Jamiras.Controls
         }
 
         /// <summary>
-        /// Gets the index of the row to constain the <see cref="FrameworkElement"/> to.
+        /// Sets the index of the row to constain the <see cref="FrameworkElement"/> to.
         /// </summary>
         public static void SetConstrainToRow(FrameworkElement target, int value)
         {
@@ -58,6 +58,71 @@ namespace Jamiras.Controls
             public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
             {
                 throw new NotImplementedException();
+            }
+        }
+
+        /// <summary>
+        /// Specifies a row to hide if the <see cref="GridSplitter"/> is hidden.
+        /// </summary>
+        public static readonly DependencyProperty HidesRowProperty =
+            DependencyProperty.RegisterAttached("HidesRow", typeof(int), typeof(GridUtils),
+                new FrameworkPropertyMetadata(-1, OnHidesRowChanged));
+
+        /// <summary>
+        /// Gets the row to hide if the <see cref="GridSplitter"/> is hidden.
+        /// </summary>
+        public static int GetHidesRow(GridSplitter target)
+        {
+            return (int)target.GetValue(HidesRowProperty);
+        }
+
+        /// <summary>
+        /// Sets the row to hide if the <see cref="GridSplitter"/> is hidden.
+        /// </summary>
+        public static void SetHidesRow(GridSplitter target, int value)
+        {
+            target.SetValue(HidesRowProperty, value);
+        }
+
+        private static void OnHidesRowChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            var splitter = (GridSplitter)sender;
+
+            if ((int)e.NewValue == -1)
+            {
+                splitter.IsVisibleChanged -= SplitterIsVisibleChanged;
+            }
+            else if ((int)e.OldValue == -1)
+            {
+                splitter.IsVisibleChanged += SplitterIsVisibleChanged;
+                if (!splitter.IsVisible)
+                    SplitterIsVisibleChanged(splitter, new DependencyPropertyChangedEventArgs(GridSplitter.IsVisibleProperty, true, false));
+            }
+        }
+
+        private static readonly DependencyProperty HiddenSizeProperty =
+            DependencyProperty.RegisterAttached("HiddenSize", typeof(GridLength), typeof(GridUtils));
+
+        private static void SplitterIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            var splitter = (GridSplitter)sender;
+            var grid = splitter.Parent as Grid;
+            if (grid == null)
+                return;
+
+            var rowIndex = GetHidesRow(splitter);
+            if (rowIndex < 0 || rowIndex > grid.RowDefinitions.Count)
+                return;
+
+            var row = grid.RowDefinitions[rowIndex];
+            if (splitter.IsVisible)
+            {
+                row.Height = (GridLength)row.GetValue(HiddenSizeProperty);
+            }
+            else
+            {
+                row.SetValue(HiddenSizeProperty, row.Height);
+                row.Height = new GridLength(0);
             }
         }
     }

@@ -1,7 +1,11 @@
-﻿using System.Linq;
+﻿using Jamiras.Commands;
+using System;
+using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace Jamiras.Controls
 {
@@ -126,28 +130,63 @@ namespace Jamiras.Controls
         private static void OnDoubleClickCommandChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
         {
             var element = (UIElement)sender;
-            if (e.NewValue != null)
+            var binding = element.InputBindings.OfType<InputBinding>().FirstOrDefault(b =>
             {
-                element.InputBindings.Add(new InputBinding((ICommand)e.NewValue, new MouseGesture(MouseAction.LeftDoubleClick)));
+                var gesture = b.Gesture as MouseGesture;
+                return (gesture != null && gesture.MouseAction == MouseAction.LeftDoubleClick);
+            });
+
+            if (binding == null)
+            {
+                if (e.NewValue != null)
+                {
+                    binding = new InputBinding((ICommand)e.NewValue, new MouseGesture(MouseAction.LeftDoubleClick));
+                    element.InputBindings.Add(binding);
+                }
             }
             else
             {
-                var binding = element.InputBindings.OfType<InputBinding>().FirstOrDefault(b =>
-                {
-                    var gesture = b.Gesture as MouseGesture;
-                    return (gesture != null && gesture.MouseAction == MouseAction.LeftDoubleClick);
-                });
-
-                if (binding != null)
+                if (e.NewValue != null)
+                    binding.Command = (ICommand)e.NewValue;
+                else
                     element.InputBindings.Remove(binding);
             }
         }
 
-        private static void OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
+        /// <summary>
+        /// Property for binding an <see cref="ICommand"/> to the <see cref="MouseAction.LeftDoubleClick"/> gesture.
+        /// </summary>
+        public static readonly DependencyProperty DoubleClickCommandParameterProperty =
+            DependencyProperty.RegisterAttached("DoubleClickCommandParameter", typeof(object), typeof(CommandBinding),
+        new FrameworkPropertyMetadata(OnDoubleClickCommandParameterChanged));
+
+        /// <summary>
+        /// Gets the <see cref="ICommand"/> bound to the <see cref="MouseAction.LeftDoubleClick"/> gesture for the provided <see cref="UIElement"/>.
+        /// </summary>
+        public static object GetDoubleClickCommandParameter(UIElement target)
         {
-            var command = GetClickCommand((UIElement)sender);
-            if (command != null && command.CanExecute(e))
-                command.Execute(e);
+            return target.GetValue(DoubleClickCommandParameterProperty);
+        }
+
+        /// <summary>
+        /// Binds a <see cref="ICommand"/> to the <see cref="MouseAction.LeftDoubleClick"/> gesture for the provided <see cref="UIElement"/>.
+        /// </summary>
+        public static void SetDoubleClickCommandParameter(UIElement target, object value)
+        {
+            target.SetValue(DoubleClickCommandParameterProperty, value);
+        }
+
+        private static void OnDoubleClickCommandParameterChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            var element = (UIElement)sender;
+            var binding = element.InputBindings.OfType<InputBinding>().FirstOrDefault(b =>
+            {
+                var gesture = b.Gesture as MouseGesture;
+                return (gesture != null && gesture.MouseAction == MouseAction.LeftDoubleClick);
+            });
+
+            if (binding != null)
+                binding.CommandParameter = e.NewValue;
         }
 
         /// <summary>
@@ -155,7 +194,7 @@ namespace Jamiras.Controls
         /// </summary>
         public static readonly DependencyProperty FocusIfTrueProperty =
             DependencyProperty.RegisterAttached("FocusIfTrue", typeof(bool), typeof(CommandBinding),
-                new FrameworkPropertyMetadata(OnFocusIfTrueChanged));
+                new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnFocusIfTrueChanged));
 
         /// <summary>
         /// Gets whether the FocusIfTrue attached property is <c>true</c> for the <see cref="UIElement"/>.
@@ -177,8 +216,32 @@ namespace Jamiras.Controls
         {
             if ((bool)e.NewValue)
             {
-                ((IInputElement)sender).Focus();
-                SetFocusIfTrue((UIElement)sender, false);
+                var uiElement = (FrameworkElement)sender;
+                if (!uiElement.IsLoaded)
+                {
+                    uiElement.Loaded += OnFocusRequestedElementLoaded;
+                    return;
+                }
+
+                uiElement.Focus();
+
+                // asynchronously set the value back to false. trying to update the source property from wihtin the property changed handler gets swallowed by the WPF framework
+                uiElement.Dispatcher.BeginInvoke(new Action<UIElement>((UIElement element) =>
+                {
+                    SetFocusIfTrue(element, false);
+                }), uiElement);
+            }
+        }
+
+        private static void OnFocusRequestedElementLoaded(object sender, RoutedEventArgs e)
+        {
+            var uiElement = (FrameworkElement)sender;
+            uiElement.Loaded -= OnFocusRequestedElementLoaded;
+
+            if (GetFocusIfTrue(uiElement))
+            {
+                uiElement.Focus();
+                SetFocusIfTrue(uiElement, false);
             }
         }
 
@@ -239,6 +302,130 @@ namespace Jamiras.Controls
                 if (binding != null)
                     binding.UpdateSource();
             }
+        }
+
+        /// <summary>
+        /// Property for <see cref="TextBox"/> that causes the contents to be selected whenever the TextBox gets focused.
+        /// </summary>
+        public static readonly DependencyProperty SelectAllOnFocusProperty =
+            DependencyProperty.RegisterAttached("SelectAllOnFocus", typeof(bool), typeof(CommandBinding),
+                new FrameworkPropertyMetadata(OnSelectAllOnFocusChanged));
+
+        /// <summary>
+        /// Gets whether the SelectAllOnFocus attached property is <c>true</c> for the <see cref="TextBox"/>.
+        /// </summary>
+        public static bool GetSelectAllOnFocus(TextBox target)
+        {
+            return (bool)target.GetValue(SelectAllOnFocusProperty);
+        }
+
+        /// <summary>
+        /// Sets the SelectAllOnFocus attached property for the <see cref="TextBox"/>.
+        /// </summary>
+        public static void SetSelectAllOnFocus(TextBox target, bool value)
+        {
+            target.SetValue(SelectAllOnFocusProperty, value);
+        }
+
+        private static void OnSelectAllOnFocusChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            var textBox = sender as TextBox;
+            if (textBox != null)
+            {
+                if ((bool)e.NewValue)
+                {
+                    textBox.GotKeyboardFocus += TextBox_SelectAllOnFocus;
+
+                    if (textBox.IsKeyboardFocusWithin)
+                        SelectAll(textBox);
+                }
+                else
+                    textBox.GotKeyboardFocus -= TextBox_SelectAllOnFocus;
+            }
+        }
+
+        private static void TextBox_SelectAllOnFocus(object sender, RoutedEventArgs e)
+        {
+            SelectAll((TextBox)sender);
+        }
+
+        private static void SelectAll(TextBox textBox)
+        {
+            textBox.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                textBox.SelectAll();
+            }), System.Windows.Threading.DispatcherPriority.Background);
+        }
+
+        /// <summary>
+        /// Property for a <see cref="MenuItem"/> that sets its InputGesture property and creates an InputBinding for it.
+        /// </summary>
+        public static readonly DependencyProperty InputGestureProperty =
+            DependencyProperty.RegisterAttached("InputGesture", typeof(string), typeof(CommandBinding),
+                new FrameworkPropertyMetadata(OnInputGestureChanged));
+
+        /// <summary>
+        /// Gets whether the InputGesture attached property is <c>true</c> for the <see cref="MenuItem"/>.
+        /// </summary>
+        public static string GetInputGesture(MenuItem target)
+        {
+            return (string)target.GetValue(InputGestureProperty);
+        }
+
+        /// <summary>
+        /// Sets the InputGesture attached property for the <see cref="MenuItem"/>.
+        /// </summary>
+        public static void SetInputGesture(MenuItem target, string value)
+        {
+            target.SetValue(InputGestureProperty, value);
+        }
+
+        private static void OnInputGestureChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            var menuItem = (MenuItem)sender;
+            var gestureText = (String)e.NewValue;
+            KeyGesture gesture = null;
+
+            if (String.IsNullOrEmpty(gestureText))
+            {
+                menuItem.InputGestureText = null;
+            }
+            else
+            {
+                menuItem.InputGestureText = gestureText;
+                gesture = (KeyGesture)new KeyGestureConverter().ConvertFrom(null, System.Globalization.CultureInfo.CurrentUICulture, gestureText);
+            }
+
+            var uiElement = sender;
+            while (uiElement != null)
+            {
+                var window = uiElement as Window;
+                if (window != null)
+                {
+                    var bindings = window.InputBindings.OfType<KeyBinding>();
+                    var binding = bindings.FirstOrDefault(b => b.Key == gesture.Key && b.Modifiers == gesture.Modifiers);
+                    if (binding == null)
+                    {
+                        if (gesture == null)
+                            return;
+
+                        binding = new KeyBinding { Gesture = gesture };
+                        window.InputBindings.Add(binding);
+                    }
+
+                    binding.Command = new DelegateCommand<MenuItem>(ActivateMenuItem);
+                    binding.CommandParameter = menuItem;
+                }
+
+                uiElement = LogicalTreeHelper.GetParent(uiElement);
+            }
+        }
+
+        private static void ActivateMenuItem(MenuItem item)
+        {
+            var command = item.Command;
+            if (command != null && command.CanExecute(item.CommandParameter))
+                command.Execute(item.CommandParameter);
         }
     }
 }
