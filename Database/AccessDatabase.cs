@@ -128,16 +128,27 @@ namespace Jamiras.Database
         /// <param name="fileName">Path to the Access database.</param>
         public bool Connect(string fileName)
         {
-            string connectionString;
-            if (fileName.EndsWith(".accdb", StringComparison.OrdinalIgnoreCase))
-                connectionString = "Provider=Microsoft.ACE.OLEDB.12.0; Data Source=" + fileName;
-            else
-                connectionString = "Provider=Microsoft.Jet.OLEDB.4.0; Data Source=" + fileName;
+            if (IntPtr.Size != 4)
+                throw new NotSupportedException("Access Database drivers only work in 32-bit mode");
 
             _logger.Write("Opening database: {0}", fileName);
 
+            // try newer driver first (this is the only driver available in x64)
+            string connectionString = "Provider=Microsoft.ACE.OLEDB.12.0; Data Source=" + fileName;
             var connection = new System.Data.OleDb.OleDbConnection(connectionString);
-            connection.Open();
+            try
+            {
+                connection.Open();
+            }
+            catch (InvalidOperationException ex)
+            {
+                System.Windows.Forms.MessageBox.Show(ex.Message);
+
+                // then try older driver
+                connectionString = "Provider=Microsoft.Jet.OLEDB.4.0; Data Source=" + fileName;
+                connection = new System.Data.OleDb.OleDbConnection(connectionString);
+                connection.Open();
+            }
 
             while (connection.State == System.Data.ConnectionState.Connecting)
                 System.Threading.Thread.Sleep(100);
