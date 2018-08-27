@@ -1304,6 +1304,13 @@ namespace Jamiras.ViewModels.CodeEditor
             return null;
         }
 
+        private static bool IsPunctuation(char c)
+        {
+            // Char.IsPunctionation returned true for underscore, we want it to be
+            // treated as part of the identifier, so classify it directly.
+            return (c != '_' && Char.IsPunctuation(c));
+        }
+
         private Selection GetWordSelection(int line, int column)
         { 
             var cursorLineViewModel = _lines[line - 1];
@@ -1314,42 +1321,41 @@ namespace Jamiras.ViewModels.CodeEditor
             var text = currentTextPiece.Piece.Text;
             var offset = currentTextPiece.Offset;
 
-            int wordStart, wordEnd;
+            Predicate<char> isPartOfWord;
             if (Char.IsWhiteSpace(text[offset]))
             {
-                do
-                {
-                    offset--;
-                } while (offset >= 0 && Char.IsWhiteSpace(text[offset]));
-
-                wordStart = column - (currentTextPiece.Offset - offset) + 1;
-
-                offset = currentTextPiece.Offset;
-                do
-                {
-                    offset++;
-                } while (offset < text.Length && Char.IsWhiteSpace(text[offset]));
-
-                wordEnd = column + (offset - currentTextPiece.Offset);
+                // target character is whitespace, select all whitespace on either side
+                isPartOfWord = Char.IsWhiteSpace;
+            }
+            else if (IsPunctuation(text[offset]))
+            {
+                // target character is punctuation, select all punctuation on either side
+                isPartOfWord = IsPunctuation;
             }
             else
             {
-                do
-                {
-                    offset--;
-                } while (offset >= 0 && !Char.IsWhiteSpace(text[offset]));
-
-                wordStart = column - (currentTextPiece.Offset - offset) + 1;
-
-                offset = currentTextPiece.Offset;
-                do
-                {
-                    offset++;
-                } while (offset < text.Length && !Char.IsWhiteSpace(text[offset]));
-
-                wordEnd = column + (offset - currentTextPiece.Offset);
+                // target character is not punctuation or whitespace, select all characters
+                // on either side until whitespace or punctuation is found
+                isPartOfWord = c => !Char.IsWhiteSpace(c) && !IsPunctuation(c);
             }
 
+            // find the boundaries of the word
+            do
+            {
+                offset--;
+            } while (offset >= 0 && isPartOfWord(text[offset]));
+
+            int wordStart = column - (currentTextPiece.Offset - offset) + 1;
+
+            offset = currentTextPiece.Offset;
+            do
+            {
+                offset++;
+            } while (offset < text.Length && isPartOfWord(text[offset]));
+
+            int wordEnd = column + (offset - currentTextPiece.Offset);
+
+            // return the bounds
             return new Selection { StartLine = line, StartColumn = wordStart, EndLine = line, EndColumn = wordEnd };
         }
 

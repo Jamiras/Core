@@ -54,15 +54,50 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             int i = 0;
             while (i < text.Length)
             {
-                if (Char.IsWhiteSpace(text[i]))
+                int start = i;
+
+                switch (text[i])
                 {
-                    i++;
-                    continue;
+                    case '=':
+                        if (text[i + 1] == '=')
+                        {
+                            e.SetColor(i + 1, 2, 99);
+                            i += 2;
+                            continue;
+                        }
+                        break;
+
+                    case '\'':
+                        do
+                        {
+                            i++;
+                        } while (i < text.Length && text[i] != '\'');
+
+                        e.SetColor(start + 1, i - start, 98);
+                        continue;
+
+                    case '/':
+                        if (text[i + 1] == '/')
+                        {
+                            do
+                            {
+                                i++;
+                            } while (i < text.Length && text[i] != '\n');
+
+                            e.SetColor(start + 1, i - start, 97);
+                            continue;
+                        }
+                        break;
+
+                    case ' ':
+                    case '\n':
+                    case '\t':
+                        i++;
+                        continue;
                 }
 
                 if (Char.IsLetterOrDigit(text[i]))
                 {
-                    int start = i;
                     do
                     {
                         i++;
@@ -486,6 +521,11 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         [TestCase(1, 4, 5, "bool")]
         [TestCase(1, 5, 6, " ")]
         [TestCase(1, 6, 19, "test_function")]
+        [TestCase(3, 10, 12, "This")]
+        [TestCase(4, 16, 18, "==")]
+        [TestCase(5, 21, 24, "Hello")]
+        [TestCase(5, 24, 25, ",")]
+        [TestCase(7, 20, 22, "NULL")]
         public void TestHightlightWordAt(int line, int column, int expectedColumn, string expectedText)
         {
             viewModel.HighlightWordAt(line, column);
