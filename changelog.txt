@@ -1,3 +1,6 @@
+v1.1.2 - 26 Jan 2019
+* don't insert matching brace if the character following the cursor is not whitespace or punctuation
+
 v1.1.1 - 27 Aug 2018
 * stop at punctuation when highlighting word at cursor in CodeEditor
 

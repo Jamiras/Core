@@ -1213,5 +1213,39 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             Assert.That(bracingViewModel.Lines[2].Text, Is.EqualTo(")"));
             Assert.That(bracingViewModel.CursorColumn, Is.EqualTo(6));
         }
+
+        [Test]
+        public void TestBraceMatchingNextChar()
+        {
+            var bracingViewModel = CreateBracingCodeEditorViewModel();
+            bracingViewModel.HandleCharacter('a');
+            bracingViewModel.HandleCharacter(' ');
+            bracingViewModel.HandleCharacter('b');
+            bracingViewModel.HandleCharacter('.');
+            bracingViewModel.HandleCharacter('c');
+
+            // end of line should add match
+            bracingViewModel.HandleCharacter('(');
+            CompleteTyping();
+            Assert.That(bracingViewModel.Lines[0].Text, Is.EqualTo("a b.c()"));
+
+            // before punctuation should add match
+            bracingViewModel.MoveCursorTo(1, 4, CodeEditorViewModel.MoveCursorFlags.None);
+            bracingViewModel.HandleCharacter('(');
+            CompleteTyping();
+            Assert.That(bracingViewModel.Lines[0].Text, Is.EqualTo("a b().c()"));
+
+            // before space should add match
+            bracingViewModel.MoveCursorTo(1, 2, CodeEditorViewModel.MoveCursorFlags.None);
+            bracingViewModel.HandleCharacter('(');
+            CompleteTyping();
+            Assert.That(bracingViewModel.Lines[0].Text, Is.EqualTo("a() b().c()"));
+
+            // before letter should not add match
+            bracingViewModel.MoveCursorTo(1, 5, CodeEditorViewModel.MoveCursorFlags.None);
+            bracingViewModel.HandleCharacter('(');
+            CompleteTyping();
+            Assert.That(bracingViewModel.Lines[0].Text, Is.EqualTo("a() (b().c()"));
+        }
     }
 }

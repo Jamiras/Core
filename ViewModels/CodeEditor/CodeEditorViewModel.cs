@@ -561,7 +561,7 @@ namespace Jamiras.ViewModels.CodeEditor
             get { return _linesWrapper; }
         }
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private ReadOnlyObservableCollection<LineViewModel> _linesWrapper;
+        private readonly ReadOnlyObservableCollection<LineViewModel> _linesWrapper;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private ObservableCollection<LineViewModel> _lines;
 
@@ -899,10 +899,21 @@ namespace Jamiras.ViewModels.CodeEditor
             }
             else if (_braces.TryGetValue(c, out brace))
             {
-                // typed a brace, insert it and the matching character
-                lineViewModel.Insert(column, c.ToString() + brace.ToString());
-                undoItem.After.EndColumn += 2;
-                _braceStack.Push(brace);
+                var text = lineViewModel.PendingText ?? lineViewModel.Text;
+
+                // typed a brace. if the next character is whitespace or punctuation, insert it and the matching character
+                if (column > lineViewModel.LineLength || Char.IsWhiteSpace(text[column - 1]) || Char.IsPunctuation(text[column - 1]))
+                {
+                    lineViewModel.Insert(column, c.ToString() + brace.ToString());
+                    undoItem.After.EndColumn += 2;
+                    _braceStack.Push(brace);
+                }
+                else
+                {
+                    // next character is not whitespace or punctuation, just insert it
+                    lineViewModel.Insert(column, c.ToString());
+                    undoItem.After.EndColumn++;
+                }
             }
             else
             {
