@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Text;
 using Jamiras.Components;
 
 namespace Jamiras.Services
@@ -116,12 +117,35 @@ namespace Jamiras.Services
 
         private static string Unescape(string text)
         {
-            return text.Replace("\\r", "\r").Replace("\\n", "\n");
+            if (text.IndexOf('\\') == -1)
+                return text;
+
+            var builder = new StringBuilder();
+            for (int i = 0; i < text.Length; i++)
+            {
+                var c = text[i];
+                if (c == '\\' && i + 1 < text.Length)
+                {
+                    c = text[++i];
+                    if (c == 'n')
+                        builder.Append('\n');
+                    else if (c == 'r')
+                        builder.Append('\r');
+                    else
+                        builder.Append(c);
+                }
+                else
+                {
+                    builder.Append(c);
+                }
+            }
+
+            return builder.ToString();
         }
 
         private static string Escape(string text)
         {
-            return text.Replace("\r", "\\r").Replace("\n", "\\n");
+            return text.Replace("\\", "\\\\").Replace("\r", "\\r").Replace("\n", "\\n");
         }
 
         #region IPersistantDataRepository Members
