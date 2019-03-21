@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
 using Jamiras.DataModels;
 using Jamiras.DataModels.Metadata;
 using Jamiras.ViewModels;
 using Moq;
 using NUnit.Framework;
-using Jamiras.Components;
 
 namespace Jamiras.Core.Tests.ViewModels
 {

@@ -1,6 +1,4 @@
-﻿using System.Collections;
-
-namespace Jamiras.DataModels
+﻿namespace Jamiras.DataModels
 {
     /// <summary>
     /// Interface for a repository that manages data models.
