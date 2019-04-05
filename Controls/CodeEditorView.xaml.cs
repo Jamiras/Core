@@ -217,7 +217,11 @@ namespace Jamiras.Controls
 
         private LineViewModel GetLineInternal(Point point)
         {
-            var item = VisualTreeHelper.HitTest(this, point).VisualHit;
+            var hitTestResult = VisualTreeHelper.HitTest(this, point);
+            if (hitTestResult == null)
+                return null;
+
+            var item = hitTestResult.VisualHit;
 
             do
             {

@@ -730,6 +730,21 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         }
 
         [Test]
+        public void TestReplaceMultipleLinesWithMultipleLinesAtEndOfFile()
+        {
+            viewModel.MoveCursorTo(8, 1, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(10, 2, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+            viewModel.ReplaceSelection("test");
+
+            Assert.That(viewModel.Lines[7].Text, Is.EqualTo("test"));
+            Assert.That(viewModel.Lines[7].Line, Is.EqualTo(8));
+            Assert.That(viewModel.Lines.Count, Is.EqualTo(8));
+
+            Assert.That(viewModel.CursorLine, Is.EqualTo(8));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(5));
+        }
+
+        [Test]
         public void TestReplaceTextWordNoSelection()
         {
             viewModel.MoveCursorTo(1, 19, CodeEditorViewModel.MoveCursorFlags.None);
