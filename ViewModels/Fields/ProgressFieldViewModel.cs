@@ -2,7 +2,6 @@
 //using System.Windows.Shell;
 using Jamiras.DataModels;
 using Jamiras.Components;
-using Jamiras.Services;
 
 namespace Jamiras.ViewModels.Fields
 {
