@@ -110,6 +110,15 @@ namespace Jamiras.Core.Tests.Services
         }
 
         [Test]
+        public void TestGetValueEscapedPath()
+        {
+            SetupFile("x=C:\\\\root\\\\node\\\\file.txt"); // \r and \n are not escape sequence. \\ is.
+
+            var value = _repository.GetValue("x");
+            Assert.That(value, Is.EqualTo("C:\\root\\node\\file.txt"));
+        }
+
+        [Test]
         public void TestSetValue()
         {
             var stream = SetupFileWrite();
@@ -121,6 +130,20 @@ namespace Jamiras.Core.Tests.Services
             _mockFileSystemService.Verify(f => f.CreateFile(_fileName));
             var contents = GetFileContents(stream);
             Assert.That(contents, Is.EqualTo("x=3\r\n"));
+        }
+
+        [Test]
+        public void TestSetValueEscaped()
+        {
+            var stream = SetupFileWrite();
+            _repository.SetValue("x", "C:\\root\\node\\file.txt\nC:\\file2.txt");
+
+            var value = _repository.GetValue("x");
+            Assert.That(value, Is.EqualTo("C:\\root\\node\\file.txt\nC:\\file2.txt"));
+
+            _mockFileSystemService.Verify(f => f.CreateFile(_fileName));
+            var contents = GetFileContents(stream);
+            Assert.That(contents, Is.EqualTo("x=C:\\\\root\\\\node\\\\file.txt\\nC:\\\\file2.txt\r\n"));
         }
 
         [Test]
