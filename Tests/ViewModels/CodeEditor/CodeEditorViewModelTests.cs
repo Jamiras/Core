@@ -673,6 +673,41 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         }
 
         [Test]
+        public void TestReplaceTextWordReverse()
+        {
+            viewModel.MoveCursorTo(1, 19, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(1, 6, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+            viewModel.ReplaceSelection("orange");
+
+            Assert.That(viewModel.Lines[0].Text, Is.EqualTo("bool orange(int param1, string param2)"));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(12));
+        }
+
+        [Test]
+        public void TestUndoReplaceTextWord()
+        {
+            viewModel.MoveCursorTo(1, 6, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(1, 19, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+            viewModel.ReplaceSelection("orange");
+            viewModel.HandleKey(Key.Z, ModifierKeys.Control);
+
+            Assert.That(viewModel.Lines[0].Text, Is.EqualTo("bool test_function(int param1, string param2)"));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(19));
+        }
+
+        [Test]
+        public void TestUndoReplaceTextWordReverse()
+        {
+            viewModel.MoveCursorTo(1, 19, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel.MoveCursorTo(1, 6, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+            viewModel.ReplaceSelection("orange");
+            viewModel.HandleKey(Key.Z, ModifierKeys.Control);
+
+            Assert.That(viewModel.Lines[0].Text, Is.EqualTo("bool test_function(int param1, string param2)"));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(6));
+        }
+
+        [Test]
         public void TestReplaceTextWordWithMultipleLines()
         {
             viewModel.MoveCursorTo(1, 6, CodeEditorViewModel.MoveCursorFlags.None);
