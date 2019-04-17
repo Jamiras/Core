@@ -261,6 +261,12 @@ namespace Jamiras.ViewModels.CodeEditor
         {
             _lines.Clear();
 
+            while (_undoStack.Count > 0)
+                _undoStack.Pop();
+
+            while (_redoStack.Count > 0)
+                _redoStack.Pop();
+
             int lineIndex = 1;
             var tokenizer = Tokenizer.CreateTokenizer(value);
             do
@@ -1196,6 +1202,8 @@ namespace Jamiras.ViewModels.CodeEditor
         private void ReplaceText(Selection selection, string newText)
         {
             selection = selection.GetOrderedSelection();
+            var cursorLine = selection.EndLine;
+            var cursorColumn = selection.EndColumn;
 
             LineViewModel line;
             var linesAdded = 0;
@@ -1219,26 +1227,32 @@ namespace Jamiras.ViewModels.CodeEditor
 
                 line = new LineViewModel(this, line.Line + 1) { Text = remaining };
                 _lines.Insert(selection.StartLine, line);
-                ++selection.EndLine;
                 linesAdded = 1;
             }
             else
             {
-                line = _lines[selection.StartLine - 1];
-                if (selection.StartColumn < line.LineLength)
-                    line.Remove(selection.StartColumn, line.LineLength);
+                if (selection.StartLine <= _lines.Count)
+                {
+                    line = _lines[selection.StartLine - 1];
+                    if (selection.StartColumn < line.LineLength)
+                        line.Remove(selection.StartColumn, line.LineLength);
+                }
 
-                line = _lines[selection.EndLine - 1];
-                if (selection.EndColumn > 1)
-                    line.Remove(1, selection.EndColumn - 1);
+                if (selection.EndLine <= _lines.Count)
+                {
+                    line = _lines[selection.EndLine - 1];
+                    if (selection.EndColumn > 1)
+                        line.Remove(1, selection.EndColumn - 1);
+
+                    line.Line -= (selection.EndLine - selection.StartLine - 1);
+                }
 
                 for (int i = selection.EndLine - 2; i >= selection.StartLine; --i)
                 {
-                    _lines.RemoveAt(i);
+                    if (i < _lines.Count - 1)
+                        _lines.RemoveAt(i);
                     linesAdded--;
                 }
-
-                line.Line += linesAdded;
             }
 
             var newTextLines = newText.Split('\n');
@@ -1247,7 +1261,7 @@ namespace Jamiras.ViewModels.CodeEditor
 
             if (newTextLines.Length == 1)
             {
-                selection.EndColumn = line.LineLength + 1;
+                cursorColumn = line.LineLength + 1;
 
                 var startLine = _lines[selection.StartLine];
                 line.Insert(line.LineLength + 1, startLine.PendingText ?? startLine.Text);
@@ -1255,14 +1269,14 @@ namespace Jamiras.ViewModels.CodeEditor
                 _lines.RemoveAt(selection.StartLine);
                 linesAdded--;
             }
-            else
+            else if (selection.StartLine < _lines.Count)
             {
                 line = _lines[selection.StartLine];
                 var text = newTextLines[newTextLines.Length - 1].TrimEnd('\r');
                 line.Insert(1, text);
                 line.Line += newTextLines.Length - 2;
 
-                selection.EndColumn = text.Length + 1;
+                cursorColumn = text.Length + 1;
             }
 
             for (int i = 1; i < newTextLines.Length - 1; i++)
@@ -1272,17 +1286,17 @@ namespace Jamiras.ViewModels.CodeEditor
                 linesAdded++;
             }
 
-            selection.EndLine = selection.StartLine + newTextLines.Length - 1;
+            cursorLine = selection.StartLine + newTextLines.Length - 1;
 
             if (linesAdded != 0)
             {
-                for (int i = selection.EndLine; i < _lines.Count; ++i)
+                for (int i = cursorLine; i < _lines.Count; ++i)
                     _lines[i].Line += linesAdded;
             }
 
             LineCount += linesAdded;
 
-            MoveCursorTo(selection.EndLine, selection.EndColumn, MoveCursorFlags.Typing);
+            MoveCursorTo(cursorLine, cursorColumn, MoveCursorFlags.Typing);
         }
 
         /// <summary>
@@ -1757,6 +1771,18 @@ namespace Jamiras.ViewModels.CodeEditor
                 _braceStack.Clear();
 
             // update highlighting
+            if (_selectionStartLine > _lines.Count)
+            {
+                _selectionStartLine = _lines.Count;
+                _selectionStartColumn = _lines[_lines.Count - 1].LineLength + 1;
+            }
+
+            if (_selectionEndLine > _lines.Count)
+            {
+                _selectionEndLine = _lines.Count;
+                _selectionEndColumn = _lines[_lines.Count - 1].LineLength + 1;
+            }
+
             if ((flags & MoveCursorFlags.Highlighting) == 0)
             {
                 // remove highlighted region
@@ -1814,7 +1840,8 @@ namespace Jamiras.ViewModels.CodeEditor
             // update the cursor position
             if (line != currentLine)
             {
-                _lines[currentLine - 1].CursorColumn = 0;
+                if (currentLine <= _lines.Count)
+                    _lines[currentLine - 1].CursorColumn = 0;
                 _lines[line - 1].CursorColumn = column;
 
                 if (column != currentColumn)
