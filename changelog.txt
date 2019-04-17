@@ -1,3 +1,7 @@
+v1.1.3 - 16 Apr 2019
+* escape backslashes in persistant data
+* fix exceptions when replacing text with smaller amount of text (via paste/undo/redo) in code editor
+
 v1.1.2 - 26 Jan 2019
 * don't insert matching brace if the character following the cursor is not whitespace or punctuation
 
