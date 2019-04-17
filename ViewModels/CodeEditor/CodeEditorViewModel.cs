@@ -1104,6 +1104,9 @@ namespace Jamiras.ViewModels.CodeEditor
                         var text = line.PendingText ?? line.Text;
 
                         var firstChar = (i == orderedSelection.StartLine) ? orderedSelection.StartColumn - 1 : 0;
+                        if (firstChar > text.Length)
+                            firstChar = text.Length;
+
                         int lastChar;
                         if (i == orderedSelection.EndLine)
                         {
@@ -1186,8 +1189,19 @@ namespace Jamiras.ViewModels.CodeEditor
             EndUndo(newText);
 
             var item = _undoStack.Pop();
-            item.After.StartLine = selection.StartLine;
-            item.After.StartColumn = selection.StartColumn;
+
+            if (selection.StartLine > selection.EndLine ||
+                (selection.StartLine == selection.EndLine && selection.StartColumn > selection.EndColumn))
+            {
+                item.After.StartLine = selection.EndLine;
+                item.After.StartColumn = selection.EndColumn;
+            }
+            else
+            {
+                item.After.StartLine = selection.StartLine;
+                item.After.StartColumn = selection.StartColumn;
+            }
+
             _undoStack.Push(item);
 
             Refresh();
