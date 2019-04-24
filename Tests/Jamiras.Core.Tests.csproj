@@ -76,43 +76,35 @@
     </Reference>
   </ItemGroup>
   <Choose>
-    <When Condition="Exists('..\lib\Moq.dll')">
+    <When Condition="Exists('..\lib\moq-4.3\net40\Moq.dll')">
       <ItemGroup>
         <Reference Include="Moq">
-          <HintPath>..\lib\Moq.dll</HintPath>
+          <HintPath>..\lib\moq-4.3\net40\Moq.dll</HintPath>
         </Reference>
       </ItemGroup>
     </When>
     <Otherwise>
       <ItemGroup>
         <Reference Include="Moq">
-          <HintPath>..\..\nUnit\Moq.dll</HintPath>
+          <HintPath>..\..\libs\moq-4.3\net40\Moq.dll</HintPath>
         </Reference>
       </ItemGroup>
     </Otherwise>
   </Choose>
   <Choose>
-    <When Condition="Exists('..\lib\nunit.framework.dll')">
+    <When Condition="Exists('..\lib\nUnit-3.11\net40\nunit.framework.dll')">
       <ItemGroup>
-        <Reference Include="nunit.framework, Version=2.5.8.10295, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
+        <Reference Include="nunit.framework, Version=4.0.30319, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
           <SpecificVersion>False</SpecificVersion>
-          <HintPath>..\lib\nunit.framework.dll</HintPath>
-        </Reference>
-        <Reference Include="nunit.mocks, Version=2.5.8.10295, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
-          <SpecificVersion>False</SpecificVersion>
-          <HintPath>..\lib\nunit.mocks.dll</HintPath>
+          <HintPath>..\lib\nUnit-3.11\net40\nunit.framework.dll</HintPath>
         </Reference>
       </ItemGroup>
     </When>
     <Otherwise>
       <ItemGroup>
-        <Reference Include="nunit.framework, Version=2.5.8.10295, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
+        <Reference Include="nunit.framework, Version=4.0.30319, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
           <SpecificVersion>False</SpecificVersion>
-          <HintPath>..\..\nUnit\nunit.framework.dll</HintPath>
-        </Reference>
-        <Reference Include="nunit.mocks, Version=2.5.8.10295, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
-          <SpecificVersion>False</SpecificVersion>
-          <HintPath>..\..\nUnit\nunit.mocks.dll</HintPath>
+          <HintPath>..\..\libs\nUnit-3.11\net40\nunit.framework.dll</HintPath>
         </Reference>
       </ItemGroup>
     </Otherwise>
@@ -158,13 +150,13 @@
     <Compile Include="WeakReferenceTester.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Jamiras.Core.csproj">
-      <Project>{4141F2AE-9E32-4A93-9FEA-360A7DC7D97F}</Project>
-      <Name>Jamiras.Core</Name>
-    </ProjectReference>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <ItemGroup>
-    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+    <ProjectReference Include="..\Jamiras.Core.csproj">
+      <Project>{4141f2ae-9e32-4a93-9fea-360a7dc7d97f}</Project>
+      <Name>Jamiras.Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -5,7 +5,7 @@ using NUnit.Framework;
 namespace Jamiras.Core.Tests.Controls
 {
     [TestFixture]
-    [RequiresSTA]
+    [Apartment(System.Threading.ApartmentState.STA)]
     class CalendarControlTests
     {
         private CalendarControl _control;
