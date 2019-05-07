@@ -33,7 +33,7 @@ namespace Jamiras.Core.Tests.Commands
         }
 
         [Test]
-        [RequiresSTA]
+        [Apartment(System.Threading.ApartmentState.STA)]
         public void TestExecute()
         {
             var executed = false;
@@ -113,7 +113,7 @@ namespace Jamiras.Core.Tests.Commands
         }
 
         [Test]
-        [RequiresSTA]
+        [Apartment(System.Threading.ApartmentState.STA)]
         public void TestParameterizedExecuteICommand()
         {
             var executeParameter = 0;

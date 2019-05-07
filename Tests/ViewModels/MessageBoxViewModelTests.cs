@@ -1,15 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using Jamiras.Services;
 using Jamiras.ViewModels;
-using NUnit.Framework;
-using Jamiras.Services;
 using Moq;
+using NUnit.Framework;
+using System.Collections.Generic;
 
 namespace Jamiras.Core.Tests.ViewModels
 {
     [TestFixture]
     class MessageBoxViewModelTests
     {
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             var dialogService = new Mock<IDialogService>();

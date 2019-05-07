@@ -49,7 +49,7 @@ namespace Jamiras.Core.Tests.Commands
         }
 
         [Test]
-        [RequiresSTA]
+        [Apartment(System.Threading.ApartmentState.STA)]
         public void TestExecuteICommand()
         {
             var command = new TestCommand();
@@ -128,7 +128,7 @@ namespace Jamiras.Core.Tests.Commands
         }
 
         [Test]
-        [RequiresSTA]
+        [Apartment(System.Threading.ApartmentState.STA)]
         public void TestParameterizedExecuteICommand()
         {
             var command = new TestParameterizedCommand();

@@ -9,7 +9,7 @@ namespace Jamiras.Core.Tests.Services
     [TestFixture]
     class PersistantDataRepositoryTests
     {
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             _fileName = PersistantDataRepository.GetFileName();
@@ -53,8 +53,8 @@ namespace Jamiras.Core.Tests.Services
         [Test]
         public void TestGetFileName()
         {
-            Assert.That(_fileName, Is.StringContaining("\\Jamiras\\"));
-            Assert.That(_fileName, Is.StringEnding("\\userdata.ini"));
+            Assert.That(_fileName, Does.Contain("\\Jamiras\\"));
+            Assert.That(_fileName, Does.EndWith("\\userdata.ini"));
         }
 
         [Test]

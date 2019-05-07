@@ -21,7 +21,7 @@ namespace Jamiras.Core.Tests.DataModels
             ResetModelProperties();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             ResetModelProperties();
