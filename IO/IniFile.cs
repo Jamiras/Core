@@ -70,5 +70,24 @@ namespace Jamiras.IO
 
             return values;
         }
+
+        /// <summary>
+        /// Writes this ini file.
+        /// </summary>
+        /// <parameter name="values">Dictionary of key/value pairs to write to the .ini file.</returns>
+        /// <remarks>Completely replaces the .ini file. Recommend calling <see cref="Read"/> and merging changes before calling <see cref="Write"/>. Comments will be lost.</remarks>
+        public void Write(IDictionary<string, string> values)
+        {
+            using (var writer = File.CreateText(_iniPath))
+            {
+                foreach (var pair in values)
+                {
+                    writer.Write(pair.Key);
+                    writer.Write('=');
+                    writer.Write(pair.Value);
+                    writer.WriteLine();
+                }
+            }
+        }
     }
 }
