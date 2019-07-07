@@ -29,6 +29,7 @@ namespace Jamiras.Controls
         public FormattedTextBlock()
         {
             _hyperlinkCommand = new HyperlinkCommand(this);
+            Visibility = Visibility.Collapsed;
         }
 
         private class HyperlinkCommand : ICommand
@@ -112,10 +113,14 @@ namespace Jamiras.Controls
         {
             Inlines.Clear();
             if (String.IsNullOrEmpty(input))
+            {
+                Visibility = Visibility.Collapsed;
                 return;
+            }
 
             var converter = new SyntaxToInlineConverter(_hyperlinkCommand);
             converter.Convert(input, Inlines);
+            Visibility = Visibility.Visible;
         }
 
         private class SyntaxToInlineConverter
