@@ -424,7 +424,7 @@ namespace Jamiras.Components
         /// </summary>
         public Token SubToken(int start)
         {
-            if (start < 0 || start >= _length)
+            if (start < 0 || start > _length)
                 throw new ArgumentOutOfRangeException("start");
 
             return new Token(_source, _start + start, _length - start);
@@ -435,7 +435,7 @@ namespace Jamiras.Components
         /// </summary>
         public Token SubToken(int start, int length)
         {
-            if (start < 0 || start >= _length)
+            if (start < 0 || start > _length)
                 throw new ArgumentOutOfRangeException("start");
             if (length < 0 || start + length > _length)
                 throw new ArgumentOutOfRangeException("length");

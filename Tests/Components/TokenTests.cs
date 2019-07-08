@@ -463,9 +463,11 @@ namespace Jamiras.Core.Tests.Components
             var token2 = token.SubToken(1, 2);
             var token3 = token.SubToken(2, 4);
             var token4 = token.SubToken(3, 5);
+            var token5 = token.SubToken(8, 0);
             Assert.That(token2 == "es", Is.True);
             Assert.That(token3 == "st12", Is.True);
             Assert.That(token4 == "t1234", Is.True);
+            Assert.That(token5 == "", Is.True);
             AssertTokenPointer(token, input);
             AssertTokenPointer(token2, input);
             AssertTokenPointer(token3, input);
@@ -485,16 +487,18 @@ namespace Jamiras.Core.Tests.Components
             var token2 = token.SubToken(1);
             var token3 = token.SubToken(2);
             var token4 = token.SubToken(3);
+            var token5 = token.SubToken(8);
             Assert.That(token2 == "est1234", Is.True);
             Assert.That(token3 == "st1234", Is.True);
             Assert.That(token4 == "t1234", Is.True);
+            Assert.That(token5 == "", Is.True);
             AssertTokenPointer(token, input);
             AssertTokenPointer(token2, input);
             AssertTokenPointer(token3, input);
             AssertTokenPointer(token4, input);
 
             Assert.That(() => token.SubToken(-1), Throws.InstanceOf<ArgumentOutOfRangeException>());
-            Assert.That(() => token.SubToken(8), Throws.InstanceOf<ArgumentOutOfRangeException>());
+            Assert.That(() => token.SubToken(9), Throws.InstanceOf<ArgumentOutOfRangeException>());
         }
 
         [Test]
@@ -505,9 +509,11 @@ namespace Jamiras.Core.Tests.Components
             var str1 = token.Substring(1, 2);
             var str2 = token.Substring(2, 4);
             var str3 = token.Substring(3, 5);
+            var str4 = token.Substring(8, 0);
             Assert.That(str1, Is.EqualTo("es"));
             Assert.That(str2, Is.EqualTo("st12"));
             Assert.That(str3, Is.EqualTo("t1234"));
+            Assert.That(str4, Is.EqualTo(""));
             AssertTokenPointer(token, input);
 
             Assert.That(() => token.Substring(-1, 2), Throws.InstanceOf<ArgumentOutOfRangeException>());
@@ -524,13 +530,15 @@ namespace Jamiras.Core.Tests.Components
             var str1 = token.Substring(1);
             var str2 = token.Substring(2);
             var str3 = token.Substring(3);
+            var str4 = token.Substring(8);
             Assert.That(str1, Is.EqualTo("est1234"));
             Assert.That(str2, Is.EqualTo("st1234"));
             Assert.That(str3, Is.EqualTo("t1234"));
+            Assert.That(str4, Is.EqualTo(""));
             AssertTokenPointer(token, input);
 
             Assert.That(() => token.Substring(-1), Throws.InstanceOf<ArgumentOutOfRangeException>());
-            Assert.That(() => token.Substring(8), Throws.InstanceOf<ArgumentOutOfRangeException>());
+            Assert.That(() => token.Substring(9), Throws.InstanceOf<ArgumentOutOfRangeException>());
         }
 
         [Test]
