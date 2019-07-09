@@ -15,6 +15,11 @@ namespace Jamiras.Services
         Window MainWindow { get; set; }
 
         /// <summary>
+        /// Gets or sets the default title to display in windows.
+        /// </summary>
+        string DefaultWindowTitle { get; set; }
+
+        /// <summary>
         /// Registers a callback that creates the View for a ViewModel.
         /// </summary>
         /// <param name="viewModelType">Type of ViewModel to create View for (must inherit from DialogViewModelBase)</param>

@@ -274,6 +274,7 @@
     <Compile Include="ViewModels\Grid\Summarization.cs" />
     <Compile Include="ViewModels\ICompositeViewModel.cs" />
     <Compile Include="ViewModels\KeyPressedEventArgs.cs" />
+    <Compile Include="ViewModels\TaskDialogViewModel.cs" />
     <Compile Include="ViewModels\ModelBinding.cs" />
     <Compile Include="ViewModels\TabSetViewModel.cs" />
     <Compile Include="ViewModels\ValidatedViewModelBase.cs" />

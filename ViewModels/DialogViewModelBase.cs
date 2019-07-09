@@ -217,5 +217,10 @@ namespace Jamiras.ViewModels
         /// The user selected No.
         /// </summary>
         No,
+
+        /// <summary>
+        /// The user selected Retry.
+        /// </summary>
+        Retry,
     }
 }
