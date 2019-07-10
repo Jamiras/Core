@@ -74,7 +74,7 @@ namespace Jamiras.ViewModels
             string pszMainInstruction, string pszContent, int dwCommonButtons, IntPtr pszIcon,
             out int pnButton);
 
-        private new bool ShowDialog()
+        private bool ShowTaskDialog()
         {
             if (_dialogService.HasDialogHandler(typeof(TaskDialogViewModel)))
             {
@@ -143,7 +143,7 @@ namespace Jamiras.ViewModels
         {
             var vm = new TaskDialogViewModel(message, detail);
 
-            if (!vm.ShowDialog())
+            if (!vm.ShowTaskDialog())
                 MessageBoxViewModel.ShowMessage(message + "\n\n" + detail);
         }
 
@@ -158,7 +158,7 @@ namespace Jamiras.ViewModels
             var vm = new TaskDialogViewModel(message, detail);
             vm.SetButtons(buttons);
 
-            if (!vm.ShowDialog())
+            if (!vm.ShowTaskDialog())
             {
                 var messageBoxViewModel = new MessageBoxViewModel(message + "\n\n" + detail);
                 switch (buttons)
@@ -183,7 +183,7 @@ namespace Jamiras.ViewModels
             var vm = new TaskDialogViewModel(message, detail);
             vm.SetIcon(Icon.Warning);
 
-            if (!vm.ShowDialog())
+            if (!vm.ShowTaskDialog())
             {
                 var messageBoxViewModel = new MessageBoxViewModel(message + "\n\n" + detail);
                 messageBoxViewModel.DialogTitle = "Warning";
@@ -203,7 +203,7 @@ namespace Jamiras.ViewModels
             vm.SetIcon(Icon.Warning);
             vm.SetButtons(buttons);
 
-            if (!vm.ShowDialog())
+            if (!vm.ShowTaskDialog())
             {
                 var messageBoxViewModel = new MessageBoxViewModel(message + "\n\n" + detail);
                 messageBoxViewModel.DialogTitle = "Warning";
@@ -229,7 +229,7 @@ namespace Jamiras.ViewModels
             var vm = new TaskDialogViewModel(message, detail);
             vm.SetIcon(Icon.Error);
 
-            if (!vm.ShowDialog())
+            if (!vm.ShowTaskDialog())
             {
                 var messageBoxViewModel = new MessageBoxViewModel(message + "\n\n" + detail);
                 messageBoxViewModel.DialogTitle = "Error";
