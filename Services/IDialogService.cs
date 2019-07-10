@@ -27,6 +27,13 @@ namespace Jamiras.Services
         void RegisterDialogHandler(Type viewModelType, Func<DialogViewModelBase, FrameworkElement> createViewDelegate);
 
         /// <summary>
+        /// Gets whether or not a handler is registered for the provided type.
+        /// </summary>
+        /// <param name="viewModelType">Type of ViewModel to query for (must inherit from DialogViewModelBase)</param>
+        /// <returns><c>true</c> if a handler is registered, <c>false</c> if not.</returns>
+        bool HasDialogHandler(Type viewModelType);
+
+        /// <summary>
         /// Shows the dialog for the provided ViewModel.
         /// </summary>
         /// <param name="viewModel">ViewModel to show dialog for.</param>

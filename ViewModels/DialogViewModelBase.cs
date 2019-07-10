@@ -28,7 +28,7 @@ namespace Jamiras.ViewModels
             _dialogService = dialogService;
         }
 
-        private readonly IDialogService _dialogService;
+        protected readonly IDialogService _dialogService;
 
         /// <summary>
         /// <see cref="ModelProperty"/> for <see cref="DialogTitle"/>

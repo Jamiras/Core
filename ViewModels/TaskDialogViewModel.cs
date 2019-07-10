@@ -1,6 +1,4 @@
-﻿using Jamiras.Components;
-using Jamiras.Services;
-using System;
+﻿using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -11,7 +9,7 @@ namespace Jamiras.ViewModels
     /// <summary>
     /// ViewModel for displaying the Windows TaskDialog.
     /// </summary>
-    public sealed class TaskDialogViewModel
+    public sealed class TaskDialogViewModel : DialogViewModelBase
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="TaskDialogViewModel"/> class.
@@ -33,16 +31,6 @@ namespace Jamiras.ViewModels
         /// Gets or sets the additional detail message to display.
         /// </summary>
         public string Detail { get; set; }
-
-        /// <summary>
-        /// Gets or sets the dialog caption.
-        /// </summary>
-        public string DialogTitle { get; set; }
-
-        /// <summary>
-        /// Gets an indicator of how the dialog was closed.
-        /// </summary>
-        public DialogResult DialogResult { get; private set; }
 
         public enum Icon
         {
@@ -86,8 +74,14 @@ namespace Jamiras.ViewModels
             string pszMainInstruction, string pszContent, int dwCommonButtons, IntPtr pszIcon,
             out int pnButton);
 
-        private bool ShowDialog()
+        private new bool ShowDialog()
         {
+            if (_dialogService.HasDialogHandler(typeof(TaskDialogViewModel)))
+            {
+                _dialogService.ShowDialog(this);
+                return true;
+            }
+
             if (!_isSupported)
                 return false;
 
@@ -95,7 +89,7 @@ namespace Jamiras.ViewModels
             var hWndOwner = (ownerWindow != null) ? new WindowInteropHelper(ownerWindow).Handle : IntPtr.Zero;
 
             if (DialogTitle == null)
-                DialogTitle = ServiceRepository.Instance.FindService<IDialogService>().DefaultWindowTitle;
+                DialogTitle = _dialogService.DefaultWindowTitle;
 
             int button;
             try
