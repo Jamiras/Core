@@ -285,7 +285,7 @@ namespace Jamiras.Services
         /// <summary>
         /// Gets whether or not a handler is registered for the provided type.
         /// </summary>
-        /// <param name="viewModelType">Type of ViewModel to query for (must inherit from DialogViewModelBase)</param>
+        /// <param name="type">Type of ViewModel to query for (must inherit from DialogViewModelBase)</param>
         /// <returns><c>true</c> if a handler is registered, <c>false</c> if not.</returns>
         public bool HasDialogHandler(Type type)
         {

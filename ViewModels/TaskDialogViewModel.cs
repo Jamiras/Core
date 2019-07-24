@@ -32,11 +32,29 @@ namespace Jamiras.ViewModels
         /// </summary>
         public string Detail { get; set; }
 
+        /// <summary>
+        /// The icon to show on the Task Dialog
+        /// </summary>
         public enum Icon
         {
+            /// <summary>
+            /// No icon
+            /// </summary>
             None = 0,
+
+            /// <summary>
+            /// The information icon (blue circle)
+            /// </summary>
             Info = -3, // TD_INFORMATION_ICON
+
+            /// <summary>
+            /// The warning icon (yellow triangle)
+            /// </summary>
             Warning = -1, // TD_WARNING_ICON
+
+            /// <summary>
+            /// The error icon (red octagon)
+            /// </summary>
             Error = -2, // TD_ERROR_ICON
         }
 
@@ -49,12 +67,34 @@ namespace Jamiras.ViewModels
         }
         private Icon _icon = Icon.None;
 
+        /// <summary>
+        /// The buttons to show on the Task Dialog
+        /// </summary>
         public enum Buttons
         {
+            /// <summary>
+            /// Just the OK button
+            /// </summary>
             OK = 1, // TDCBF_OK_BUTTON
+
+            /// <summary>
+            /// The OK and Cancel buttons
+            /// </summary>
             OKCancel = 9, // TDCBF_OK_BUTTON | TDCBF_CANCEL_BUTTON
+
+            /// <summary>
+            /// The Yes and No buttons
+            /// </summary>
             YesNo = 6, // TDCBF_YES_BUTTON | TDCBF_NO_BUTTON
+
+            /// <summary>
+            /// The Yes, No, and Cancel buttons
+            /// </summary>
             YesNoCancel = 14, // TDCBF_YES_BUTTON | TDCBF_NO_BUTTON | TDCBF_CANCEL_BUTTON
+
+            /// <summary>
+            /// The Retry and Cancel buttons.
+            /// </summary>
             RetryCancel = 24, // TDCBF_RETRY_BUTTON | TDCBF_CANCEL_BUTTON
         }
 

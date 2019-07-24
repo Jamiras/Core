@@ -28,6 +28,9 @@ namespace Jamiras.ViewModels
             _dialogService = dialogService;
         }
 
+        /// <summary>
+        /// The <see cref="IDialogService"/> used to show the dialog.
+        /// </summary>
         protected readonly IDialogService _dialogService;
 
         /// <summary>
