@@ -1,9 +1,9 @@
-﻿using System.Diagnostics;
-using System.Windows.Input;
-using Jamiras.Commands;
+﻿using Jamiras.Commands;
 using Jamiras.Components;
 using Jamiras.DataModels;
 using Jamiras.Services;
+using System.Diagnostics;
+using System.Windows.Input;
 
 namespace Jamiras.ViewModels
 {
@@ -122,6 +122,11 @@ namespace Jamiras.ViewModels
                 DialogResult = DialogResult.Yes;
                 return;
             }
+            else if (OkButtonText == "Retry")
+            {
+                DialogResult = DialogResult.Retry;
+                return;
+            }
 
             base.ExecuteOkCommand();
         }
@@ -142,6 +147,17 @@ namespace Jamiras.ViewModels
         /// <returns><see cref="DialogResult.Ok"/> if the OK button was pressed, <see cref="DialogResult.Cancel"/> if not.</returns>
         public DialogResult ShowOkCancelDialog()
         {
+            CancelButtonText = "Cancel";
+            return ShowDialog();
+        }
+
+        /// <summary>
+        /// Shows the provided message in a simple retry/cancel dialog.
+        /// </summary>
+        /// <returns><see cref="DialogResult.Retry"/> if the Retry button was pressed, <see cref="DialogResult.Cancel"/> if not.</returns>
+        public DialogResult ShowRetryCancelDialog()
+        {
+            OkButtonText = "Retry";
             CancelButtonText = "Cancel";
             return ShowDialog();
         }

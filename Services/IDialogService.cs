@@ -15,11 +15,23 @@ namespace Jamiras.Services
         Window MainWindow { get; set; }
 
         /// <summary>
+        /// Gets or sets the default title to display in windows.
+        /// </summary>
+        string DefaultWindowTitle { get; set; }
+
+        /// <summary>
         /// Registers a callback that creates the View for a ViewModel.
         /// </summary>
         /// <param name="viewModelType">Type of ViewModel to create View for (must inherit from DialogViewModelBase)</param>
         /// <param name="createViewDelegate">Delegate that returns a View instance.</param>
         void RegisterDialogHandler(Type viewModelType, Func<DialogViewModelBase, FrameworkElement> createViewDelegate);
+
+        /// <summary>
+        /// Gets whether or not a handler is registered for the provided type.
+        /// </summary>
+        /// <param name="viewModelType">Type of ViewModel to query for (must inherit from DialogViewModelBase)</param>
+        /// <returns><c>true</c> if a handler is registered, <c>false</c> if not.</returns>
+        bool HasDialogHandler(Type viewModelType);
 
         /// <summary>
         /// Shows the dialog for the provided ViewModel.

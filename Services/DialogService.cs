@@ -54,6 +54,25 @@ namespace Jamiras.Services
 
         private Dictionary<Type, Func<DialogViewModelBase, FrameworkElement>> _createViewDelegates;
 
+        public string DefaultWindowTitle
+        {
+            get
+            {
+                if (!String.IsNullOrEmpty(_defaultWindowTitle))
+                    return _defaultWindowTitle;
+
+                if (_mainWindow != null)
+                    return _mainWindow.Title;
+
+                return null;
+            }
+            set
+            {
+                _defaultWindowTitle = value;
+            }
+        }
+        private string _defaultWindowTitle;
+
         /// <summary>
         /// Registers a callback that creates the View for a ViewModel.
         /// </summary>
@@ -89,18 +108,21 @@ namespace Jamiras.Services
             if (_mainWindow == null)
                 throw new InvalidOperationException("Cannot show dialog without setting MainWindow");
 
-            _logger.Write("Showing dialog: {0}", viewModel.DialogTitle);
+            _logger.Write("Showing {0} dialog: {1}", viewModel.GetType().Name, viewModel.DialogTitle);
 
-            FrameworkElement view = GetView(viewModel, viewModel.GetType());
-            if (view == null)
+            var createViewDelegate = GetHandler(viewModel.GetType());
+            if (createViewDelegate == null)
                 throw new ArgumentException("No view registered for " + viewModel.GetType().Name, "viewModel");
+            var view = createViewDelegate(viewModel);
+            if (view == null)
+                throw new InvalidOperationException("Handler for " + viewModel.GetType().Name + " did not generate a view");
 
             Window window = new Window();
             window.Content = view;
             window.DataContext = viewModel;
 
             if (String.IsNullOrEmpty(viewModel.DialogTitle))
-                viewModel.DialogTitle = _mainWindow.Title;
+                viewModel.DialogTitle = DefaultWindowTitle;
 
             if (!viewModel.CanResize)
             {
@@ -247,17 +269,27 @@ namespace Jamiras.Services
             public int dwFlags = 0;
         }
 
-        private FrameworkElement GetView(DialogViewModelBase viewModel, Type type)
+        private Func<DialogViewModelBase, FrameworkElement> GetHandler(Type type)
         {
             Func<DialogViewModelBase, FrameworkElement> createViewDelegate;
             if (_createViewDelegates.TryGetValue(type, out createViewDelegate))
-                return createViewDelegate(viewModel);
+                return createViewDelegate;
 
             type = type.BaseType;
             if (type != typeof(DialogViewModelBase))
-                return GetView(viewModel, type);
+                return GetHandler(type);
 
             return null;
+        }
+
+        /// <summary>
+        /// Gets whether or not a handler is registered for the provided type.
+        /// </summary>
+        /// <param name="viewModelType">Type of ViewModel to query for (must inherit from DialogViewModelBase)</param>
+        /// <returns><c>true</c> if a handler is registered, <c>false</c> if not.</returns>
+        public bool HasDialogHandler(Type type)
+        {
+            return (GetHandler(type) != null);
         }
     }
 }
