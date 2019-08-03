@@ -245,10 +245,16 @@ namespace Jamiras.ViewModels.CodeEditor
         public string GetContent()
         {
             var builder = new StringBuilder();
-            foreach (var line in _lines)
+
+            var enumerator = _lines.GetEnumerator();
+            if (enumerator.MoveNext())
             {
-                builder.Append(line.Text);
-                builder.Append('\n');
+                builder.Append(enumerator.Current.Text);
+                while (enumerator.MoveNext())
+                {
+                    builder.AppendLine();
+                    builder.Append(enumerator.Current.Text);
+                }
             }
 
             return builder.ToString();
@@ -269,17 +275,22 @@ namespace Jamiras.ViewModels.CodeEditor
 
             int lineIndex = 1;
             var tokenizer = Tokenizer.CreateTokenizer(value);
+            char lineEnd;
             do
             {
                 var line = tokenizer.ReadTo('\n');
                 if (line.Length > 0 && line[line.Length - 1] == '\r')
                     line = line.SubToken(0, line.Length - 1);
+                lineEnd = tokenizer.NextChar;
                 tokenizer.Advance();
 
                 var lineViewModel = new LineViewModel(this, lineIndex) { Text = line.ToString() };
                 _lines.Add(lineViewModel);
                 lineIndex++;
             } while (tokenizer.NextChar != '\0');
+
+            if (lineEnd == '\n')
+                _lines.Add(new LineViewModel(this, lineIndex));
 
             LineCount = _lines.Count;
             CursorLine = 1;
@@ -1098,7 +1109,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     for (int i = orderedSelection.StartLine; i <= orderedSelection.EndLine; ++i)
                     {
                         if (i != orderedSelection.StartLine)
-                            builder.Append('\n');
+                            builder.AppendLine();
 
                         var line = _lines[i - 1];
                         var text = line.PendingText ?? line.Text;
