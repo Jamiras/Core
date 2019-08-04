@@ -3,6 +3,7 @@ using Jamiras.ViewModels.CodeEditor;
 using Moq;
 using NUnit.Framework;
 using System;
+using System.Linq;
 using System.Windows.Input;
 
 namespace Jamiras.Core.Tests.ViewModels.CodeEditor
@@ -777,6 +778,52 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
 
             Assert.That(viewModel.CursorLine, Is.EqualTo(8));
             Assert.That(viewModel.CursorColumn, Is.EqualTo(5));
+        }
+
+        class CodeEditorViewModelContentChangedHarness : CodeEditorViewModel
+        {
+            public CodeEditorViewModelContentChangedHarness(IClipboardService clipboardService, ITimerService timerService, IBackgroundWorkerService backgroundWorkerService)
+                : base(clipboardService, timerService, backgroundWorkerService)
+            {
+            }
+
+            private int _expectUpdatedLines = 0;
+
+            public void ExpectUpdatedLines(int count)
+            {
+                _expectUpdatedLines = count;
+            }
+
+            protected override void OnContentChanged(ContentChangedEventArgs e)
+            {
+                Assert.That(e.UpdatedLines.Count(), Is.EqualTo(_expectUpdatedLines));
+                base.OnContentChanged(e);
+            }
+        }
+
+        [Test]
+        public void TestReplaceMultipleLinesWithMultipleLinesContentChanged()
+        {
+            var viewModel2 = new CodeEditorViewModelContentChangedHarness(mockClipboardService.Object, mockTimerService.Object, mockBackgroundWorkerService.Object);
+            viewModel2.SetContent(viewModel.GetContent());
+            viewModel2.FormatLine += FormatLine;
+            viewModel2.ExpectUpdatedLines(3);
+
+            viewModel2.MoveCursorTo(3, 1, CodeEditorViewModel.MoveCursorFlags.None);
+            viewModel2.MoveCursorTo(5, 34, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+            viewModel2.ReplaceSelection("    // New\n    if (param2 == 2)\n        param2 = 'New';");
+
+            Assert.That(viewModel2.Lines[2].Text, Is.EqualTo("    // New"));
+            Assert.That(viewModel2.Lines[3].Text, Is.EqualTo("    if (param2 == 2)"));
+            Assert.That(viewModel2.Lines[4].Text, Is.EqualTo("        param2 = 'New';"));
+
+            Assert.That(viewModel2.Lines[2].Line, Is.EqualTo(3));
+            Assert.That(viewModel2.Lines[3].Line, Is.EqualTo(4));
+            Assert.That(viewModel2.Lines[4].Line, Is.EqualTo(5));
+            Assert.That(viewModel2.Lines.Count, Is.EqualTo(10));
+
+            Assert.That(viewModel2.CursorLine, Is.EqualTo(5));
+            Assert.That(viewModel2.CursorColumn, Is.EqualTo(24));
         }
 
         [Test]
