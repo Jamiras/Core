@@ -1,3 +1,11 @@
+v1.1.4 - 10 Aug 2019
+* add TaskDialogViewModel
+* add FileDialogViewModel.ShowSelectFolderDialog
+* add CommandBinding.FileDropCommand
+* add support for writing ini files
+* fix: newline at end of content should add a blank line to the code editor
+* fix: include all lines in ContentChangedEventArgs when pasting multiple lines
+
 v1.1.3 - 16 Apr 2019
 * escape backslashes in persistant data
 * fix exceptions when replacing text with smaller amount of text (via paste/undo/redo) in code editor
