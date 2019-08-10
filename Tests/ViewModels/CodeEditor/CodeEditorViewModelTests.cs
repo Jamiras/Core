@@ -24,7 +24,8 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
                           "        param2 = NULL;\n" +                        // 7
                           "\n" +                                              // 8
                           "    return true;\n" +                              // 9
-                          "}\n";                                              // 10
+                          "}\n" +                                             // 10
+                          "";                                                 // 11
 
             mockTimerService = new Mock<ITimerService>();
             mockTimerService.Setup(t => t.WaitForTyping(It.IsAny<Action>())).Callback((Action a) => typingCallback = a);
@@ -120,8 +121,8 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             Assert.That(viewModel.VisibleLines, Is.EqualTo(20));
             Assert.That(viewModel.CursorLine, Is.EqualTo(1));
             Assert.That(viewModel.CursorColumn, Is.EqualTo(1));
-            Assert.That(viewModel.LineCount, Is.EqualTo(10));
-            Assert.That(viewModel.Lines.Count, Is.EqualTo(10));
+            Assert.That(viewModel.LineCount, Is.EqualTo(11));
+            Assert.That(viewModel.Lines.Count, Is.EqualTo(11));
             Assert.That(viewModel.Lines[0].LineLength, Is.EqualTo(45));
             Assert.That(viewModel.Lines[1].LineLength, Is.EqualTo(1));
             Assert.That(viewModel.Lines[2].LineLength, Is.EqualTo(37));
@@ -132,19 +133,37 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             Assert.That(viewModel.Lines[7].LineLength, Is.EqualTo(0));
             Assert.That(viewModel.Lines[8].LineLength, Is.EqualTo(16));
             Assert.That(viewModel.Lines[9].LineLength, Is.EqualTo(1));
+            Assert.That(viewModel.Lines[10].LineLength, Is.EqualTo(0));
+        }
+
+        public void TestSetContent()
+        {
+            viewModel.SetContent("line 1\r\nline 2");
+            Assert.That(viewModel.Lines.Count, Is.EqualTo(2));
+            Assert.That(viewModel.Lines[0].Text, Is.EqualTo("line 1"));
+            Assert.That(viewModel.Lines[1].Text, Is.EqualTo("line 2"));
+
+            viewModel.SetContent("line 1\r\nline 2\r\n");
+            Assert.That(viewModel.Lines.Count, Is.EqualTo(3));
+            Assert.That(viewModel.Lines[0].Text, Is.EqualTo("line 1"));
+            Assert.That(viewModel.Lines[1].Text, Is.EqualTo("line 2"));
+            Assert.That(viewModel.Lines[2].Text, Is.EqualTo(""));
         }
 
         [Test]
         [TestCase(1, 1, 1, 1)]
         [TestCase(5, 1, 5, 1)]
         [TestCase(10, 1, 10, 1)]
-        [TestCase(15, 1, 10, 1)]
+        [TestCase(11, 0, 11, 1)]
+        [TestCase(11, 1, 11, 1)]
+        [TestCase(11, 2, 11, 1)]
+        [TestCase(15, 1, 11, 1)]
         [TestCase(1, 20, 1, 20)]
         [TestCase(1, 40, 1, 40)]
         [TestCase(1, 60, 1, 46)]
         [TestCase(6, 20, 6, 9)]
         [TestCase(0, 0, 1, 1)]
-        [TestCase(Int32.MaxValue, Int32.MaxValue, 10, 2)]
+        [TestCase(Int32.MaxValue, Int32.MaxValue, 11, 1)]
         public void TestMoveCursor(int line, int column, int expectedLine, int expectedColumn)
         {
             viewModel.MoveCursorTo(line, column, CodeEditorViewModel.MoveCursorFlags.None);
@@ -185,9 +204,10 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         [Test]
         [TestCase(1, 1, 2, 1)]
         [TestCase(9, 1, 10, 1)]
-        [TestCase(10, 1, 10, 1)]
+        [TestCase(10, 1, 11, 1)]
         [TestCase(1, 10, 2, 2)]
         [TestCase(9, 16, 10, 2)]
+        [TestCase(11, 1, 11, 1)]
         public void TestKeyDown(int line, int column, int expectedLine, int expectedColumn)
         {
             viewModel.MoveCursorTo(line, column, CodeEditorViewModel.MoveCursorFlags.None);
@@ -273,8 +293,9 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         [TestCase(1, 1, 4, 1)]
         [TestCase(1, 30, 4, 21)]
         [TestCase(7, 10, 10, 2)]
-        [TestCase(9, 10, 10, 2)]
-        [TestCase(10, 1, 10, 1)]
+        [TestCase(9, 10, 11, 1)]
+        [TestCase(10, 1, 11, 1)]
+        [TestCase(11, 1, 11, 1)]
         public void TestKeyPageDown(int line, int column, int expectedLine, int expectedColumn)
         {
             viewModel.VisibleLines = 4;
@@ -344,11 +365,11 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         }
 
         [Test]
-        [TestCase(1, 1, 10, 2)]
-        [TestCase(1, 9, 10, 2)]
-        [TestCase(1, 46, 10, 2)]
-        [TestCase(8, 1, 10, 2)]
-        [TestCase(10, 1, 10, 2)]
+        [TestCase(1, 1, 11, 1)]
+        [TestCase(1, 9, 11, 1)]
+        [TestCase(1, 46, 11, 1)]
+        [TestCase(8, 1, 11, 1)]
+        [TestCase(10, 1, 11, 1)]
         public void TestKeyCtrlEnd(int line, int column, int expectedLine, int expectedColumn)
         {
             viewModel.MoveCursorTo(line, column, CodeEditorViewModel.MoveCursorFlags.None);
@@ -365,7 +386,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             Assert.That(viewModel.CursorLine, Is.EqualTo(6));
             Assert.That(viewModel.CursorColumn, Is.EqualTo(6));
             Assert.That(viewModel.Lines[5].PendingText, Is.EqualTo("    ese"));
-            Assert.That(viewModel.LineCount, Is.EqualTo(10));
+            Assert.That(viewModel.LineCount, Is.EqualTo(11));
         }
 
         [Test]
@@ -376,7 +397,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             Assert.That(viewModel.CursorLine, Is.EqualTo(6));
             Assert.That(viewModel.CursorColumn, Is.EqualTo(9));
             Assert.That(viewModel.Lines[5].PendingText, Is.EqualTo("    else        param2 = NULL;"));
-            Assert.That(viewModel.LineCount, Is.EqualTo(9));
+            Assert.That(viewModel.LineCount, Is.EqualTo(10));
         }
 
         [Test]
@@ -387,7 +408,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             Assert.That(viewModel.CursorLine, Is.EqualTo(1));
             Assert.That(viewModel.CursorColumn, Is.EqualTo(1));
             Assert.That(viewModel.Lines[5].PendingText, Is.Null);
-            Assert.That(viewModel.LineCount, Is.EqualTo(10));
+            Assert.That(viewModel.LineCount, Is.EqualTo(11));
         }
 
         [Test]
@@ -413,7 +434,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             Assert.That(viewModel.CursorLine, Is.EqualTo(6));
             Assert.That(viewModel.CursorColumn, Is.EqualTo(7));
             Assert.That(viewModel.Lines[5].PendingText, Is.EqualTo("    ele"));
-            Assert.That(viewModel.LineCount, Is.EqualTo(10));
+            Assert.That(viewModel.LineCount, Is.EqualTo(11));
         }
 
         [Test]
@@ -424,7 +445,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             Assert.That(viewModel.CursorLine, Is.EqualTo(6));
             Assert.That(viewModel.CursorColumn, Is.EqualTo(9));
             Assert.That(viewModel.Lines[5].PendingText, Is.EqualTo("    else        param2 = NULL;"));
-            Assert.That(viewModel.LineCount, Is.EqualTo(9));
+            Assert.That(viewModel.LineCount, Is.EqualTo(10));
         }
 
         [Test]
@@ -451,7 +472,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             Assert.That(viewModel.Lines[5].Line, Is.EqualTo(6));
             Assert.That(viewModel.Lines[6].Line, Is.EqualTo(7));
             Assert.That(viewModel.Lines[7].Line, Is.EqualTo(8));
-            Assert.That(viewModel.LineCount, Is.EqualTo(11));
+            Assert.That(viewModel.LineCount, Is.EqualTo(12));
         }
 
         [Test]
@@ -467,7 +488,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             Assert.That(viewModel.Lines[5].Line, Is.EqualTo(6));
             Assert.That(viewModel.Lines[6].Line, Is.EqualTo(7));
             Assert.That(viewModel.Lines[7].Line, Is.EqualTo(8));
-            Assert.That(viewModel.LineCount, Is.EqualTo(11));
+            Assert.That(viewModel.LineCount, Is.EqualTo(12));
         }
 
         [Test]
@@ -484,7 +505,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             Assert.That(viewModel.Lines[5].Line, Is.EqualTo(6));
             Assert.That(viewModel.Lines[6].Line, Is.EqualTo(7));
             Assert.That(viewModel.Lines[7].Line, Is.EqualTo(8));
-            Assert.That(viewModel.LineCount, Is.EqualTo(11));
+            Assert.That(viewModel.LineCount, Is.EqualTo(12));
         }
 
         [Test]
@@ -536,7 +557,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
 
         [Test]
         [TestCase(1, 11, "f")]
-        [TestCase(2, 2, "\n")]
+        [TestCase(2, 2, "\r\n")]
         public void TestHighlightKeyRight(int line, int column, string expectedText)
         {
             viewModel.MoveCursorTo(line, column, CodeEditorViewModel.MoveCursorFlags.None);
@@ -546,7 +567,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
 
         [Test]
         [TestCase(1, 11, "_")]
-        [TestCase(3, 1, "\n")]
+        [TestCase(3, 1, "\r\n")]
         public void TestHighlightKeyLeft(int line, int column, string expectedText)
         {
             viewModel.MoveCursorTo(line, column, CodeEditorViewModel.MoveCursorFlags.None);
@@ -555,8 +576,8 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         }
 
         [Test]
-        [TestCase(4, 12, " is an unnecessary comment\n    if (par")]
-        [TestCase(9, 7, "\n    re")]
+        [TestCase(4, 12, " is an unnecessary comment\r\n    if (par")]
+        [TestCase(9, 7, "\r\n    re")]
         public void TestHighlightKeyUp(int line, int column, string expectedText)
         {
             viewModel.MoveCursorTo(line, column, CodeEditorViewModel.MoveCursorFlags.None);
@@ -565,8 +586,8 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         }
 
         [Test]
-        [TestCase(4, 12, "am1 == 1)\n        par")]
-        [TestCase(9, 7, "turn true;\n}")]
+        [TestCase(4, 12, "am1 == 1)\r\n        par")]
+        [TestCase(9, 7, "turn true;\r\n}")]
         public void TestHighlightKeyDown(int line, int column, string expectedText)
         {
             viewModel.MoveCursorTo(line, column, CodeEditorViewModel.MoveCursorFlags.None);
@@ -601,7 +622,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         {
             viewModel.MoveCursorTo(5, 12, CodeEditorViewModel.MoveCursorFlags.None);
             viewModel.MoveCursorTo(4, 12, CodeEditorViewModel.MoveCursorFlags.Highlighting);
-            Assert.That(viewModel.GetSelectedText(), Is.EqualTo("am1 == 1)\n        par"));
+            Assert.That(viewModel.GetSelectedText(), Is.EqualTo("am1 == 1)\r\n        par"));
             Assert.That(viewModel.Lines[3].SelectionStart, Is.EqualTo(12));
             Assert.That(viewModel.Lines[3].SelectionEnd, Is.EqualTo(20));
             Assert.That(viewModel.Lines[4].SelectionStart, Is.EqualTo(1));
@@ -620,18 +641,17 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         {
             viewModel.MoveCursorTo(5, 20, CodeEditorViewModel.MoveCursorFlags.None);
             Assert.That(viewModel.HandleKey(Key.A, ModifierKeys.Control), Is.True);
-            Assert.That(viewModel.GetSelectedText().Length, Is.EqualTo(192));
+            Assert.That(viewModel.GetSelectedText().Length, Is.EqualTo(203));
 
-            // trim Content() since SelectedText doesn't contain the trailing newline
-            Assert.That(viewModel.GetSelectedText(), Is.EqualTo(viewModel.GetContent().TrimEnd()));
+            Assert.That(viewModel.GetSelectedText(), Is.EqualTo(viewModel.GetContent()));
         }
 
         [Test]
         [TestCase(4, 9, 4, 15, "param1")]
         [TestCase(4, 9, 4, 5, "if (")]
         [TestCase(4, 9, 4, 9, "")]
-        [TestCase(9, 12, 10, 2, "true;\n}")]
-        [TestCase(10, 2, 9, 12, "true;\n}")]
+        [TestCase(9, 12, 10, 2, "true;\r\n}")]
+        [TestCase(10, 2, 9, 12, "true;\r\n}")]
         public void TestKeyCtrlC(int startLine, int startColumn, int endLine, int endColumn, string expectedText)
         {
             string clipboardText = null;
@@ -739,7 +759,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             Assert.That(viewModel.Lines[4].Line, Is.EqualTo(5));
             Assert.That(viewModel.Lines[5].Line, Is.EqualTo(6));
             Assert.That(viewModel.Lines[7].Line, Is.EqualTo(8));
-            Assert.That(viewModel.Lines.Count, Is.EqualTo(8));
+            Assert.That(viewModel.Lines.Count, Is.EqualTo(9));
 
             Assert.That(viewModel.CursorLine, Is.EqualTo(5));
             Assert.That(viewModel.CursorColumn, Is.EqualTo(19));
@@ -750,7 +770,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         {
             viewModel.MoveCursorTo(3, 1, CodeEditorViewModel.MoveCursorFlags.None);
             viewModel.MoveCursorTo(4, 21, CodeEditorViewModel.MoveCursorFlags.Highlighting);
-            viewModel.ReplaceSelection("    // New\n    if (param2 == 2)");
+            viewModel.ReplaceSelection("    // New\r\n    if (param2 == 2)");
 
             Assert.That(viewModel.Lines[2].Text, Is.EqualTo("    // New"));
             Assert.That(viewModel.Lines[3].Text, Is.EqualTo("    if (param2 == 2)"));
@@ -758,7 +778,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             Assert.That(viewModel.Lines[2].Line, Is.EqualTo(3));
             Assert.That(viewModel.Lines[3].Line, Is.EqualTo(4));
             Assert.That(viewModel.Lines[4].Line, Is.EqualTo(5));
-            Assert.That(viewModel.Lines.Count, Is.EqualTo(10));
+            Assert.That(viewModel.Lines.Count, Is.EqualTo(11));
 
             Assert.That(viewModel.CursorLine, Is.EqualTo(4));
             Assert.That(viewModel.CursorColumn, Is.EqualTo(21));
@@ -773,7 +793,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
 
             Assert.That(viewModel.Lines[7].Text, Is.EqualTo("test"));
             Assert.That(viewModel.Lines[7].Line, Is.EqualTo(8));
-            Assert.That(viewModel.Lines.Count, Is.EqualTo(8));
+            Assert.That(viewModel.Lines.Count, Is.EqualTo(9));
 
             Assert.That(viewModel.CursorLine, Is.EqualTo(8));
             Assert.That(viewModel.CursorColumn, Is.EqualTo(5));
@@ -875,11 +895,11 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
 
             Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    a=3"));
             Assert.That(viewModel.Lines[9].Text, Is.EqualTo("    // return true;"));
-            Assert.That(viewModel.LineCount, Is.EqualTo(11));
+            Assert.That(viewModel.LineCount, Is.EqualTo(12));
 
             viewModel.HandleKey(Key.Z, ModifierKeys.Control);
             Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return true;"));
-            Assert.That(viewModel.LineCount, Is.EqualTo(10));
+            Assert.That(viewModel.LineCount, Is.EqualTo(11));
         }
 
         [Test]
@@ -964,11 +984,11 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
 
             CompleteTyping();
 
-            Assert.That(viewModel.LineCount, Is.EqualTo(9));
+            Assert.That(viewModel.LineCount, Is.EqualTo(10));
             Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return true}"));
 
             viewModel.HandleKey(Key.Z, ModifierKeys.Control);
-            Assert.That(viewModel.LineCount, Is.EqualTo(10));
+            Assert.That(viewModel.LineCount, Is.EqualTo(11));
             Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return true;"));
             Assert.That(viewModel.Lines[9].Text, Is.EqualTo("}"));
         }
@@ -982,11 +1002,11 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
 
             CompleteTyping();
 
-            Assert.That(viewModel.LineCount, Is.EqualTo(9));
+            Assert.That(viewModel.LineCount, Is.EqualTo(10));
             Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return true}"));
 
             viewModel.HandleKey(Key.Z, ModifierKeys.Control);
-            Assert.That(viewModel.LineCount, Is.EqualTo(10));
+            Assert.That(viewModel.LineCount, Is.EqualTo(11));
             Assert.That(viewModel.Lines[8].Text, Is.EqualTo("    return true;"));
             Assert.That(viewModel.Lines[9].Text, Is.EqualTo("}"));
         }
@@ -999,7 +1019,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
 
             viewModel.HandleKey(Key.Tab, ModifierKeys.None);
             Assert.That(viewModel.Lines[8].Text, Is.EqualTo("        return true;"));
-            Assert.That(viewModel.GetSelectedText(), Is.EqualTo("        return true;\n"));
+            Assert.That(viewModel.GetSelectedText(), Is.EqualTo("        return true;\r\n"));
             Assert.That(viewModel.CursorLine, Is.EqualTo(10));
             Assert.That(viewModel.CursorColumn, Is.EqualTo(1));
         }
@@ -1014,8 +1034,8 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             Assert.That(viewModel.Lines[6].Text, Is.EqualTo("            param2 = NULL;"));
             Assert.That(viewModel.Lines[7].Text, Is.EqualTo("")); // whitepsace only line shouldn't be affected
             Assert.That(viewModel.Lines[8].Text, Is.EqualTo("        return true;"));
-            Assert.That(viewModel.GetSelectedText(), Is.EqualTo("            param2 = NULL;\n\n" +
-                                                                "        return true;\n"));
+            Assert.That(viewModel.GetSelectedText(), Is.EqualTo("            param2 = NULL;\r\n\r\n" +
+                                                                "        return true;\r\n"));
             Assert.That(viewModel.CursorLine, Is.EqualTo(10));
             Assert.That(viewModel.CursorColumn, Is.EqualTo(1));
         }
@@ -1045,7 +1065,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
 
             viewModel.HandleKey(Key.Tab, ModifierKeys.Shift);
             Assert.That(viewModel.Lines[8].Text, Is.EqualTo("return true;"));
-            Assert.That(viewModel.GetSelectedText(), Is.EqualTo("return true;\n"));
+            Assert.That(viewModel.GetSelectedText(), Is.EqualTo("return true;\r\n"));
             Assert.That(viewModel.CursorLine, Is.EqualTo(10));
             Assert.That(viewModel.CursorColumn, Is.EqualTo(1));
         }
@@ -1060,8 +1080,8 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             Assert.That(viewModel.Lines[6].Text, Is.EqualTo("    param2 = NULL;"));
             Assert.That(viewModel.Lines[7].Text, Is.EqualTo("")); // whitepsace only line shouldn't be affected
             Assert.That(viewModel.Lines[8].Text, Is.EqualTo("return true;"));
-            Assert.That(viewModel.GetSelectedText(), Is.EqualTo("    param2 = NULL;\n\n" +
-                                                                "return true;\n"));
+            Assert.That(viewModel.GetSelectedText(), Is.EqualTo("    param2 = NULL;\r\n\r\n" +
+                                                                "return true;\r\n"));
             Assert.That(viewModel.CursorLine, Is.EqualTo(10));
             Assert.That(viewModel.CursorColumn, Is.EqualTo(1));
         }
@@ -1103,7 +1123,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             viewModel.DeleteSelection();
             Assert.That(viewModel.CursorLine, Is.EqualTo(3));
             Assert.That(viewModel.CursorColumn, Is.EqualTo(1));
-            Assert.That(viewModel.LineCount, Is.EqualTo(9));
+            Assert.That(viewModel.LineCount, Is.EqualTo(10));
             Assert.That(viewModel.Lines[2].Text, Is.EqualTo("    if (param1 == 1)"));
             Assert.That(viewModel.GetSelectedText(), Is.EqualTo(""));
         }
@@ -1116,7 +1136,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             viewModel.DeleteSelection();
             Assert.That(viewModel.CursorLine, Is.EqualTo(4));
             Assert.That(viewModel.CursorColumn, Is.EqualTo(5));
-            Assert.That(viewModel.LineCount, Is.EqualTo(7));
+            Assert.That(viewModel.LineCount, Is.EqualTo(8));
             Assert.That(viewModel.Lines[3].Text, Is.EqualTo("    param2 = NULL;"));
             Assert.That(viewModel.GetSelectedText(), Is.EqualTo(""));
         }
@@ -1129,7 +1149,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             viewModel.DeleteSelection();
             Assert.That(viewModel.CursorLine, Is.EqualTo(4));
             Assert.That(viewModel.CursorColumn, Is.EqualTo(5));
-            Assert.That(viewModel.LineCount, Is.EqualTo(7));
+            Assert.That(viewModel.LineCount, Is.EqualTo(8));
             Assert.That(viewModel.Lines[3].Text, Is.EqualTo("    param2 = NULL;"));
             Assert.That(viewModel.GetSelectedText(), Is.EqualTo(""));
         }
