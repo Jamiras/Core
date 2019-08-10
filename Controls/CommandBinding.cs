@@ -425,5 +425,89 @@ namespace Jamiras.Controls
             if (command != null && command.CanExecute(item.CommandParameter))
                 command.Execute(item.CommandParameter);
         }
+
+        /// <summary>
+        /// Property for binding an <see cref="ICommand"/> to the <see cref="E:UIElement.Drop"/> event.
+        /// </summary>
+        public static readonly DependencyProperty FileDropCommandProperty =
+            DependencyProperty.RegisterAttached("FileDropCommand", typeof(ICommand), typeof(CommandBinding),
+                new FrameworkPropertyMetadata(OnFileDropCommandChanged));
+
+        /// <summary>
+        /// Gets the <see cref="ICommand"/> bound to the <see cref="E:UIElement.Drop"/> event for the provided <see cref="UIElement"/>.
+        /// </summary>
+        public static ICommand GetFileDropCommand(UIElement target)
+        {
+            return (ICommand)target.GetValue(FileDropCommandProperty);
+        }
+
+        /// <summary>
+        /// Binds a <see cref="ICommand"/> to the <see cref="E:UIElement.Drop"/> event for the provided <see cref="UIElement"/>.
+        /// </summary>
+        public static void SetFileDropCommand(UIElement target, ICommand value)
+        {
+            target.SetValue(FileDropCommandProperty, value);
+        }
+
+        private static void OnFileDropCommandChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            var element = (UIElement)sender;
+            if (e.NewValue != null)
+            {
+                if (e.OldValue == null)
+                {
+                    element.DragOver += OnFileDragOver;
+                    element.Drop += OnFileDrop;
+                    element.AllowDrop = true;
+                }
+            }
+            else
+            {
+                if (e.OldValue != null)
+                {
+                    element.DragOver -= OnFileDragOver;
+                    element.Drop -= OnFileDrop;
+                    element.AllowDrop = false;
+                }
+            }
+        }
+
+        private static void OnFileDragOver(object sender, DragEventArgs e)
+        {
+            e.Effects = DragDropEffects.None;
+
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                // don't allow dropping on a target if it has an open modal child window
+                bool allowed = true;
+                var window = Window.GetWindow((UIElement)sender);
+                if (window != null && System.Windows.Interop.ComponentDispatcher.IsThreadModal)
+                    allowed = false;
+
+                if (allowed)
+                {
+                    var command = GetFileDropCommand((UIElement)sender);
+                    var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                    if (command != null && command.CanExecute(files))
+                        e.Effects = DragDropEffects.Copy;
+                }
+            }
+
+            e.Handled = true;
+        }
+
+        private static void OnFileDrop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                var command = GetFileDropCommand((UIElement)sender);
+                if (command != null)
+                {
+                    var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                    command.Execute(files);
+                    e.Handled = true;
+                }
+            }
+        }
     }
 }
