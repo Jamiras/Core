@@ -1306,7 +1306,7 @@ namespace Jamiras.ViewModels.CodeEditor
 
             for (int i = 1; i < newTextLines.Length - 1; i++)
             {
-                line = new LineViewModel(this, selection.StartLine + i) { Text = newTextLines[i].TrimEnd('\r') };
+                line = new LineViewModel(this, selection.StartLine + i) { PendingText = newTextLines[i].TrimEnd('\r') };
                 _lines.Insert(selection.StartLine + i - 1, line);
                 linesAdded++;
             }
