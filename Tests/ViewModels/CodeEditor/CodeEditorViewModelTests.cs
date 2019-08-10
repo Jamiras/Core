@@ -840,7 +840,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             Assert.That(viewModel2.Lines[2].Line, Is.EqualTo(3));
             Assert.That(viewModel2.Lines[3].Line, Is.EqualTo(4));
             Assert.That(viewModel2.Lines[4].Line, Is.EqualTo(5));
-            Assert.That(viewModel2.Lines.Count, Is.EqualTo(10));
+            Assert.That(viewModel2.Lines.Count, Is.EqualTo(11));
 
             Assert.That(viewModel2.CursorLine, Is.EqualTo(5));
             Assert.That(viewModel2.CursorColumn, Is.EqualTo(24));
