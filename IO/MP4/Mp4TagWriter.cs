@@ -117,6 +117,8 @@ namespace Jamiras.IO.MP4
                 spaceNeeded -= (int)_blocks[tagsIndex].Size;
 
             var ilstIndex = FindBlock(_blocks, "moov.udta.meta.ilst");
+            if (ilstIndex < 0)
+                throw new InvalidOperationException("Cannot find moov.udta.meta.ilst block");
             spaceNeeded -= (int)_blocks[ilstIndex].Size;
 
             var freeIndex = ilstIndex + 1;
