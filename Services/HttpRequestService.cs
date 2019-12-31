@@ -47,9 +47,19 @@ namespace Jamiras.Services
             {
                 _logger.WriteError(webEx.Message + ": " + webRequest.RequestUri);
 
-                webResponse = webEx.Response as HttpWebResponse;
-                if (webResponse == null)
-                    throw;
+                switch (webEx.Status)
+                {
+                    case WebExceptionStatus.NameResolutionFailure:
+                    case WebExceptionStatus.Timeout:
+                        // immediately try again (once) for these errors
+                        webRequest = CreateWebRequest(request);
+                        var response = webRequest.GetResponse();
+                        webResponse = (HttpWebResponse)response;
+                        break;
+
+                    default:
+                        throw;
+                }
             }
 
             return new HttpResponse(webResponse);
