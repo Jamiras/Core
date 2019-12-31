@@ -14,6 +14,7 @@ namespace Jamiras.IO.MP4
     {
         const int CONTAINER_IDENTIFIER = 0x66747970;  // ftyp
         const int BRAND_MP42 = 0x6D703432; // mp42
+        const int BRAND_ISOM = 0x69736F6D; // isom
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Mp4Reader"/> class.
@@ -33,7 +34,7 @@ namespace Jamiras.IO.MP4
                     throw new ArgumentException("Stream does not appear to be an MP4 container", "stream");
 
                 uint brand = ReadUInt32(reader);
-                if (brand != BRAND_MP42)
+                if (brand != BRAND_MP42 && brand != BRAND_ISOM)
                     throw new ArgumentException("Stream is not an MP4.2 container", "stream");
 
                 reader.BaseStream.Position = next;
