@@ -14,6 +14,8 @@ namespace Jamiras.Services
         public HttpRequestService(ILogService logService)
         {
             _logger = logService.GetLogger("Jamiras.Core");
+
+            ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072; // Tls12 (.NET45 constant)
         }
 
         private readonly ILogger _logger;
@@ -95,6 +97,15 @@ namespace Jamiras.Services
                             break;
                         case "User-Agent":
                             webRequest.UserAgent = request.Headers[header];
+                            break;
+                        case "Cookie":
+                            foreach (var cookieString in request.Headers[header].Split(';'))
+                            {
+                                var parts = cookieString.Split('=');
+                                var cookie = new Cookie(parts[0].Trim(), parts[1].Trim());
+                                cookie.Domain = webRequest.Address.Host;
+                                webRequest.CookieContainer.Add(cookie);
+                            }
                             break;
                         default:
                             webRequest.Headers.Add(header, request.Headers[header]);
