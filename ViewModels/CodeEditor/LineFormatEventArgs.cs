@@ -151,7 +151,7 @@ namespace Jamiras.ViewModels.CodeEditor
                 if (error.Color == 0)
                     continue;
 
-                while (range.EndColumn < error.StartColumn)
+                while (range.EndColumn < error.StartColumn && rangeIndex < _ranges.Count - 1)
                     range = _ranges[++rangeIndex];
 
                 if (range.StartColumn < error.StartColumn)
@@ -165,7 +165,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     range = newRange;
                 }
 
-                while (range.EndColumn < error.EndColumn)
+                while (range.EndColumn < error.EndColumn && rangeIndex < _ranges.Count - 1)
                     range = _ranges[++rangeIndex];
 
                 if (range.EndColumn > error.EndColumn)
@@ -204,10 +204,10 @@ namespace Jamiras.ViewModels.CodeEditor
                 if (error.Color == 0)
                     continue;
 
-                while (_ranges[rangeIndex].StartColumn != error.StartColumn)
+                while (_ranges[rangeIndex].StartColumn != error.StartColumn && rangeIndex < _ranges.Count - 1)
                     ++rangeIndex;
 
-                do
+                while (rangeIndex < newPieces.Length)
                 {
                     newPieces[rangeIndex].IsError = true;
                     newPieces[rangeIndex].ToolTip = error.ToolTip;
@@ -216,7 +216,7 @@ namespace Jamiras.ViewModels.CodeEditor
                         break;
 
                     rangeIndex++;
-                } while (true);
+                }
             }
 
             // if anything changed, use the updated values
