@@ -125,7 +125,7 @@
             <BooleanToVisibilityConverter x:Key="boolToVisConverter" />
             
             <DataTemplate x:Key="lineTemplate">
-                <Grid HorizontalAlignment="Stretch" Background="{Binding Resources.Background.Brush, Mode=OneTime}" Margin="2,0,0,0">
+                <Grid HorizontalAlignment="Stretch" Background="{Binding Resources.Background.Brush}" Margin="2,0,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{Binding DataContext.LineNumberColumnWidth, ElementName=codeEditorLines}" />
                         <ColumnDefinition Width="*" />
@@ -133,16 +133,16 @@
                     <TextBlock Text="{Binding Line}" 
                             FontFamily="{Binding Resources.FontName, Mode=OneTime}"
                             FontSize="{Binding Resources.FontSize, Mode=OneTime}"
-                            Foreground="{Binding Resources.LineNumber.Brush, Mode=OneTime}"
+                            Foreground="{Binding Resources.LineNumber.Brush}"
                             Margin="0,0,8,0" HorizontalAlignment="Right" />
-                    <Border Grid.Column="1" Background="{Binding Resources.Selection.Brush, Mode=OneTime}" Margin="{Binding SelectionLocation}" Width="{Binding SelectionWidth}" HorizontalAlignment="Left" />
+                    <Border Grid.Column="1" Background="{Binding Resources.Selection.Brush}" Margin="{Binding SelectionLocation}" Width="{Binding SelectionWidth}" HorizontalAlignment="Left" />
                     <jamiras:CodeEditorTextBlock Grid.Column="1" SnapsToDevicePixels="True"
                                              FontFamily="{Binding Resources.FontName, Mode=OneTime}"
                                              FontSize="{Binding Resources.FontSize, Mode=OneTime}"
-                                             Foreground="{Binding Resources.Foreground.Brush, Mode=OneTime}" 
+                                             Foreground="{Binding Resources.Foreground.Brush}" 
                                              TextPieces="{Binding TextPieces}" />
 
-                    <Border Grid.Column="1" BorderThickness="1" BorderBrush="{Binding Resources.Foreground.Brush, Mode=OneTime}" SnapsToDevicePixels="True"
+                    <Border Grid.Column="1" BorderThickness="1" BorderBrush="{Binding Resources.Foreground.Brush}" SnapsToDevicePixels="True"
                             Margin="{Binding CursorLocation}" Width="1" VerticalAlignment="Stretch" HorizontalAlignment="Left">
                         <Border.Style>
                             <Style TargetType="{x:Type Border}">

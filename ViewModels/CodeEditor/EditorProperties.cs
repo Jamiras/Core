@@ -1,5 +1,6 @@
 ﻿using Jamiras.Components;
 using Jamiras.DataModels;
+using System;
 using System.Windows.Media;
 
 namespace Jamiras.ViewModels.CodeEditor
@@ -112,7 +113,28 @@ namespace Jamiras.ViewModels.CodeEditor
         public void SetCustomColor(int id, Color color)
         {
             _customColors[id] = color;
+            OnCustomColorChanged(new CustomColorChangedEventArgs(id, color));
         }
+
+        public class CustomColorChangedEventArgs : EventArgs
+        {
+            public CustomColorChangedEventArgs(int id, Color color)
+            {
+                Id = id;
+                Color = color;
+            }
+
+            public int Id { get; private set; }
+            public Color Color { get; private set; }
+        }
+
+        private void OnCustomColorChanged(CustomColorChangedEventArgs e)
+        {
+            if (CustomColorChanged != null)
+                CustomColorChanged(this, e);
+        }
+
+        public event EventHandler<CustomColorChangedEventArgs> CustomColorChanged;
 
         /// <summary>
         /// Get the color registered for a custom syntax type.

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Jamiras.Components;
+using Jamiras.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -6,8 +8,6 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
-using Jamiras.Components;
-using Jamiras.ViewModels;
 
 namespace Jamiras.Services
 {
@@ -211,6 +211,14 @@ namespace Jamiras.Services
             viewModel.PropertyChanged -= propertyChangedHandler;
 
             return viewModel.DialogResult;
+        }
+
+        public Window GetTopMostDialog()
+        {
+            if (_dialogStack.Count == 0)
+                return null;
+
+            return _dialogStack.Peek();
         }
 
         private static void EnsureVisible(Window window)
