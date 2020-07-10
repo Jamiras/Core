@@ -1108,7 +1108,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     var orderedSelection = selection.GetOrderedSelection();
                     for (int i = orderedSelection.StartLine; i <= orderedSelection.EndLine; ++i)
                     {
-                        if (i >= _lines.Count)
+                        if (i > _lines.Count)
                             break;
 
                         if (i != orderedSelection.StartLine)
