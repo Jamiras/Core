@@ -116,15 +116,30 @@ namespace Jamiras.ViewModels.CodeEditor
             OnCustomColorChanged(new CustomColorChangedEventArgs(id, color));
         }
 
+        /// <summary>
+        /// Event args for the <see cref="CustomColorChanged"/> event.
+        /// </summary>
         public class CustomColorChangedEventArgs : EventArgs
         {
+            /// <summary>
+            /// Constructs a new <see cref="CustomColorChangedEventArgs"/>
+            /// </summary>
+            /// <param name="id">The unique identifier of the syntax type.</param>
+            /// <param name="color">The new color to use when text is identified as the syntax type.</param>
             public CustomColorChangedEventArgs(int id, Color color)
             {
                 Id = id;
                 Color = color;
             }
 
+            /// <summary>
+            /// Gets the unique identifier of the syntax type whose color changed.
+            /// </summary>
             public int Id { get; private set; }
+
+            /// <summary>
+            /// Gets the new color to use when text is identified as the syntax type.
+            /// </summary>
             public Color Color { get; private set; }
         }
 
@@ -134,6 +149,9 @@ namespace Jamiras.ViewModels.CodeEditor
                 CustomColorChanged(this, e);
         }
 
+        /// <summary>
+        /// Raised when a custom color changes.
+        /// </summary>
         public event EventHandler<CustomColorChangedEventArgs> CustomColorChanged;
 
         /// <summary>

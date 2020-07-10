@@ -9,6 +9,9 @@ namespace Jamiras.ViewModels
     /// </summary>
     public sealed class ColorPickerDialogViewModel : DialogViewModelBase
     {
+        /// <summary>
+        /// Gets or sets the selected color.
+        /// </summary>
         public System.Windows.Media.Color SelectedColor { get; set; }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -45,6 +48,10 @@ namespace Jamiras.ViewModels
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool ChooseColor([In, Out] CHOOSECOLOR lpchoosecolor);
 
+        /// <summary>
+        /// Shows the dialog for the view model.
+        /// </summary>
+        /// <returns>How the dialog was closed.</returns>
         public new DialogResult ShowDialog()
         {
             if (_dialogService.HasDialogHandler(typeof(ColorPickerDialogViewModel)))

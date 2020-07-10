@@ -171,7 +171,7 @@
     </UserControl.Resources>
 
     <Border BorderBrush="Gray" BorderThickness="1">
-        <Grid>
+        <Grid Background="{Binding Resources.Background.Brush}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="{Binding DataContext.LineNumberColumnWidth, ElementName=codeEditorLines}" />
                 <ColumnDefinition Width="*" />
