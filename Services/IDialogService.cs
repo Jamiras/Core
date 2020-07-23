@@ -39,5 +39,11 @@ namespace Jamiras.Services
         /// <param name="viewModel">ViewModel to show dialog for.</param>
         /// <returns>How the dialog was dismissed.</returns>
         DialogResult ShowDialog(DialogViewModelBase viewModel);
+
+        /// <summary>
+        /// Gets the <see cref="Window"/> object for a topmost <see cref="DialogViewModelBase"/> being shown.
+        /// </summary>
+        /// <returns>Window for topmost ViewModel, <c>null</c> if no dialogs are open.</returns>
+        Window GetTopMostDialog();
     }
 }

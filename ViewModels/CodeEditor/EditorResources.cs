@@ -1,5 +1,6 @@
 ﻿using Jamiras.Components;
 using Jamiras.DataModels;
+using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
@@ -9,7 +10,7 @@ namespace Jamiras.ViewModels.CodeEditor
     /// <summary>
     /// Wrapper for <see cref="EditorProperties"/> that converts program-friendly data types to UI-bindable data types.
     /// </summary>
-    public class EditorResources
+    public class EditorResources : IDisposable
     {
         /// <summary>
         /// Container for a <see cref="Brush"/> that will be updated if the related <see cref="EditorProperties"/> value changes.
@@ -66,6 +67,7 @@ namespace Jamiras.ViewModels.CodeEditor
         public EditorResources(EditorProperties properties)
         {
             _properties = properties;
+            _properties.CustomColorChanged += properties_CustomColorChanged;
 
             Background = new BrushResource(properties, EditorProperties.BackgroundProperty);
             Foreground = new BrushResource(properties, EditorProperties.ForegroundProperty);
@@ -80,6 +82,17 @@ namespace Jamiras.ViewModels.CodeEditor
             var formattedText = new FormattedText("0", CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface(FontName), FontSize, Brushes.Black);
             CharacterWidth = formattedText.Width;
             CharacterHeight = (int)(formattedText.Height + 0.75);
+        }
+
+        void IDisposable.Dispose()
+        {
+            if (_properties != null)
+                _properties.CustomColorChanged -= properties_CustomColorChanged;
+        }
+
+        private void properties_CustomColorChanged(object sender, EditorProperties.CustomColorChangedEventArgs e)
+        {
+            _customBrushes.Remove(e.Id);
         }
 
         private readonly EditorProperties _properties;
