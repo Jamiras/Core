@@ -1904,8 +1904,9 @@ namespace Jamiras.ViewModels.CodeEditor
 
         private void HandlePaste()
         {
-            var text = _clipboardService.GetText();            
-            ReplaceSelection(text);
+            var text = _clipboardService.GetText();
+            if (text != null)
+                ReplaceSelection(text);
         }
 
         [DebuggerDisplay("{StartLine}:{StartColumn}-{EndLine}:{EndColumn} {Text}")]
