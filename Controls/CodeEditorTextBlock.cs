@@ -77,24 +77,50 @@ namespace Jamiras.Controls
 
         private void BuildText()
         {
-            Inlines.Clear();
+            List<Inline> newInlines = null;
+            var inline = Inlines.FirstInline;
 
             var pieces = TextPieces;
             if (pieces != null)
             {
                 foreach (var piece in pieces)
                 {
-                    var inline = new Run(piece.Text);
+                    if (inline == null)
+                    {
+                        inline = new Run(piece.Text);
+
+                        if (newInlines == null)
+                            newInlines = new List<Inline>();
+                        newInlines.Add(inline);
+                    }
+                    else
+                    {
+                        ((Run)inline).Text = piece.Text;
+                    }
+
                     inline.Foreground = piece.Foreground;
 
-                    if (!String.IsNullOrEmpty(piece.ToolTip))
-                        inline.ToolTip = piece.ToolTip;
+                    inline.ToolTip = !String.IsNullOrEmpty(piece.ToolTip) ? piece.ToolTip : null;
 
                     if (piece.IsError)
                         inline.TextDecorations.Add(_wavyLine);
+                    else
+                        inline.TextDecorations.Clear();
 
-                    Inlines.Add(inline);
+                    inline = inline.NextInline;
                 }
+            }
+
+            if (inline != null)
+            {
+                while (inline.NextInline != null)
+                    Inlines.Remove(Inlines.LastInline);
+
+                Inlines.Remove(inline);
+            }
+            else if (newInlines != null)
+            {
+                Inlines.AddRange(newInlines);
             }
         }
     }
