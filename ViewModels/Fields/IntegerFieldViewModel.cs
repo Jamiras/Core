@@ -100,6 +100,32 @@ namespace Jamiras.ViewModels.Fields
         }
 
         /// <summary>
+        /// Notifies any subscribers that the value of a <see cref="ModelProperty" /> has changed.
+        /// </summary>
+        protected override void OnModelPropertyChanged(ModelPropertyChangedEventArgs e)
+        {
+            if (e.Property == TextProperty)
+            {
+                if (IsTextBindingDelayed)
+                {
+                    WaitForTyping(() =>
+                    {
+                        Validate(TextProperty);
+                        base.OnModelPropertyChanged(e);
+                    });
+
+                    return;
+                }
+                else
+                {
+                    Validate(TextProperty);
+                }
+            }
+
+            base.OnModelPropertyChanged(e);
+        }
+
+        /// <summary>
         /// Validates a value being assigned to a property.
         /// </summary>
         /// <param name="property">Property being modified.</param>
@@ -111,7 +137,7 @@ namespace Jamiras.ViewModels.Fields
         {
             if (property == TextProperty)
             {
-                if (String.IsNullOrEmpty((string)value))
+                if (String.IsNullOrEmpty((string)value) && IsRequired)
                 {
                     if (IsRequired)
                         return String.Format("{0} is required", LabelWithoutAccelerators);

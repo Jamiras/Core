@@ -816,7 +816,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
 
             protected override void OnContentChanged(ContentChangedEventArgs e)
             {
-                Assert.That(e.UpdatedLines.Count(), Is.EqualTo(_expectUpdatedLines));
+                Assert.That(e.AffectedLines.Count(), Is.EqualTo(_expectUpdatedLines));
                 base.OnContentChanged(e);
             }
         }
