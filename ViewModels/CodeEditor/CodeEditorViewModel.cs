@@ -299,13 +299,25 @@ namespace Jamiras.ViewModels.CodeEditor
             OnUpdateSyntax(new ContentChangedEventArgs(value, _version, this, ContentChangeType.Refresh, null, false));
         }
 
+        /// <summary>
+        /// The type of change that occurred.
+        /// </summary>
         protected enum ContentChangeType
         {
+            /// <summary>
+            /// No change occurred.
+            /// </summary>
             None = 0,
-            Refresh,   // entire content was updated
-            Update,    // the specified lines changed
-            Add,       // the specified lines were added
-            Remove,    // the specified lines were removed
+
+            /// <summary>
+            /// The entire content was updated.
+            /// </summary>
+            Refresh,
+
+            /// <summary>
+            /// The specified lines changed.
+            /// </summary>
+            Update,
         }
 
         /// <summary>
@@ -489,6 +501,9 @@ namespace Jamiras.ViewModels.CodeEditor
             return true;
         }
 
+        /// <summary>
+        /// Call to force each line of the editor to repaint, starting with the lines in e.AffectedLines
+        /// </summary>
         protected void UpdateSyntaxHighlighting(ContentChangedEventArgs e)
         {
             if (e.AffectedLines == null)
