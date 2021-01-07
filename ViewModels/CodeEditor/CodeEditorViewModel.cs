@@ -296,7 +296,28 @@ namespace Jamiras.ViewModels.CodeEditor
             CursorLine = 1;
             CursorColumn = 1;
 
-            OnUpdateSyntax(new ContentChangedEventArgs(value, _version, this, _lines, false));
+            OnUpdateSyntax(new ContentChangedEventArgs(value, _version, this, ContentChangeType.Refresh, null, false));
+        }
+
+        /// <summary>
+        /// The type of change that occurred.
+        /// </summary>
+        protected enum ContentChangeType
+        {
+            /// <summary>
+            /// No change occurred.
+            /// </summary>
+            None = 0,
+
+            /// <summary>
+            /// The entire content was updated.
+            /// </summary>
+            Refresh,
+
+            /// <summary>
+            /// The specified lines changed.
+            /// </summary>
+            Update,
         }
 
         /// <summary>
@@ -310,14 +331,17 @@ namespace Jamiras.ViewModels.CodeEditor
             /// <param name="content">The new content of the editor.</param>
             /// <param name="version">An internal counter indicating the revision.</param>
             /// <param name="editor">A reference to the editor.</param>
-            /// <param name="updatedLines">The lines that were updated.</param>
+            /// <param name="type">The type of change that occurred.</param>
+            /// <param name="affectedLines">The lines that were updated.</param>
             /// <param name="isWhitespaceOnly">Flag indicating that the changes did not affect syntax.</param>
-            public ContentChangedEventArgs(string content, int version, CodeEditorViewModel editor, IEnumerable<LineViewModel> updatedLines, bool isWhitespaceOnly)
+            public ContentChangedEventArgs(string content, int version, CodeEditorViewModel editor, 
+                ContentChangeType type, IEnumerable<int> affectedLines, bool isWhitespaceOnly)
             {
                 Content = content;
                 _version = version;
                 _editor = editor;
-                UpdatedLines = updatedLines;
+                Type = type;
+                AffectedLines = affectedLines;
                 IsWhitespaceOnlyChange = isWhitespaceOnly;
             }
 
@@ -330,9 +354,14 @@ namespace Jamiras.ViewModels.CodeEditor
             public string Content { get; private set; }
 
             /// <summary>
+            /// Gets the type of change.
+            /// </summary>
+            public ContentChangeType Type { get; private set; }
+
+            /// <summary>
             /// Gets the lines that were updated.
             /// </summary>
-            public IEnumerable<LineViewModel> UpdatedLines { get; private set; }
+            public IEnumerable<int> AffectedLines { get; private set; }
 
             /// <summary>
             /// Gets whether or not the change was only whitespace.
@@ -384,16 +413,13 @@ namespace Jamiras.ViewModels.CodeEditor
         /// </summary>
         public override void Refresh()
         {
-            _backgroundWorkerService.RunAsync(() =>
+            var updatedLines = new List<LineViewModel>();
+            if (!PerformUpdate(updatedLines))
             {
-                var updatedLines = new List<LineViewModel>();
-                if (!PerformUpdate(updatedLines))
-                {
-                    // more changes occurred while updating, quickly repaint only the affected lines for this change, then let the new change do the full update
-                    foreach (var line in updatedLines)
-                        line.Refresh();
-                }
-            });
+                // more changes occurred while updating, quickly repaint only the affected lines for this change, then let the new change do the full update
+                foreach (var line in updatedLines)
+                    line.Refresh();
+            }
         }
 
         private bool PerformUpdate(List<LineViewModel> updatedLines)
@@ -405,8 +431,6 @@ namespace Jamiras.ViewModels.CodeEditor
                 version = ++_version;
             }
 
-            bool isWhitespaceOnly = true;
-
             var allLines = new List<string>(_lines.Count);
             int newContentLength = _lines.Count * 2; // crlf for each line
             for (int i = 0; i < _lines.Count; i++)
@@ -415,19 +439,12 @@ namespace Jamiras.ViewModels.CodeEditor
 
                 var pendingText = line.PendingText;
                 if (pendingText != null)
-                {
-                    newContentLength += pendingText.Length;
-                    allLines.Add(pendingText);
-
                     updatedLines.Add(line);
-                    line.CommitPending(ref isWhitespaceOnly);
-                }
                 else
-                {
                     pendingText = line.Text;
-                    allLines.Add(pendingText);
-                    newContentLength += pendingText.Length;
-                }
+
+                allLines.Add(pendingText);
+                newContentLength += pendingText.Length;
 
                 if ((i & 127) == 127)
                 {
@@ -440,7 +457,7 @@ namespace Jamiras.ViewModels.CodeEditor
                 }
             }
 
-            // see if changes have been made while committing
+            // see if changes have been made
             lock (_lines)
             {
                 if (_version != version)
@@ -451,20 +468,23 @@ namespace Jamiras.ViewModels.CodeEditor
             foreach (var line in allLines)
                 newContent.AppendLine(line);
 
-            // final check to see if more changes have been made before converting the builder to a string
+            var newContentString = newContent.ToString();
+            var updatedLineNumbers = updatedLines.Select(l => l.Line).ToArray();
+
+            // final check to see if more changes have been made before committing the current data and raising the events
             lock (_lines)
             {
                 if (_version != version)
                     return false;
             }
 
-            var e = new ContentChangedEventArgs(newContent.ToString(), version, this, updatedLines, isWhitespaceOnly);
+            // commit the changes
+            bool isWhitespaceOnly = true;
+            foreach (var line in updatedLines)
+                line.CommitPending(ref isWhitespaceOnly);
 
-            // string converted, make another check before processing it
-            if (e.IsAborted)
-                return false;
+            var e = new ContentChangedEventArgs(newContentString, version, this, ContentChangeType.Update, updatedLineNumbers, isWhitespaceOnly);
 
-            // process the string
             OnUpdateSyntax(e);
 
             if (e.IsAborted)
@@ -481,22 +501,25 @@ namespace Jamiras.ViewModels.CodeEditor
             return true;
         }
 
-        private void UpdateSyntaxHighlighting(ContentChangedEventArgs e)
+        /// <summary>
+        /// Call to force each line of the editor to repaint, starting with the lines in e.AffectedLines
+        /// </summary>
+        protected void UpdateSyntaxHighlighting(ContentChangedEventArgs e)
         {
-            // repaint the affected lines
-            foreach (var line in e.UpdatedLines)
-                line.Refresh();
-
-            // repaint ten lines on either side of each updated line
-            var nearbyLines = new byte[_lines.Count];
-            foreach (var line in e.UpdatedLines)
+            if (e.AffectedLines == null)
             {
-                var index = _lines.IndexOf(line);
-                if (index == -1)
-                    continue;
+                foreach (var line in _lines)
+                    line.Refresh();
 
-                var start = Math.Max(index - 10, 0);
-                var end = Math.Min(index + 10, nearbyLines.Length);
+                return;
+            }
+
+            // repaint six lines on either side of each updated line (will include the affected line)
+            var nearbyLines = new byte[_lines.Count];
+            foreach (var index in e.AffectedLines)
+            {
+                var start = Math.Max(index - 6, 0);
+                var end = Math.Min(index + 6, nearbyLines.Length);
                 for (int i = start; i < end; i++)
                     nearbyLines[i] = 1;
             }
@@ -1657,7 +1680,6 @@ namespace Jamiras.ViewModels.CodeEditor
             var cursorLineViewModel = _lines[cursorLine - 1];
             string text = cursorLineViewModel.PendingText ?? cursorLineViewModel.Text;
             var cursorColumn = CursorColumn - 1; // string index is 0-based
-            string left = (cursorColumn > 0) ? text.Substring(0, cursorColumn) : String.Empty;
             string right = (cursorColumn < text.Length) ? text.Substring(cursorColumn) : String.Empty;
 
             // truncate the first line
