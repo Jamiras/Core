@@ -517,9 +517,9 @@ namespace Jamiras.IO.Serialization
             if (strings.Count > 0)
                 AddField(fieldName, JsonFieldType.StringArray, strings.ToArray());
             else if (ints.Count > 0)
-                AddField(fieldName, JsonFieldType.IntegerArray, items.ToArray());
+                AddField(fieldName, JsonFieldType.IntegerArray, ints.ToArray());
             else if (dbls.Count > 0)
-                AddField(fieldName, JsonFieldType.DoubleArray, items.ToArray());
+                AddField(fieldName, JsonFieldType.DoubleArray, dbls.ToArray());
             else
                 AddField(fieldName, JsonFieldType.ObjectArray, items.ToArray());
         }
