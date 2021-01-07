@@ -83,6 +83,11 @@ namespace Jamiras.Controls
             var pieces = TextPieces;
             if (pieces != null)
             {
+                // Even with TextContainer.BeginChangeNoUndo, calling AddRange with more than ~500 inlines 
+                // started to bog down the editor. Only generate enough inlines to support the visible columns.
+                // At 1920x1200, about 250 columns are visible. Larger resolutions support more columns, but
+                // the text becomes too small to be of much use. TODO: get actual number of columns from View.
+                int columnsRemaining = 400;
                 foreach (var piece in pieces)
                 {
                     if (inline == null)
@@ -91,6 +96,7 @@ namespace Jamiras.Controls
 
                         if (newInlines == null)
                             newInlines = new List<Inline>();
+
                         newInlines.Add(inline);
                     }
                     else
@@ -108,11 +114,16 @@ namespace Jamiras.Controls
                         inline.TextDecorations.Clear();
 
                     inline = inline.NextInline;
+
+                    columnsRemaining -= piece.Text.Length;
+                    if (columnsRemaining < 0)
+                        break;
                 }
             }
 
             if (inline != null)
             {
+                // used less inlines than were available, discard the extras
                 while (inline.NextInline != null)
                     Inlines.Remove(Inlines.LastInline);
 
@@ -120,6 +131,7 @@ namespace Jamiras.Controls
             }
             else if (newInlines != null)
             {
+                // needed additional inlines. add them now
                 Inlines.AddRange(newInlines);
             }
         }
