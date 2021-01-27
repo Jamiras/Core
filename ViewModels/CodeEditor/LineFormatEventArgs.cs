@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Jamiras.ViewModels.CodeEditor
@@ -190,9 +191,17 @@ namespace Jamiras.ViewModels.CodeEditor
             for (int i = 0; i < _ranges.Count; i++)
             {
                 var range = _ranges[i];
+                string text;
+                if (range.StartColumn + range.Length - 1 <= Text.Length)
+                    text = Text.Substring(range.StartColumn - 1, range.Length);
+                else if (range.StartColumn - 1 < Text.Length)
+                    text = Text.Substring(range.StartColumn - 1);
+                else
+                    text = String.Empty;
+
                 newPieces[i] = new TextPiece
                 {
-                    Text = Text.Substring(range.StartColumn - 1, range.Length),
+                    Text = text,
                     Foreground = (range.Color == 0) ? Line.Resources.Foreground.Brush : Line.Resources.GetCustomBrush(range.Color),
                     ToolTip = range.ToolTip
                 };
