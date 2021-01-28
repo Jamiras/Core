@@ -878,7 +878,7 @@ namespace Jamiras.ViewModels.CodeEditor
         private UndoItem BeginTypingUndo()
         {
             var undoItem = _undoStack.Peek();
-            if (undoItem.Before == null || undoItem.After.Text != null)
+            if (undoItem == null || undoItem.AfterText != null)
             {
                 BeginUndo();
                 undoItem = _undoStack.Pop();
@@ -888,11 +888,7 @@ namespace Jamiras.ViewModels.CodeEditor
 
                 var line = CursorLine;
                 var column = CursorColumn;
-                undoItem.After = new Selection
-                {
-                    StartLine = line, StartColumn = column,
-                    EndLine = line, EndColumn = column
-                };
+                undoItem.After = new TextRange(line, column, line, column);
 
                 _undoStack.Push(undoItem);
             }
@@ -903,25 +899,14 @@ namespace Jamiras.ViewModels.CodeEditor
         private void EndTypingUndo()
         {
             var undoItem = _undoStack.Peek();
-            if (undoItem.After != null && undoItem.After.Text == null)
-            {
-                undoItem.After.Text = GetText(undoItem.After);
-
-                var beforeOrdered = undoItem.Before.GetOrderedSelection();
-                if (!ReferenceEquals(beforeOrdered, undoItem.Before))
-                {
-                    undoItem.Before.StartLine = beforeOrdered.StartLine;
-                    undoItem.Before.StartColumn = beforeOrdered.StartColumn;
-                    undoItem.Before.EndLine = beforeOrdered.EndLine;
-                    undoItem.Before.EndColumn = beforeOrdered.EndColumn;
-                }
-            }
+            if (undoItem.AfterText == null)
+                undoItem.AfterText = GetText(undoItem.After);
         }
 
         internal void HandleCharacter(char c)
         {
             var undoItem = BeginTypingUndo();
-            if (undoItem.Before.IsEndBeforeStart())
+            if (undoItem.Before.End < undoItem.Before.Start)
             {
                 EndTypingUndo();
                 undoItem = BeginTypingUndo();
@@ -945,21 +930,21 @@ namespace Jamiras.ViewModels.CodeEditor
                 if (column > lineViewModel.LineLength || Char.IsWhiteSpace(text[column - 1]) || Char.IsPunctuation(text[column - 1]))
                 {
                     lineViewModel.Insert(column, c.ToString() + brace.ToString());
-                    undoItem.After.EndColumn += 2;
+                    undoItem.After.End.Column += 2;
                     _braceStack.Push(brace);
                 }
                 else
                 {
                     // next character is not whitespace or punctuation, just insert it
                     lineViewModel.Insert(column, c.ToString());
-                    undoItem.After.EndColumn++;
+                    undoItem.After.End.Column++;
                 }
             }
             else
             {
                 // not a brace, just insert it
                 lineViewModel.Insert(column, c.ToString());
-                undoItem.After.EndColumn++;
+                undoItem.After.End.Column++;
             }
 
             MoveCursorTo(line, column + 1, MoveCursorFlags.Typing);
@@ -976,7 +961,7 @@ namespace Jamiras.ViewModels.CodeEditor
             else
             {
                 var undoItem = BeginTypingUndo();
-                if (undoItem.Before.IsEndBeforeStart())
+                if (undoItem.Before.End < undoItem.Before.Start)
                 {
                     EndTypingUndo();
                     undoItem = BeginTypingUndo();
@@ -988,8 +973,8 @@ namespace Jamiras.ViewModels.CodeEditor
                 if (column <= lineViewModel.LineLength)
                 {
                     var text = lineViewModel.PendingText ?? lineViewModel.Text;
-                    undoItem.Before.EndColumn++;
-                    undoItem.Before.Text += text[column - 1];
+                    undoItem.Before.End.Column++;
+                    undoItem.BeforeText += text[column - 1];
 
                     if (_braceStack.Count > 0 && column < text.Length && text[column] == _braceStack.Peek())
                     {
@@ -1002,9 +987,9 @@ namespace Jamiras.ViewModels.CodeEditor
                 }
                 else if (line < LineCount)
                 {
-                    undoItem.Before.EndLine++;
-                    undoItem.Before.EndColumn = 1;
-                    undoItem.Before.Text += '\n';
+                    undoItem.Before.End.Line++;
+                    undoItem.Before.End.Column = 1;
+                    undoItem.BeforeText += '\n';
 
                     MergeNextLine();
                 }
@@ -1020,7 +1005,7 @@ namespace Jamiras.ViewModels.CodeEditor
             else
             {
                 var undoItem = BeginTypingUndo();
-                if (undoItem.Before.IsStartBeforeEnd())
+                if (undoItem.Before.Start < undoItem.Before.End)
                 {
                     EndTypingUndo();
                     undoItem = BeginTypingUndo();
@@ -1036,18 +1021,18 @@ namespace Jamiras.ViewModels.CodeEditor
                     var lineViewModel = _lines[line - 1];
                     var text = lineViewModel.PendingText ?? lineViewModel.Text;
 
-                    if (!undoItem.After.IsEmpty())
+                    if (!undoItem.After.IsEmpty)
                     {
                         // if the after selection is not empty, the user has been typing, just remove the most recent character
-                        undoItem.After.EndColumn--;
+                        undoItem.After.End.Column--;
                     }
                     else
                     {
                         // after is empty, consume a character from before and update the location of the after selection
-                        undoItem.Before.EndColumn--;
-                        undoItem.Before.Text = text[column - 1] + undoItem.Before.Text;
-                        undoItem.After.StartColumn--;
-                        undoItem.After.EndColumn--;
+                        undoItem.Before.End.Column--;
+                        undoItem.BeforeText = text[column - 1] + undoItem.BeforeText;
+                        undoItem.After.Start.Column--;
+                        undoItem.After.End.Column--;
                     }
 
                     if (_braceStack.Count > 0 && column < text.Length && text[column] == _braceStack.Peek())
@@ -1071,11 +1056,9 @@ namespace Jamiras.ViewModels.CodeEditor
                     line--;
                     column = _lines[line - 1].LineLength + 1;
 
-                    undoItem.Before.EndLine--;
-                    undoItem.Before.EndColumn = column;
-                    undoItem.Before.Text = '\n' + undoItem.Before.Text;
-                    undoItem.After.StartLine = undoItem.After.EndLine = line;
-                    undoItem.After.StartColumn = undoItem.After.EndColumn = column;
+                    undoItem.Before.End = new TextLocation(undoItem.Before.End.Line - 1, column);
+                    undoItem.BeforeText = '\n' + undoItem.BeforeText;
+                    undoItem.After = new TextRange(line, column, line, column);
 
                     MoveCursorTo(line, column, MoveCursorFlags.Typing);
                     MergeNextLine();
@@ -1108,7 +1091,7 @@ namespace Jamiras.ViewModels.CodeEditor
             if (!HasSelection())
                 return String.Empty;
 
-            var selection = GetOrderedSelection();
+            var selection = GetSelection();
             return GetText(selection);
         }
 
@@ -1117,51 +1100,52 @@ namespace Jamiras.ViewModels.CodeEditor
         /// </summary>
         protected string GetText(int startLine, int startColumn, int endLine, int endColumn)
         {
-            var selection = new Selection { StartLine = startLine, StartColumn = startColumn, EndLine = endLine, EndColumn = endColumn };
-            return GetText(selection.GetOrderedSelection());
+            var selection = new TextRange(startLine, startColumn, endLine, endColumn);
+            return GetText(selection);
         }
 
-        private string GetText(Selection selection)
+        /// <summary>
+        /// Builds a string containing the text for the specified region of the editor.
+        /// </summary>
+        protected string GetText(TextRange selection)
         {
-            if (selection.Text == null)
+            if (selection.IsEmpty)
+                return String.Empty;
+
+            var builder = new StringBuilder();
+
+            var orderedSelection = selection;
+            orderedSelection.EnsureForward();
+            for (int i = orderedSelection.Start.Line; i <= orderedSelection.End.Line; ++i)
             {
-                var builder = new StringBuilder();
-                if (selection.StartColumn != selection.EndColumn || selection.StartLine != selection.EndLine)
+                if (i > _lines.Count)
+                    break;
+
+                if (i != orderedSelection.Start.Line)
+                    builder.AppendLine();
+
+                var line = _lines[i - 1];
+                var text = line.PendingText ?? line.Text;
+
+                var firstChar = (i == orderedSelection.Start.Line) ? orderedSelection.Start.Column - 1 : 0;
+                if (firstChar > text.Length)
+                    firstChar = text.Length;
+
+                int lastChar;
+                if (i == orderedSelection.End.Line)
                 {
-                    var orderedSelection = selection.GetOrderedSelection();
-                    for (int i = orderedSelection.StartLine; i <= orderedSelection.EndLine; ++i)
-                    {
-                        if (i > _lines.Count)
-                            break;
-
-                        if (i != orderedSelection.StartLine)
-                            builder.AppendLine();
-
-                        var line = _lines[i - 1];
-                        var text = line.PendingText ?? line.Text;
-
-                        var firstChar = (i == orderedSelection.StartLine) ? orderedSelection.StartColumn - 1 : 0;
-                        if (firstChar > text.Length)
-                            firstChar = text.Length;
-
-                        int lastChar;
-                        if (i == orderedSelection.EndLine)
-                        {
-                            lastChar = orderedSelection.EndColumn - 1;
-                            if (lastChar > text.Length)
-                                lastChar = text.Length;
-                        }
-                        else
-                        {
-                            lastChar = text.Length;
-                        }
-                        builder.Append(text, firstChar, lastChar - firstChar);
-                    }
+                    lastChar = orderedSelection.End.Column - 1;
+                    if (lastChar > text.Length)
+                        lastChar = text.Length;
                 }
-
-                selection.Text = builder.ToString();
+                else
+                {
+                    lastChar = text.Length;
+                }
+                builder.Append(text, firstChar, lastChar - firstChar);
             }
-            return selection.Text;
+
+            return builder.ToString();
         }
 
         /// <summary>
@@ -1181,33 +1165,34 @@ namespace Jamiras.ViewModels.CodeEditor
 
         private void RemoveSelection()
         {
-            var selection = GetOrderedSelection();
+            var selection = GetSelection();
+            selection.EnsureForward();
 
-            var line = _lines[selection.StartLine - 1];
+            var line = _lines[selection.Start.Line - 1];
             if (line.SelectionEnd >= line.SelectionStart)
                 line.Remove(line.SelectionStart, line.SelectionEnd);
 
-            if (selection.StartLine == selection.EndLine)
+            if (selection.Start.Line == selection.End.Line)
             {
                 // update the cursor location
-                MoveCursorTo(selection.StartLine, selection.StartColumn, MoveCursorFlags.None);
+                MoveCursorTo(selection.Start.Line, selection.Start.Column, MoveCursorFlags.None);
             }
             else
             {
-                var lastLine = _lines[selection.EndLine - 1];
+                var lastLine = _lines[selection.End.Line - 1];
                 if (lastLine.SelectionEnd < lastLine.LineLength)
                     line.Insert(line.LineLength + 1, lastLine.Text.Substring(lastLine.SelectionEnd, lastLine.LineLength - lastLine.SelectionEnd));
 
                 // relocate the cursor before we remove any lines
-                MoveCursorTo(selection.StartLine, selection.StartColumn, MoveCursorFlags.None);
+                MoveCursorTo(selection.Start.Line, selection.Start.Column, MoveCursorFlags.None);
 
-                for (int i = selection.EndLine - 1; i >= selection.StartLine; --i)
+                for (int i = selection.End.Line - 1; i >= selection.Start.Line; --i)
                     _lines.RemoveAt(i);
 
-                var linesRemoved = (selection.EndLine - selection.StartLine);
+                var linesRemoved = (selection.End.Line - selection.Start.Line);
                 LineCount -= linesRemoved;
 
-                for (int i = selection.StartLine; i < _lines.Count; ++i)
+                for (int i = selection.Start.Line; i < _lines.Count; ++i)
                     _lines[i].Line -= linesRemoved;
             }
         }
@@ -1227,17 +1212,7 @@ namespace Jamiras.ViewModels.CodeEditor
 
             var item = _undoStack.Pop();
 
-            if (selection.StartLine > selection.EndLine ||
-                (selection.StartLine == selection.EndLine && selection.StartColumn > selection.EndColumn))
-            {
-                item.After.StartLine = selection.EndLine;
-                item.After.StartColumn = selection.EndColumn;
-            }
-            else
-            {
-                item.After.StartLine = selection.StartLine;
-                item.After.StartColumn = selection.StartColumn;
-            }
+            item.After = new TextRange(selection.Front, item.After.End);
 
             _undoStack.Push(item);
 
@@ -1250,55 +1225,56 @@ namespace Jamiras.ViewModels.CodeEditor
         /// <param name="selection">The selection.</param>
         /// <param name="newText">The new text.</param>
         /// <remarks>Should not update the undo buffer, used by <see cref="HandleUndo"/> and <see cref="HandleRedo"/>.</remarks>
-        private void ReplaceText(Selection selection, string newText)
+        private void ReplaceText(TextRange selection, string newText)
         {
-            selection = selection.GetOrderedSelection();
-            var cursorLine = selection.EndLine;
-            var cursorColumn = selection.EndColumn;
+            var front = selection.Front;
+            var back = selection.Back;
+            var cursorLine = back.Line;
+            var cursorColumn = back.Column;
 
             LineViewModel line;
             var linesAdded = 0;
-            if (selection.StartLine == selection.EndLine)
+            if (front.Line == back.Line)
             {
-                line = _lines[selection.StartLine - 1];
-                if (selection.StartColumn < selection.EndColumn)
-                    line.Remove(selection.StartColumn, selection.EndColumn - 1);
+                line = _lines[front.Line - 1];
+                if (front.Column < back.Column)
+                    line.Remove(front.Column, back.Column - 1);
 
                 if (!newText.Contains("\n"))
                 {
-                    line.Insert(selection.StartColumn, newText);
+                    line.Insert(front.Column, newText);
 
-                    MoveCursorTo(selection.StartLine, selection.StartColumn + newText.Length, MoveCursorFlags.None);
+                    MoveCursorTo(front.Line, front.Column + newText.Length, MoveCursorFlags.None);
                     return;
                 }
 
-                var remaining = (line.PendingText ?? line.Text).Substring(selection.StartColumn - 1);
-                if (selection.StartColumn <= line.LineLength)
-                    line.Remove(selection.StartColumn, line.LineLength);
+                var remaining = (line.PendingText ?? line.Text).Substring(front.Column - 1);
+                if (front.Column <= line.LineLength)
+                    line.Remove(front.Column, line.LineLength);
 
                 line = new LineViewModel(this, line.Line + 1) { Text = remaining };
-                _lines.Insert(selection.StartLine, line);
+                _lines.Insert(front.Line, line);
                 linesAdded = 1;
             }
             else
             {
-                if (selection.StartLine <= _lines.Count)
+                if (front.Line <= _lines.Count)
                 {
-                    line = _lines[selection.StartLine - 1];
-                    if (selection.StartColumn < line.LineLength)
-                        line.Remove(selection.StartColumn, line.LineLength);
+                    line = _lines[front.Line - 1];
+                    if (front.Column < line.LineLength)
+                        line.Remove(front.Column, line.LineLength);
                 }
 
-                if (selection.EndLine <= _lines.Count)
+                if (back.Line <= _lines.Count)
                 {
-                    line = _lines[selection.EndLine - 1];
-                    if (selection.EndColumn > 1)
-                        line.Remove(1, selection.EndColumn - 1);
+                    line = _lines[back.Line - 1];
+                    if (back.Column > 1)
+                        line.Remove(1, back.Column - 1);
 
-                    line.Line -= (selection.EndLine - selection.StartLine - 1);
+                    line.Line -= (back.Line - front.Line - 1);
                 }
 
-                for (int i = selection.EndLine - 2; i >= selection.StartLine; --i)
+                for (int i = back.Line - 2; i >= front.Line; --i)
                 {
                     if (i < _lines.Count - 1)
                         _lines.RemoveAt(i);
@@ -1307,22 +1283,22 @@ namespace Jamiras.ViewModels.CodeEditor
             }
 
             var newTextLines = newText.Split('\n');
-            line = _lines[selection.StartLine - 1];
-            line.Insert(selection.StartColumn, newTextLines[0].TrimEnd('\r'));
+            line = _lines[front.Line - 1];
+            line.Insert(front.Column, newTextLines[0].TrimEnd('\r'));
 
             if (newTextLines.Length == 1)
             {
                 cursorColumn = line.LineLength + 1;
 
-                var startLine = _lines[selection.StartLine];
+                var startLine = _lines[front.Line];
                 line.Insert(line.LineLength + 1, startLine.PendingText ?? startLine.Text);
 
-                _lines.RemoveAt(selection.StartLine);
+                _lines.RemoveAt(front.Line);
                 linesAdded--;
             }
-            else if (selection.StartLine < _lines.Count)
+            else if (front.Line < _lines.Count)
             {
-                line = _lines[selection.StartLine];
+                line = _lines[front.Line];
                 var text = newTextLines[newTextLines.Length - 1].TrimEnd('\r');
                 line.Insert(1, text);
                 line.Line += newTextLines.Length - 2;
@@ -1332,12 +1308,12 @@ namespace Jamiras.ViewModels.CodeEditor
 
             for (int i = 1; i < newTextLines.Length - 1; i++)
             {
-                line = new LineViewModel(this, selection.StartLine + i) { PendingText = newTextLines[i].TrimEnd('\r') };
-                _lines.Insert(selection.StartLine + i - 1, line);
+                line = new LineViewModel(this, front.Line + i) { PendingText = newTextLines[i].TrimEnd('\r') };
+                _lines.Insert(front.Line + i - 1, line);
                 linesAdded++;
             }
 
-            cursorLine = selection.StartLine + newTextLines.Length - 1;
+            cursorLine = front.Line + newTextLines.Length - 1;
 
             if (linesAdded != 0)
             {
@@ -1358,10 +1334,10 @@ namespace Jamiras.ViewModels.CodeEditor
         public void HighlightWordAt(int line, int column)
         {
             var word = GetWordSelection(line, column);
-            if (word.StartLine == line)
+            if (word.Start.Line == line)
             {
-                MoveCursorTo(line, word.StartColumn, MoveCursorFlags.None);
-                MoveCursorTo(line, word.EndColumn, MoveCursorFlags.Highlighting);
+                MoveCursorTo(line, word.Start.Column, MoveCursorFlags.None);
+                MoveCursorTo(line, word.End.Column, MoveCursorFlags.Highlighting);
             }
         }
 
@@ -1374,7 +1350,7 @@ namespace Jamiras.ViewModels.CodeEditor
         protected string GetWordAt(int line, int column)
         {
             var word = GetWordSelection(line, column);
-            if (word.StartLine == line)
+            if (word.Start.Line == line)
                 return GetText(word);
 
             return null;
@@ -1387,12 +1363,12 @@ namespace Jamiras.ViewModels.CodeEditor
             return (c != '_' && Char.IsPunctuation(c));
         }
 
-        private Selection GetWordSelection(int line, int column)
+        private TextRange GetWordSelection(int line, int column)
         { 
             var cursorLineViewModel = _lines[line - 1];
             var currentTextPiece = cursorLineViewModel.GetTextPiece(column);
             if (currentTextPiece.Piece == null) // column exceeds line length
-                return new Selection();
+                return new TextRange();
 
             var text = currentTextPiece.Piece.Text;
             var offset = currentTextPiece.Offset;
@@ -1432,7 +1408,7 @@ namespace Jamiras.ViewModels.CodeEditor
             int wordEnd = column + (offset - currentTextPiece.Offset);
 
             // return the bounds
-            return new Selection { StartLine = line, StartColumn = wordStart, EndLine = line, EndColumn = wordEnd };
+            return new TextRange(line, wordStart, line, wordEnd);
         }
 
         private void HandleLeft(MoveCursorFlags flags, bool nextWord)
@@ -1562,28 +1538,23 @@ namespace Jamiras.ViewModels.CodeEditor
         {
             if (HasSelection())
             {
-                var selection = GetOrderedSelection();
-                if (isShift)
+                var selection = GetSelection();
+                if (selection.Start.Line != selection.End.Line)
                 {
-                    Indent(selection, false);
+                    // indent or unindent block
+                    Indent(selection, !isShift);
                     return;
                 }
 
-                if (selection.StartLine != selection.EndLine)
+                var line = _lines[selection.Start.Line - 1];
+                if (selection.Start.Column == 1 && selection.End.Column == line.LineLength + 1)
                 {
-                    Indent(selection, true);
+                    // indent or unindent single line
+                    Indent(selection, !isShift);
                     return;
                 }
-                if (selection.StartLine == selection.EndLine)
-                {
-                    var line = _lines[selection.StartLine - 1];
-                    if (selection.StartColumn == 1 && selection.EndColumn == line.LineLength + 1)
-                    {
-                        Indent(selection, true);
-                        return;
-                    }
-                }
 
+                // only portion of line selected - replace with tab for tab, or nothing for shift+tab
                 DeleteSelection();
             }
 
@@ -1598,18 +1569,21 @@ namespace Jamiras.ViewModels.CodeEditor
             CursorColumn = newColumn;
         }
 
-        private void Indent(Selection orderedSelection, bool isIndent)
+        private void Indent(TextRange selection, bool isIndent)
         {
-            var endLine = orderedSelection.EndLine;
-            if (orderedSelection.EndColumn == 1)
+            var orderedSelection = selection;
+            orderedSelection.EnsureForward();
+
+            var endLine = orderedSelection.End.Line;
+            if (orderedSelection.End.Column == 1)
                 endLine--;
 
-            MoveCursorTo(orderedSelection.StartLine, 1, MoveCursorFlags.None);
+            MoveCursorTo(orderedSelection.Start.Line, 1, MoveCursorFlags.None);
             MoveCursorTo(endLine + 1, 1, MoveCursorFlags.Highlighting);
 
             BeginUndo();
 
-            for (int i = orderedSelection.StartLine; i <= endLine; i++)
+            for (int i = orderedSelection.Start.Line; i <= endLine; i++)
             {
                 var line = _lines[i - 1];
                 var text = line.PendingText ?? line.Text;
@@ -1631,7 +1605,7 @@ namespace Jamiras.ViewModels.CodeEditor
                 }
             }
 
-            MoveCursorTo(orderedSelection.StartLine, 1, MoveCursorFlags.None);
+            MoveCursorTo(orderedSelection.Start.Line, 1, MoveCursorFlags.None);
             MoveCursorTo(endLine + 1, 1, MoveCursorFlags.Highlighting);
 
             EndUndo(GetSelectedText());
@@ -1669,7 +1643,7 @@ namespace Jamiras.ViewModels.CodeEditor
         private void HandleEnter()
         {
             var undoItem = BeginTypingUndo();
-            if (undoItem.Before.IsEndBeforeStart())
+            if (undoItem.Before.End < undoItem.Before.Start)
             {
                 EndTypingUndo();
                 undoItem = BeginTypingUndo();
@@ -1706,15 +1680,14 @@ namespace Jamiras.ViewModels.CodeEditor
             }
 
             // update undo item
-            undoItem.After.EndLine++;
-            undoItem.After.EndColumn = indent + 1;
+            undoItem.After.End = new TextLocation(undoItem.After.End.Line + 1, indent + 1);
 
             // if breaking apart braces, insert an extra newline indented an additional level
             if (_braceStack.Count > 0 && cursorColumn < text.Length && text[cursorColumn] == _braceStack.Peek())
             {
-                _braceStack.Clear();            // no longer try to match the closing brace
-                undoItem.After.EndLine++;       // ensure closing brace included in undo information
-                newLineViewModel.Line++;        // adjust the closing brace line number
+                _braceStack.Clear();           // no longer try to match the closing brace
+                undoItem.After.End.Line++;     // ensure closing brace is included in undo information
+                newLineViewModel.Line++;       // adjust the closing brace line number
 
                 indent += 4;
                 newLineViewModel = new LineViewModel(this, cursorLine + 1) { PendingText = new string(' ', indent) };
@@ -1878,12 +1851,13 @@ namespace Jamiras.ViewModels.CodeEditor
                 }
                 else
                 {
-                    var selection = GetOrderedSelection();
+                    var selection = GetSelection();
+                    selection.EnsureForward();
 
-                    _lines[selection.StartLine - 1].Select(selection.StartColumn, _lines[selection.StartLine - 1].LineLength);
-                    for (int i = selection.StartLine; i < selection.EndLine - 1; i++)
+                    _lines[selection.Start.Line - 1].Select(selection.Start.Column, _lines[selection.Start.Line - 1].LineLength);
+                    for (int i = selection.Start.Line; i < selection.End.Line - 1; i++)
                         _lines[i].Select(1, _lines[i].LineLength);
-                    _lines[selection.EndLine - 1].Select(1, selection.EndColumn - 1);
+                    _lines[selection.End.Line - 1].Select(1, selection.End.Column - 1);
                 }
             }
 
@@ -1931,104 +1905,36 @@ namespace Jamiras.ViewModels.CodeEditor
                 ReplaceSelection(text);
         }
 
-        [DebuggerDisplay("{StartLine}:{StartColumn}-{EndLine}:{EndColumn} {Text}")]
-        private class Selection
+        private class UndoItem
         {
-            public int StartLine { get; set; }
-            public int StartColumn { get; set; }
-            public int EndLine { get; set; }
-            public int EndColumn { get; set; }
-            public string Text { get; set; }
+            public TextRange Before;
+            public TextRange After;
 
-            public bool IsEmpty()
-            {
-                return (StartColumn == EndColumn && StartLine == EndLine);
-            }
-
-            public bool IsStartBeforeEnd()
-            {
-                if (StartLine < EndLine)
-                    return true;
-                if (StartLine > EndLine)
-                    return false;
-                return (StartColumn < EndColumn);
-            }
-
-            public bool IsEndBeforeStart()
-            {
-                if (EndLine < StartLine)
-                    return true;
-                if (EndLine > StartLine)
-                    return false;
-                return (EndColumn < StartColumn);
-            }
-
-            public Selection GetOrderedSelection()
-            {
-                if (StartLine < EndLine)
-                    return this;
-
-                if (StartLine == EndLine && StartColumn < EndColumn)
-                    return this;
-
-                return new Selection
-                {
-                    StartLine = EndLine,
-                    StartColumn = EndColumn,
-                    EndLine = StartLine,
-                    EndColumn = StartColumn,
-                };
-            }
-        }
-
-        private struct UndoItem
-        {
-            public Selection Before { get; set; }
-            public Selection After { get; set; }
+            public string BeforeText;
+            public string AfterText;
 
             public override string ToString()
             {
                 var builder = new StringBuilder();
                 builder.Append('"');
-                if (Before != null)
-                    builder.Append(Before.Text);
+                if (BeforeText != null)
+                    builder.Append(BeforeText);
                 builder.Append("\" => \"");
-                if (Before != null)
-                    builder.Append(After.Text);
+                if (AfterText != null)
+                    builder.Append(AfterText);
                 builder.Append('"');
                 return builder.ToString();
             }
         }
 
-        private Selection GetSelection()
+        private TextRange GetSelection()
         {
             if (HasSelection())
-            {
-                return new Selection
-                {
-                    StartLine = _selectionStartLine,
-                    StartColumn = _selectionStartColumn,
-                    EndLine = _selectionEndLine,
-                    EndColumn = _selectionEndColumn,
-                };
-            }
-            else
-            {
-                var cursorLine = CursorLine;
-                var cursorColumn = CursorColumn;
-                return new Selection
-                {
-                    StartLine = cursorLine,
-                    StartColumn = cursorColumn,
-                    EndLine = cursorLine,
-                    EndColumn = cursorColumn
-                };
-            }
-        }
+                return new TextRange(_selectionStartLine, _selectionStartColumn, _selectionEndLine, _selectionEndColumn);
 
-        private Selection GetOrderedSelection()
-        {
-            return GetSelection().GetOrderedSelection();
+            var cursorLine = CursorLine;
+            var cursorColumn = CursorColumn;
+            return new TextRange(cursorLine, cursorColumn, cursorLine, cursorColumn);
         }
 
         private void BeginUndo()
@@ -2037,7 +1943,7 @@ namespace Jamiras.ViewModels.CodeEditor
 
             var item = new UndoItem();
             item.Before = GetSelection();
-            item.Before.Text = GetText(item.Before);
+            item.BeforeText = GetText(item.Before);
             _undoStack.Push(item);
         }
 
@@ -2045,7 +1951,7 @@ namespace Jamiras.ViewModels.CodeEditor
         {
             var item = _undoStack.Pop();
             item.After = GetSelection();
-            item.After.Text = text;
+            item.AfterText = text;
             _undoStack.Push(item);
         }
 
@@ -2057,9 +1963,9 @@ namespace Jamiras.ViewModels.CodeEditor
             var item = _undoStack.Pop();
             _redoStack.Push(item);
 
-            MoveCursorTo(item.After.StartLine, item.After.StartColumn, MoveCursorFlags.None);
-            ReplaceText(item.After, item.Before.Text);
-            MoveCursorTo(item.Before.EndLine, item.Before.EndColumn, MoveCursorFlags.None);
+            MoveCursorTo(item.After.Start.Line, item.After.Start.Column, MoveCursorFlags.None);
+            ReplaceText(item.After, item.BeforeText);
+            MoveCursorTo(item.Before.End.Line, item.Before.End.Column, MoveCursorFlags.None);
 
             Refresh();
         }
@@ -2072,9 +1978,9 @@ namespace Jamiras.ViewModels.CodeEditor
             var item = _redoStack.Pop();
             _undoStack.Push(item);
 
-            MoveCursorTo(item.Before.StartLine, item.Before.StartColumn, MoveCursorFlags.None);
-            ReplaceText(item.Before, item.After.Text);
-            MoveCursorTo(item.After.EndLine, item.After.EndColumn, MoveCursorFlags.None);
+            MoveCursorTo(item.Before.Start.Line, item.Before.Start.Column, MoveCursorFlags.None);
+            ReplaceText(item.Before, item.AfterText);
+            MoveCursorTo(item.After.End.Line, item.After.End.Column, MoveCursorFlags.None);
 
             Refresh();
         }
