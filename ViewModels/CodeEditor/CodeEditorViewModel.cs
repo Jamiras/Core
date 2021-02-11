@@ -471,17 +471,17 @@ namespace Jamiras.ViewModels.CodeEditor
             var newContentString = newContent.ToString();
             var updatedLineNumbers = updatedLines.Select(l => l.Line).ToArray();
 
-            // final check to see if more changes have been made before committing the current data and raising the events
+            bool isWhitespaceOnly = true;
             lock (_lines)
             {
+                // final check to see if more changes have been made before committing the current data and raising the events
                 if (_version != version)
                     return false;
-            }
 
-            // commit the changes
-            bool isWhitespaceOnly = true;
-            foreach (var line in updatedLines)
-                line.CommitPending(ref isWhitespaceOnly);
+                // commit the changes
+                foreach (var line in updatedLines)
+                    line.CommitPending(ref isWhitespaceOnly);
+            }
 
             var e = new ContentChangedEventArgs(newContentString, version, this, ContentChangeType.Update, updatedLineNumbers, isWhitespaceOnly);
 
@@ -506,38 +506,50 @@ namespace Jamiras.ViewModels.CodeEditor
         /// </summary>
         protected void UpdateSyntaxHighlighting(ContentChangedEventArgs e)
         {
-            if (e.AffectedLines == null)
-            {
-                foreach (var line in _lines)
-                    line.Refresh();
+            byte[] nearbyLines;
 
-                return;
+            lock (_lines)
+            {
+                if (e.IsAborted)
+                    return;
+
+                // request to refresh all lines
+                if (e.AffectedLines == null)
+                {
+                    foreach (var line in _lines)
+                        line.Refresh();
+
+                    return;
+                }
+
+                // repaint six lines on either side of each updated line (will include the affected line)
+                nearbyLines = new byte[_lines.Count];
+                foreach (var index in e.AffectedLines)
+                {
+                    var start = Math.Max(index - 6, 0);
+                    var end = Math.Min(index + 6, nearbyLines.Length);
+                    for (int i = start; i < end; i++)
+                        nearbyLines[i] = 1;
+                }
+
+                for (int i = 0; i < nearbyLines.Length; i++)
+                {
+                    if (nearbyLines[i] != 0)
+                        _lines[i].Refresh();
+                }
             }
 
-            // repaint six lines on either side of each updated line (will include the affected line)
-            var nearbyLines = new byte[_lines.Count];
-            foreach (var index in e.AffectedLines)
+            lock (_lines)
             {
-                var start = Math.Max(index - 6, 0);
-                var end = Math.Min(index + 6, nearbyLines.Length);
-                for (int i = start; i < end; i++)
-                    nearbyLines[i] = 1;
-            }
+                if (e.IsAborted)
+                    return;
 
-            for (int i = 0; i < Math.Min(nearbyLines.Length, _lines.Count); i++)
-            {
-                if (nearbyLines[i] != 0)
-                    _lines[i].Refresh();
-            }
-
-            if (e.IsAborted)
-                return;
-
-            // repaint remaining lines
-            for (int i = 0; i < Math.Min(nearbyLines.Length, _lines.Count); i++)
-            {
-                if (nearbyLines[i] == 0)
-                    _lines[i].Refresh();
+                // repaint remaining lines
+                for (int i = 0; i < Math.Min(nearbyLines.Length, _lines.Count); i++)
+                {
+                    if (nearbyLines[i] == 0)
+                        _lines[i].Refresh();
+                }
             }
         }
 
