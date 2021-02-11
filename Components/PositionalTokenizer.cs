@@ -41,6 +41,14 @@
         public int Column { get; private set; }
 
         /// <summary>
+        /// Gets the <see cref="TextLocation"/> of the <see cref="Tokenizer.NextChar"/>.
+        /// </summary>
+        public TextLocation Location
+        {
+            get { return new TextLocation(Line, Column); }
+        }
+
+        /// <summary>
         /// Advances to the next character in the source.
         /// </summary>
         public override void Advance()

@@ -900,6 +900,16 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         }
 
         [Test]
+        public void TestUndoNoChanges()
+        {
+            viewModel.SetContent("This is a sentence.");
+            viewModel.HandleKey(Key.Z, ModifierKeys.Control);
+
+            Assert.That(viewModel.Lines[0].Text, Is.EqualTo("This is a sentence."));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(1));
+        }
+
+        [Test]
         public void TestUndoTyping()
         {
             viewModel.MoveCursorTo(9, 16, CodeEditorViewModel.MoveCursorFlags.None);
@@ -1329,6 +1339,47 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
             Assert.That(bracingViewModel.Lines[1].Text, Is.EqualTo("    )"));
             Assert.That(bracingViewModel.Lines[2].Text, Is.EqualTo(")"));
             Assert.That(bracingViewModel.CursorColumn, Is.EqualTo(6));
+        }
+
+        [Test]
+        public void TestBraceMatchingNewLineUndo()
+        {
+            var bracingViewModel = CreateBracingCodeEditorViewModel();
+            bracingViewModel.HandleCharacter('f');
+            bracingViewModel.HandleCharacter('(');
+            CompleteTyping();
+            Assert.That(bracingViewModel.Lines[0].Text, Is.EqualTo("f()"));
+            Assert.That(bracingViewModel.CursorColumn, Is.EqualTo(3));
+
+            bracingViewModel.HandleKey(Key.Enter, ModifierKeys.None);
+            CompleteTyping();
+            Assert.That(bracingViewModel.LineCount, Is.EqualTo(3));
+            Assert.That(bracingViewModel.Lines[0].Text, Is.EqualTo("f("));
+            Assert.That(bracingViewModel.Lines[1].Text, Is.EqualTo("    "));
+            Assert.That(bracingViewModel.Lines[2].Text, Is.EqualTo(")"));
+            Assert.That(bracingViewModel.CursorLine, Is.EqualTo(2));
+            Assert.That(bracingViewModel.CursorColumn, Is.EqualTo(5));
+
+            bracingViewModel.HandleCharacter(')');
+            CompleteTyping();
+            Assert.That(bracingViewModel.Lines[1].Text, Is.EqualTo("    )"));
+            Assert.That(bracingViewModel.Lines[2].Text, Is.EqualTo(")"));
+            Assert.That(bracingViewModel.CursorColumn, Is.EqualTo(6));
+
+            bracingViewModel.HandleKey(Key.Z, ModifierKeys.Control);
+            CompleteTyping();
+            Assert.That(bracingViewModel.LineCount, Is.EqualTo(3));
+            Assert.That(bracingViewModel.Lines[0].Text, Is.EqualTo("f("));
+            Assert.That(bracingViewModel.Lines[1].Text, Is.EqualTo("    "));
+            Assert.That(bracingViewModel.Lines[2].Text, Is.EqualTo(")"));
+            Assert.That(bracingViewModel.CursorLine, Is.EqualTo(2));
+            Assert.That(bracingViewModel.CursorColumn, Is.EqualTo(5));
+
+            bracingViewModel.HandleKey(Key.Z, ModifierKeys.Control);
+            CompleteTyping();
+            Assert.That(bracingViewModel.Lines[0].Text, Is.EqualTo("f()"));
+            Assert.That(bracingViewModel.CursorLine, Is.EqualTo(1));
+            Assert.That(bracingViewModel.CursorColumn, Is.EqualTo(3));
         }
 
         [Test]
