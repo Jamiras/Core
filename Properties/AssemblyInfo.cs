@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("Common components for other projects")]
 [assembly: AssemblyCompany("Jamiras")]
 [assembly: AssemblyProduct("https://github.com/Jamiras/Core")]
-[assembly: AssemblyCopyright("Copyright (C) 2020 Brian Weiss")]
+[assembly: AssemblyCopyright("Copyright (C) 2021 Brian Weiss")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -31,7 +31,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.1.5.0")]
-[assembly: AssemblyFileVersion("1.1.5.0")]
+[assembly: AssemblyVersion("1.1.6.0")]
+[assembly: AssemblyFileVersion("1.1.6.0")]
 
 [assembly: InternalsVisibleTo("Jamiras.Core.Tests")]
