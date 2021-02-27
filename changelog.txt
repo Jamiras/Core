@@ -1,3 +1,8 @@
+v1.1.6 - 27 Feb 2021
+* add TextLocation and TextRange
+* several small performance improvements to CodeEditor
+* fix: JsonObject parsed array of int/double was always empty
+
 v1.1.5 - 28 Jul 2020
 * add ColorPickerDialogViewModel
 * add support for TLS 1.2 in HttpRequestService
