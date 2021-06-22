@@ -8,22 +8,29 @@ namespace Jamiras.Core.Tests.Components
     [TestFixture]
     public class TokenizerTests
     {
-        private Tokenizer CreateTokenizer(string input)
+        private Tokenizer CreateTokenizer(string input, bool useStream = false)
         {
-            return new Tokenizer.StreamTokenizer(new MemoryStream(Encoding.UTF8.GetBytes(input)));
+            if (useStream)
+                return Tokenizer.CreateTokenizer(new MemoryStream(Encoding.UTF8.GetBytes(input)));
+
+            return Tokenizer.CreateTokenizer(input);
         }
 
         [Test]
-        public void TestEmptyString()
+        [TestCase(false)]
+        [TestCase(true)]
+        public void TestEmptyString(bool useStream)
         {
-            var tokenizer = CreateTokenizer("");
+            var tokenizer = CreateTokenizer("", useStream);
             Assert.That(tokenizer.NextChar, Is.EqualTo((char)0));
         }
 
         [Test]
-        public void TestAdvance()
+        [TestCase(false)]
+        [TestCase(true)]
+        public void TestAdvance(bool useStream)
         {
-            var tokenizer = CreateTokenizer("happy");
+            var tokenizer = CreateTokenizer("happy", useStream);
             Assert.That(tokenizer.NextChar, Is.EqualTo('h'));
             tokenizer.Advance();
             Assert.That(tokenizer.NextChar, Is.EqualTo('a'));
@@ -72,9 +79,37 @@ namespace Jamiras.Core.Tests.Components
         }
 
         [Test]
-        public void TestReadIdentifierPascalCase()
+        [TestCase(false)]
+        [TestCase(true)]
+        public void TestMatch(bool useStream)
         {
-            var tokenizer = CreateTokenizer("RedSquare2();");
+            var tokenizer = CreateTokenizer("RedFishBlueFish", useStream);
+            Assert.That(tokenizer.Match("Blue"), Is.False);
+            Assert.That(tokenizer.NextChar, Is.EqualTo('R'));
+
+            Assert.That(tokenizer.Match("Red"), Is.True);
+            Assert.That(tokenizer.NextChar, Is.EqualTo('F'));
+
+            Assert.That(tokenizer.Match("Fish"), Is.True);
+            Assert.That(tokenizer.NextChar, Is.EqualTo('B'));
+
+            Assert.That(tokenizer.Match("Fish"), Is.False);
+            Assert.That(tokenizer.NextChar, Is.EqualTo('B'));
+
+            Assert.That(tokenizer.Match("BlueFish"), Is.True);
+            Assert.That(tokenizer.NextChar, Is.EqualTo('\0'));
+
+            Assert.That(tokenizer.Match("BlueFish"), Is.False);
+            Assert.That(tokenizer.Match("h"), Is.False);
+            Assert.That(tokenizer.Match(""), Is.True);
+        }
+
+        [Test]
+        [TestCase(false)]
+        [TestCase(true)]
+        public void TestReadIdentifierPascalCase(bool useStream)
+        {
+            var tokenizer = CreateTokenizer("RedSquare2();", useStream);
             var token = tokenizer.ReadIdentifier();
             Assert.That(token.ToString(), Is.EqualTo("RedSquare2"));
             Assert.That(tokenizer.NextChar, Is.EqualTo('('));
@@ -108,18 +143,22 @@ namespace Jamiras.Core.Tests.Components
         }
 
         [Test]
-        public void TestReadIdentifierNumber()
+        [TestCase(false)]
+        [TestCase(true)]
+        public void TestReadIdentifierNumber(bool useStream)
         {
-            var tokenizer = CreateTokenizer("6");
+            var tokenizer = CreateTokenizer("6", useStream);
             var token = tokenizer.ReadIdentifier();
             Assert.That(token.ToString(), Is.EqualTo(""));
             Assert.That(tokenizer.NextChar, Is.EqualTo('6'));
         }
 
         [Test]
-        public void TestReadNumberInteger()
+        [TestCase(false)]
+        [TestCase(true)]
+        public void TestReadNumberInteger(bool useStream)
         {
-            var tokenizer = CreateTokenizer("16;");
+            var tokenizer = CreateTokenizer("16;", useStream);
             var token = tokenizer.ReadNumber();
             Assert.That(token.ToString(), Is.EqualTo("16"));
             Assert.That(tokenizer.NextChar, Is.EqualTo(';'));
@@ -185,9 +224,11 @@ namespace Jamiras.Core.Tests.Components
         }
 
         [Test]
-        public void TestReadQuotedStringSimple()
+        [TestCase(false)]
+        [TestCase(true)]
+        public void TestReadQuotedStringSimple(bool useStream)
         {
-            var tokenizer = CreateTokenizer("\"happy\";");
+            var tokenizer = CreateTokenizer("\"happy\";", useStream);
             var token = tokenizer.ReadQuotedString();
             Assert.That(token.ToString(), Is.EqualTo("happy"));
             Assert.That(tokenizer.NextChar, Is.EqualTo(';'));
@@ -305,6 +346,62 @@ namespace Jamiras.Core.Tests.Components
             // NOTE: order is maintained, even though Seville is longer than Barber
             Assert.That(tokens[0].ToString(), Is.EqualTo("Barber"));
             Assert.That(tokens[1].ToString(), Is.EqualTo("Seville"));
+        }
+
+        [Test]
+        [TestCase(false)]
+        [TestCase(true)]
+        public void TestPushState(bool useStream)
+        {
+            var input = "This is a test.";
+            var tokenizer = CreateTokenizer(input, useStream);
+            Assert.That(tokenizer.NextChar, Is.EqualTo('T'));
+
+            tokenizer.PushState();
+            Assert.That(tokenizer.NextChar, Is.EqualTo('T'));
+
+            tokenizer.Match("This ");
+            Assert.That(tokenizer.NextChar, Is.EqualTo('i'));
+
+            tokenizer.PushState();
+            Assert.That(tokenizer.NextChar, Is.EqualTo('i'));
+
+            tokenizer.Match("is ");
+            Assert.That(tokenizer.NextChar, Is.EqualTo('a'));
+
+            tokenizer.PushState();
+            Assert.That(tokenizer.NextChar, Is.EqualTo('a'));
+
+            tokenizer.Advance();
+            tokenizer.Advance();
+            Assert.That(tokenizer.NextChar, Is.EqualTo('t'));
+
+            tokenizer.PopState(); // back to "a test."
+            Assert.That(tokenizer.NextChar, Is.EqualTo('a'));
+
+            Assert.That(tokenizer.Match("a test."), Is.True);
+            Assert.That(tokenizer.NextChar, Is.EqualTo('\0'));
+
+            tokenizer.PushState();
+            Assert.That(tokenizer.NextChar, Is.EqualTo('\0'));
+
+            tokenizer.Advance();
+            Assert.That(tokenizer.NextChar, Is.EqualTo('\0'));
+
+            tokenizer.PopState(); // back to end of string
+            Assert.That(tokenizer.NextChar, Is.EqualTo('\0'));
+
+            tokenizer.PopState(); // back to "is a test."
+            Assert.That(tokenizer.NextChar, Is.EqualTo('i'));
+
+            tokenizer.PopState(); // back to "This is a test."
+            Assert.That(tokenizer.NextChar, Is.EqualTo('T'));
+
+            tokenizer.Advance();
+            Assert.That(tokenizer.NextChar, Is.EqualTo('h'));
+
+            tokenizer.PopState(); // nothing to go back to
+            Assert.That(tokenizer.NextChar, Is.EqualTo('h'));
         }
     }
 }

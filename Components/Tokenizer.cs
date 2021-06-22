@@ -118,6 +118,20 @@ namespace Jamiras.Components
 
                 return count;
             }
+
+            protected override object CreateState()
+            {
+                return _inputIndex;
+            }
+
+            protected override void RestoreState(object state)
+            {
+                if (state is int)
+                {
+                    _inputIndex = (int)state - 1;
+                    Advance(); // populate NextChar
+                }
+            }
         }
 
         /// <summary>
@@ -240,7 +254,72 @@ namespace Jamiras.Components
 
                 return tokenIndex;
             }
+
+            private class StreamState
+            {
+                public long Position;
+                public char NextChar;
+                public char[] BufferedChars;
+            }
+
+            protected override object CreateState()
+            {
+                var state = new StreamState
+                {
+                    Position = _stream.Position,
+                    NextChar = NextChar
+                };
+
+                if (_bufferedChars.Count > 0)
+                    state.BufferedChars = _bufferedChars.ToArray();
+
+                return state;
+            }
+
+            protected override void RestoreState(object state)
+            {
+                var streamState = state as StreamState;
+                if (streamState != null)
+                {
+                    _stream.Position = streamState.Position;
+                    NextChar = streamState.NextChar;
+
+                    _bufferedChars.Clear();
+                    if (streamState.BufferedChars != null)
+                        _bufferedChars.AddRange(streamState.BufferedChars);
+                }
+            }
         }
+
+        private Stack<object> _state;
+
+        /// <summary>
+        /// Captures the current state of the Tokenizer so it can be restored by <see cref="PopState"/>.
+        /// </summary>
+        public void PushState()
+        {
+            if (_state == null)
+                _state = new Stack<object>();
+
+            _state.Push(CreateState());
+        }
+
+        internal object CreateStateInternal() { return CreateState(); }
+
+        protected abstract object CreateState();
+
+        /// <summary>
+        /// Restores the current state of the Tokenizer after a call to <see cref="PushState"/>.
+        /// </summary>
+        public void PopState()
+        {
+            if (_state != null && _state.Count > 0)
+                RestoreState(_state.Pop());
+        }
+
+        internal void RestoreStateInternal(object state) { RestoreState(state); }
+
+        protected abstract void RestoreState(object state);
 
         /// <summary>
         /// Gets the next character in the stream.
@@ -559,6 +638,7 @@ namespace Jamiras.Components
         /// <summary>
         /// Gets whether the provided word is a common word that has minimal importance.
         /// </summary>
+        /// <remarks>matches: a, an, in, it, on, or, of, to, and, the</remarks>
         public static bool IsIgnoredWord(Token word)
         {
             switch (word.Length)

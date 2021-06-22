@@ -1,4 +1,6 @@
-﻿namespace Jamiras.Components
+﻿using System;
+
+namespace Jamiras.Components
 {
     /// <summary>
     /// Wraps a <see cref="Tokenizer"/> to keep track of line and column numbers
@@ -58,7 +60,7 @@
                 Line++;
                 Column = 1;
             }
-            else
+            else if (baseTokenizer.NextChar != '\0')
             {
                 Column++;
             }
@@ -88,6 +90,35 @@
         public override int MatchSubstring(string token)
         {
             return baseTokenizer.MatchSubstring(token);
+        }
+
+        private class PositionalTokenizerState
+        {
+            public object BaseTokenizerState;
+            public int Line;
+            public int Column;
+        }
+
+        protected override object CreateState()
+        {
+            return new PositionalTokenizerState
+            {
+                BaseTokenizerState = baseTokenizer.CreateStateInternal(),
+                Line = Line,
+                Column = Column
+            };
+        }
+
+        protected override void RestoreState(object state)
+        {
+            var positionalTokenizerState = state as PositionalTokenizerState;
+            if (positionalTokenizerState != null)
+            {
+                baseTokenizer.RestoreStateInternal(positionalTokenizerState.BaseTokenizerState);
+                NextChar = baseTokenizer.NextChar;
+                Line = positionalTokenizerState.Line;
+                Column = positionalTokenizerState.Column;
+            }
         }
     }
 }

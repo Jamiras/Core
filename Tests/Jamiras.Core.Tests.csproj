@@ -114,6 +114,7 @@
     <Compile Include="Commands\DelegateCommandTests.cs" />
     <Compile Include="Components\DateTests.cs" />
     <Compile Include="Components\OpenActionTests.cs" />
+    <Compile Include="Components\PositionalTokenizerTests.cs" />
     <Compile Include="Components\PropertyChangedObjectTests.cs" />
     <Compile Include="Components\PropertyChangedPropagatorTests.cs" />
     <Compile Include="Components\PropertyObserverTests.cs" />
