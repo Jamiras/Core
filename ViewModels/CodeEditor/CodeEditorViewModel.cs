@@ -1641,6 +1641,7 @@ namespace Jamiras.ViewModels.CodeEditor
             cursorLineViewModel.SetValue(LineViewModel.TextPiecesProperty, newPieces.ToArray());
 
             // remove the line that was merged
+            RaiseLineChanged(new LineEventArgs(cursorLineViewModel));
             _lines.RemoveAt(cursorLine);
             LineCount--;
 
@@ -1683,6 +1684,7 @@ namespace Jamiras.ViewModels.CodeEditor
             int newLines = 1;
             var newLineViewModel = new LineViewModel(this, cursorLine + 1) { PendingText = right };
             _lines.Insert(cursorLine, newLineViewModel);
+            RaiseLineChanged(new LineEventArgs(newLineViewModel));
 
             // create TextPieces for the new line so it appears
             if (right.Length > 0)
