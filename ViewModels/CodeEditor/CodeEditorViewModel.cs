@@ -915,6 +915,14 @@ namespace Jamiras.ViewModels.CodeEditor
                 undoItem.AfterText = GetText(undoItem.After);
         }
 
+        /// <summary>
+        /// Simulates typing a single character.
+        /// </summary>
+        protected void TypeCharacter(char c)
+        {
+            HandleCharacter(c);
+        }
+
         internal void HandleCharacter(char c)
         {
             var undoItem = BeginTypingUndo();
@@ -1761,7 +1769,7 @@ namespace Jamiras.ViewModels.CodeEditor
         /// <param name="line">The line.</param>
         /// <param name="column">The column.</param>
         /// <param name="flags">Additional logic to perform while moving the cursor.</param>
-        public void MoveCursorTo(int line, int column, MoveCursorFlags flags)
+        public virtual void MoveCursorTo(int line, int column, MoveCursorFlags flags)
         {
             var currentLine = CursorLine;
             var currentColumn = CursorColumn;
