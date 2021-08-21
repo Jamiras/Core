@@ -306,6 +306,10 @@ namespace Jamiras.Components
 
         internal object CreateStateInternal() { return CreateState(); }
 
+        /// <summary>
+        /// Captures the current state of the tokenizer.
+        /// </summary>
+        /// <returns>An object that can be passed to <see cref="RestoreState"/> to return the tokenizer to the current state.</returns>
         protected abstract object CreateState();
 
         /// <summary>
@@ -319,6 +323,10 @@ namespace Jamiras.Components
 
         internal void RestoreStateInternal(object state) { RestoreState(state); }
 
+        /// <summary>
+        /// Restores the state of the tokenizer to some previous state.
+        /// </summary>
+        /// <returns>An object that was captured by <see cref="CreateState"/> representing the state of the tokenizer when it was captured.</returns>
         protected abstract void RestoreState(object state);
 
         /// <summary>

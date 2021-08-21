@@ -99,6 +99,10 @@ namespace Jamiras.Components
             public int Column;
         }
 
+        /// <summary>
+        /// Captures the current state of the tokenizer.
+        /// </summary>
+        /// <returns>An object that can be passed to <see cref="RestoreState"/> to return the tokenizer to the current state.</returns>
         protected override object CreateState()
         {
             return new PositionalTokenizerState
@@ -109,6 +113,10 @@ namespace Jamiras.Components
             };
         }
 
+        /// <summary>
+        /// Restores the state of the tokenizer to some previous state.
+        /// </summary>
+        /// <returns>An object that was captured by <see cref="CreateState"/> representing the state of the tokenizer when it was captured.</returns>
         protected override void RestoreState(object state)
         {
             var positionalTokenizerState = state as PositionalTokenizerState;
