@@ -1,0 +1,29 @@
+name: C# CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  Build and Tests:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup dotnet 3.5.x
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.5.x
+
+    - name: Install MSBuild
+      uses: microsoft/setup-msbuild@v1.0.2
+
+    - name: Build
+      run: msbuild.exe Jamiras.Core.sln -p:Configuration=Release -p:Platform="Any CPU"
+
+    - name: Run Tests
+#     run: dotnet test --verbosity normal Tests\bin\Release\Jamiras.Core.Tests.dll
+      run: dotnet test Tests\bin\Release\Jamiras.Core.Tests.dll
