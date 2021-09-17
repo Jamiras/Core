@@ -7,7 +7,7 @@ on:
     branches: [ master, github-actions ]
 
 jobs:
-  Build and Tests:
+  Build-and-Tests:
     runs-on: windows-latest
     steps:
     - name: Checkout
