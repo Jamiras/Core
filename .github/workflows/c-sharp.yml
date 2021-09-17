@@ -13,10 +13,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Setup dotnet 3.5.x
+    - name: Setup dotnet
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 3.5.x
+        dotnet-version: 5.0
 
     - name: Install MSBuild
       uses: microsoft/setup-msbuild@v1.0.2
