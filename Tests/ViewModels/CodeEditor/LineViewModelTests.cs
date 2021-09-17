@@ -25,7 +25,7 @@ namespace Jamiras.Core.Tests.ViewModels.CodeEditor
         [Test]
         public void TestInitialization()
         {
-            Assert.That(viewModel.Line, Is.EqualTo(1));
+            Assert.That(viewModel.Line, Is.EqualTo(2));
             Assert.That(viewModel.SelectionStart, Is.EqualTo(0));
             Assert.That(viewModel.SelectionEnd, Is.EqualTo(0));
             Assert.That(viewModel.CursorColumn, Is.EqualTo(0));
