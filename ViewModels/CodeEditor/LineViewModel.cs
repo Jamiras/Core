@@ -375,7 +375,9 @@ namespace Jamiras.ViewModels.CodeEditor
             text = text.Insert(column, str);
             PendingText = text;
 
-            var newPieces = new List<TextPiece>(TextPieces);
+            var pieces = TextPieces;
+            Debug.Assert(pieces != null);
+            var newPieces = new List<TextPiece>(pieces);
 
             var index = column;
             var enumerator = newPieces.GetEnumerator();

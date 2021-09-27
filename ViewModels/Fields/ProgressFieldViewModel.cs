@@ -179,7 +179,10 @@ namespace Jamiras.ViewModels.Fields
             if (timeSpan < TimeSpan.FromMinutes(2))
                 return String.Format("{0} seconds remaining", (int)timeSpan.TotalSeconds);
 
-            return String.Format("Approximately {0} minutes remaining", (int)Math.Round(timeSpan.TotalMinutes));
+            if (timeSpan < TimeSpan.FromHours(2))
+                return String.Format("Approximately {0} minutes remaining", (int)Math.Round(timeSpan.TotalMinutes));
+
+            return String.Format("Approximately {0} hours remaining", (int)Math.Round(timeSpan.TotalHours));
         }
 
         /// <summary>
