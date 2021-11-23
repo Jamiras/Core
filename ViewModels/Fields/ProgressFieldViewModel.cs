@@ -1,7 +1,8 @@
 ﻿using System;
-//using System.Windows.Shell;
+using System.Windows.Shell;
 using Jamiras.DataModels;
 using Jamiras.Components;
+using Jamiras.Services;
 
 namespace Jamiras.ViewModels.Fields
 {
@@ -17,12 +18,12 @@ namespace Jamiras.ViewModels.Fields
         private double _estimatedMilliseconds;
 
         private DateTime? _progressStart;
-        //private TaskbarItemInfo _taskBarItemInfo;
+        private TaskbarItemInfo _taskBarItemInfo;
 
         /// <summary>
         /// <see cref="ModelProperty"/> for <see cref="Current"/>
         /// </summary>
-        public static readonly ModelProperty CurrentProperty = ModelProperty.Register(typeof(ProgressFieldViewModel), "Current", typeof(int), 0);
+        public static readonly ModelProperty CurrentProperty = ModelProperty.Register(typeof(ProgressFieldViewModel), "Current", typeof(int), 0, OnCurrentChanged);
         
         /// <summary>
         /// Gets or sets the current progress value.
@@ -33,40 +34,39 @@ namespace Jamiras.ViewModels.Fields
             set { SetValue(CurrentProperty, value); }
         }
 
-        //private static void OnCurrentChanged(object sender, ModelPropertyChangedEventArgs e)
-        //{
-        //    var viewModel = (ProgressFieldViewModel)sender;
+        private static void OnCurrentChanged(object sender, ModelPropertyChangedEventArgs e)
+        {
+            var viewModel = (ProgressFieldViewModel)sender;
 
-        //    if (viewModel._taskBarItemInfo == null)
-        //    {
-        //        var window = ServiceRepository.Instance.FindService<IDialogService>().MainWindow;
-        //        if (window.TaskbarItemInfo != null)
-        //        {
-        //            viewModel._taskBarItemInfo = window.TaskbarItemInfo;
-        //        }
-        //        else
-        //        {
-        //            window.Dispatcher.Invoke(new Action(() =>
-        //            {
-        //                viewModel._taskBarItemInfo = (window.TaskbarItemInfo = new TaskbarItemInfo());
-        //            }));
-        //        }
-        //    }
+            if (viewModel._taskBarItemInfo == null)
+            {
+                var window = ServiceRepository.Instance.FindService<IDialogService>().MainWindow;
+                if (window == null)
+                    return;
 
-        //    viewModel._taskBarItemInfo.Dispatcher.BeginInvoke(new Action(() =>
-        //    {
-        //        if (viewModel.Target == 0 || viewModel.Target == viewModel.Current)
-        //        {
-        //            viewModel._taskBarItemInfo.ProgressState = TaskbarItemProgressState.None;
-        //        }
-        //        else
-        //        {
-        //            var percentComplete = (double)viewModel.Current / (double)viewModel.Target;
-        //            viewModel._taskBarItemInfo.ProgressState = TaskbarItemProgressState.Normal;
-        //            viewModel._taskBarItemInfo.ProgressValue = percentComplete;
-        //        }
-        //    }), null);
-        //}
+                window.Dispatcher.Invoke(new Action(() =>
+                {
+                    if (window.TaskbarItemInfo == null)
+                        window.TaskbarItemInfo = new TaskbarItemInfo();
+
+                    viewModel._taskBarItemInfo = window.TaskbarItemInfo;
+                }));
+            }
+
+            viewModel._taskBarItemInfo.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (viewModel.Target == 0 || viewModel.Target == viewModel.Current)
+                {
+                    viewModel._taskBarItemInfo.ProgressState = TaskbarItemProgressState.None;
+                }
+                else
+                {
+                    var percentComplete = (double)viewModel.Current / (double)viewModel.Target;
+                    viewModel._taskBarItemInfo.ProgressState = TaskbarItemProgressState.Normal;
+                    viewModel._taskBarItemInfo.ProgressValue = percentComplete;
+                }
+            }), null);
+        }
 
         /// <summary>
         /// <see cref="ModelProperty"/> for <see cref="Target"/>
