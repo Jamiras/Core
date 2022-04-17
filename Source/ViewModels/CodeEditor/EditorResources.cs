@@ -3,6 +3,7 @@ using Jamiras.DataModels;
 using System;
 using System.Globalization;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 
 namespace Jamiras.ViewModels.CodeEditor
@@ -79,7 +80,8 @@ namespace Jamiras.ViewModels.CodeEditor
 
             _customBrushes = new TinyDictionary<int, Brush>();
 
-            var formattedText = new FormattedText("0", CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface(FontName), FontSize, Brushes.Black);
+            var formattedText = new FormattedText("0", CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface(FontName), 
+                FontSize, Brushes.Black, VisualTreeHelper.GetDpi(new Button()).PixelsPerDip);
             CharacterWidth = formattedText.Width;
             CharacterHeight = (int)(formattedText.Height + 0.75);
         }

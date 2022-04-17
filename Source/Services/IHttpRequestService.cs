@@ -30,17 +30,6 @@ namespace Jamiras.Services
         IHttpResponse Request(IHttpRequest request);
 
         /// <summary>
-        /// Requests the document at a URL asynchronously.
-        /// </summary>
-        /// <param name="request">Information about the request.</param>
-        /// <param name="callback">Method to call when the response is received.</param>
-        /// <remarks>
-        /// Make sure to close the stream associated to the <see cref="IHttpResponse"/> 
-        /// (or the <see cref="IHttpResponse"/> if you don't use the stream) when you're done with them.
-        /// </remarks>
-        void BeginRequest(IHttpRequest request, Action<IHttpResponse> callback);
-
-        /// <summary>
         /// Removes HTML tags from a string and converts escaped characters.
         /// </summary>
         string HtmlToText(string html);

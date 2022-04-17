@@ -1,9 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Text;
-using Jamiras.Components;
+﻿using Jamiras.Components;
 using Jamiras.IO.Serialization;
+using System;
+using System.Net;
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Jamiras.Services
 {
@@ -37,180 +38,60 @@ namespace Jamiras.Services
         /// <returns><see cref="IHttpResponse"/> wrapping the response.</returns>
         public IHttpResponse Request(IHttpRequest request)
         {
-            var webRequest = CreateWebRequest(request);
+            var client = CreateClient(request);
+            var message = CreateRequestMessage(request);
             _logger.Write("Requesting " + request.Url);
-            HttpWebResponse webResponse;
+
+            HttpResponseMessage response;
             try
             {
-                var response = webRequest.GetResponse();
-                webResponse = (HttpWebResponse)response;
+                response = client.Send(message);
             }
-            catch (WebException webEx)
+            catch (TaskCanceledException taskEx)
             {
-                _logger.WriteError(webEx.Message + ": " + webRequest.RequestUri);
+                _logger.WriteError(taskEx.Message + ": " + message.RequestUri);
 
-                switch (webEx.Status)
-                {
-                    case WebExceptionStatus.NameResolutionFailure:
-                    case WebExceptionStatus.Timeout:
-                        // immediately try again (once) for these errors
-                        webRequest = CreateWebRequest(request);
-                        var response = webRequest.GetResponse();
-                        webResponse = (HttpWebResponse)response;
-                        break;
-
-                    default:
-                        throw;
-                }
-            }
-
-            return new HttpResponse(webResponse);
-        }
-
-        private HttpWebRequest CreateWebRequest(IHttpRequest request)
-        {
-            var webRequest = (HttpWebRequest)WebRequest.Create(request.Url);
-            webRequest.Timeout = webRequest.ReadWriteTimeout = (int)(request.Timeout.Ticks/TimeSpan.TicksPerMillisecond);
-
-            if (webRequest.Proxy == null)
-                webRequest.Proxy = WebRequest.GetSystemWebProxy();
-            //if (webRequest.Proxy != null)
-            //{
-            //    var proxyUri = webRequest.Proxy.GetProxy(webRequest.RequestUri);
-            //    webRequest.Proxy.Credentials = _httpConnectionService.GetCredentials(proxyUri);
-            //}
-
-            //Passing empty cookies containter. If we pass null cookie container we will not get cookies back.
-            webRequest.CookieContainer = new CookieContainer();
-
-            if (request.Headers.Count > 0)
-            {
-                foreach (var header in request.Headers.AllKeys)
-                {
-                    switch (header)
-                    {
-                        case "Referer":
-                            webRequest.Referer = request.Headers[header];
-                            break;
-                        case "Accept":
-                            webRequest.Accept = request.Headers[header];
-                            break;
-                        case "User-Agent":
-                            webRequest.UserAgent = request.Headers[header];
-                            break;
-                        case "Cookie":
-                            foreach (var cookieString in request.Headers[header].Split(';'))
-                            {
-                                var parts = cookieString.Split('=');
-                                var cookie = new Cookie(parts[0].Trim(), parts[1].Trim());
-                                cookie.Domain = webRequest.Address.Host;
-                                webRequest.CookieContainer.Add(cookie);
-                            }
-                            break;
-                        default:
-                            webRequest.Headers.Add(header, request.Headers[header]);
-                            break;
-                    }
-                }
-            }
-
-            webRequest.ContentType = "application/x-www-form-urlencoded";
-
-            var postData = GetPostData(request);
-            if (postData != null)
-            {
-                webRequest.Method = "POST";
-                webRequest.ContentLength = postData.Length;
-
-                using (var dataStream = webRequest.GetRequestStream())
-                {
-                    dataStream.Write(postData, 0, postData.Length);
-                }   
-            }
-
-            return webRequest;
-        }
-
-        internal byte[] GetPostData(IHttpRequest request)
-        {
-            if (!String.IsNullOrEmpty(request.PostData))
-                return Encoding.UTF8.GetBytes(request.PostData);
-
-            return null;
-        }
-
-        /// <summary>
-        /// Creates a string formatted with the name value pairs that can be used
-        /// as post data or a query string
-        /// </summary>
-        /// <param name="data">dictionary of name value pairs to use in the query string</param>
-        /// <returns>string formatted</returns>
-        private string CreateQueryString(Dictionary<string, string> data)
-        {
-            var builder = new StringBuilder();
-
-            foreach (var dataKey in data.Keys)
-            {
-                if (builder.Length > 0)
-                    builder.Append("&");
-
-                builder.Append(dataKey);
-                builder.Append("=");
-                builder.Append(data[dataKey]);
-            }
-
-            return builder.ToString();
-        }
-
-        /// <summary>
-        /// Requests the document at a URL asynchronously.
-        /// </summary>
-        /// <param name="request">Information about the request.</param>
-        /// <param name="callback">Method to call when the response is received.</param>
-        public void BeginRequest(IHttpRequest request, Action<IHttpResponse> callback)
-        {
-            var webRequest = CreateWebRequest(request);
-            var callbackData = new KeyValuePair<HttpWebRequest, Action<IHttpResponse>>(webRequest, callback);
-            webRequest.BeginGetResponse(AsyncRequestCallback, callbackData);
-        }
-
-        private void AsyncRequestCallback(IAsyncResult asyncResult)
-        {
-            var callbackData = (KeyValuePair<HttpWebRequest, Action<IHttpResponse>>)asyncResult.AsyncState;
-            var webRequest = callbackData.Key;
-            var callback = callbackData.Value;
-
-            HttpWebResponse webResponse;
-            try
-            {
-                webResponse = (HttpWebResponse)webRequest.EndGetResponse(asyncResult);
-            }
-            catch (WebException webEx)
-            {
-                _logger.WriteError(webEx.Message + ": " + webRequest.RequestUri);
-
-                webResponse = webEx.Response as HttpWebResponse;
-                if (webResponse == null)
-                {
-                    if (TryHandleException(webEx))
-                        return;
-
-                    throw;
-                }
+                // timeout; immediately try again (once)
+                response = client.Send(message);
             }
             catch (Exception ex)
             {
-                _logger.WriteError(ex.Message + ": " + webRequest.RequestUri);
+                _logger.WriteError(ex.Message + ": " + message.RequestUri);
+                if (!TryHandleException(ex))
+                    throw;
 
-                if (TryHandleException(ex))
-                    return;
-                throw;
+                return null;
             }
 
-            if (callback != null)
-                callback(new HttpResponse(webResponse));
+            return new HttpResponse(response);
+        }
+
+        private static HttpClient CreateClient(IHttpRequest request)
+        {
+            var client = new HttpClient(new HttpClientHandler
+            {
+                AutomaticDecompression = DecompressionMethods.GZip
+            });
+            client.Timeout = request.Timeout;
+
+            return client;
+        }
+
+        private static HttpRequestMessage CreateRequestMessage(IHttpRequest request)
+        {
+            HttpRequestMessage message;
+
+            if (!String.IsNullOrEmpty(request.PostData))
+                message = new HttpRequestMessage(HttpMethod.Post, request.Url) { Content = new StringContent(request.PostData, Encoding.UTF8) };
             else
-                webResponse.Close();
+                message = new HttpRequestMessage(HttpMethod.Get, request.Url);
+
+            message.Headers.Add("ContentType", "application/x-www-form-urlencoded");
+
+            foreach (var header in request.Headers.AllKeys)
+                message.Headers.Add(header, request.Headers[header]);
+
+            return message;
         }
 
         private static bool TryHandleException(Exception ex)
