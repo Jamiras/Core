@@ -64,8 +64,16 @@ namespace Jamiras.Core.Tests.Components
         [Test]
         public void TestWeakReference()
         {
-            var tester = new WeakReferenceTester<WeakReferenceHelper>(() => new WeakReferenceHelper(this));
-            _observer.RegisterHandler("NewProperty", tester.Target.SourcePropertyChanged);
+            // in .NET Core, WeakReferences have to be created in a different scope than
+            // where they're used in order for the Garbage Collector to act on them.
+            var createWeakReferenceTester = (PropertyObserverTests owner) =>
+            {
+                var tester = new WeakReferenceTester<WeakReferenceHelper>(() => new WeakReferenceHelper(owner));
+                _observer.RegisterHandler("NewProperty", tester.Target.SourcePropertyChanged);
+                return tester;
+            };
+
+            var tester = createWeakReferenceTester(this);
 
             _source.NewProperty = "Hello";
             Assert.That(_propertyChanged, Is.EqualTo("NewProperty"));

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using Jamiras.Components;
 using NUnit.Framework;
 
@@ -102,11 +103,24 @@ namespace Jamiras.Core.Tests.Components
             Assert.That(target.Value, Is.EqualTo(3), "Value not updated on target");
         }
 
+
         [Test]
         public void TestWeakReference()
         {
-            var weakTarget = new WeakReferenceTester<TestClass>(() => new TestClass());
-            var weakAction = new WeakAction<int>(weakTarget.Target.SetValue);
+            // in .NET Core, WeakReferences have to be created in a different scope than
+            // where they're used in order for the Garbage Collector to act on them.
+            var createWeakReferenceTester = () =>
+            {
+                return new WeakReferenceTester<TestClass>(() => new TestClass());
+            };
+
+            var createWeakAction = (WeakReferenceTester<TestClass> weakTarget) =>
+            {
+                return new WeakAction<int>(weakTarget.Target.SetValue);
+            };
+
+            var weakTarget = createWeakReferenceTester();
+            var weakAction = createWeakAction(weakTarget);
 
             Assert.That(weakTarget.Expire(), Is.True, "Could not garbage collect target");
             Assert.That(weakAction.Invoke(3), Is.False, "Invoke did not indicate target death");
@@ -183,8 +197,20 @@ namespace Jamiras.Core.Tests.Components
         [Test]
         public void TestWeakReferenceTwoParameters()
         {
-            var weakTarget = new WeakReferenceTester<TestClass>(() => new TestClass());
-            var weakAction = new WeakAction<int,int>(weakTarget.Target.SetValues);
+            // in .NET Core, WeakReferences have to be created in a different scope than
+            // where they're used in order for the Garbage Collector to act on them.
+            var createWeakReferenceTester = () =>
+            {
+                return new WeakReferenceTester<TestClass>(() => new TestClass());
+            };
+
+            var createWeakAction = (WeakReferenceTester<TestClass> weakTarget) =>
+            {
+                return new WeakAction<int, int>(weakTarget.Target.SetValues);
+            };
+
+            var weakTarget = createWeakReferenceTester();
+            var weakAction = createWeakAction(weakTarget);
 
             Assert.That(weakTarget.Expire(), Is.True, "Could not garbage collect target");
             Assert.That(weakAction.Invoke(3, 4), Is.False, "Invoke did not indicate target death");

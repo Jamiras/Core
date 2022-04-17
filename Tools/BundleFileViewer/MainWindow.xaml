@@ -115,6 +115,7 @@
             <ListView ItemsSource="{Binding Items}" Grid.Column="2" HorizontalAlignment="Stretch" >
                 <ListView.ItemTemplate>
                     <DataTemplate>
+                        <!--
                         <Grid jamiras:CommandBinding.DoubleClickCommand="{Binding OpenItemCommand}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="150" />
@@ -125,6 +126,7 @@
                             <TextBlock Grid.Column="1" FontSize="10" Text="{Binding Modified}" HorizontalAlignment="Right" />
                             <TextBlock Grid.Column="2" FontSize="10" Text="{Binding Size}" HorizontalAlignment="Right" />
                         </Grid>
+                        -->
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>

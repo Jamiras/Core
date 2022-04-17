@@ -43,6 +43,7 @@ namespace Jamiras.Services
             repository.RegisterService(typeof(HttpListener));
             repository.RegisterService(typeof(ClipboardService));
             repository.RegisterService(typeof(TimerService));
+            repository.RegisterService(typeof(BrowserService));
         }
 
         private static void DispatcherShutdownStarted(object sender, EventArgs e)

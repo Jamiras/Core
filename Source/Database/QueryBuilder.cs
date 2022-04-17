@@ -30,13 +30,13 @@ namespace Jamiras.Database
         private readonly List<AggregateFieldDefinition> _aggregateFields;
         private string _filterExpression;
 
-        /// <summary>
-        /// Returns a <see cref="System.String" /> that represents this instance.
-        /// </summary>
-        public override string ToString()
-        {
-            return AccessDatabaseQuery.BuildQueryString(this, null);
-        }
+        ///// <summary>
+        ///// Returns a <see cref="System.String" /> that represents this instance.
+        ///// </summary>
+        //public override string ToString()
+        //{
+        //    return AccessDatabaseQuery.BuildQueryString(this, null);
+        //}
 
         /// <summary>
         /// Gets the collection of fields to return from the query.
