@@ -7,6 +7,7 @@ using System.Text;
 namespace Jamiras.Core.Tests.ViewModels.CodeEditor
 {
     [TestFixture]
+    [Apartment(System.Threading.ApartmentState.STA)]
     class LineViewModelTests
     {
         [SetUp]

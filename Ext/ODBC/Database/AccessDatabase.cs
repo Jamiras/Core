@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Data.Odbc;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using Jamiras.Components;
+using Jamiras.ViewModels;
 
 namespace Jamiras.Database
 {
@@ -13,7 +16,7 @@ namespace Jamiras.Database
     public class AccessDatabase : IDatabase
     {
         private readonly ILogger _logger = Logger.GetLogger("AccessDatabase");
-        private System.Data.OleDb.OleDbConnection _connection;
+        private OdbcConnection _connection;
 
         /// <summary>
         /// Disconnects from the database.
@@ -128,25 +131,39 @@ namespace Jamiras.Database
         /// <param name="fileName">Path to the Access database.</param>
         public bool Connect(string fileName)
         {
-            if (IntPtr.Size != 4)
-                throw new NotSupportedException("Access Database drivers only work in 32-bit mode");
-
             _logger.Write("Opening database: {0}", fileName);
 
-            // try newer driver first (this is the only driver available in x64)
-            string connectionString = "Provider=Microsoft.ACE.OLEDB.12.0; Data Source=" + fileName;
-            var connection = new System.Data.OleDb.OleDbConnection(connectionString);
+            // try newer driver first
+            string connectionString = "Driver={Microsoft Access Driver (*.mdb, *.accdb)}; DBQ=" + fileName;
+            var connection = new OdbcConnection(connectionString);
             try
             {
                 connection.Open();
             }
+            catch (OdbcException ex)
+            {
+                _logger.Write("Failed to open database: " + ex.Message);
+
+                if (ex.Message.Contains("[IM002]"))
+                {
+                    if (IntPtr.Size != 4 && File.Exists(fileName))
+                        MessageBoxViewModel.ShowMessage("Access driver not found - assuming 64-bit access driver not installed");
+
+                    // https://knowledge.autodesk.com/support/autocad/learn-explore/caas/sfdcarticles/sfdcarticles/How-to-install-64-bit-Microsoft-Database-Drivers-alongside-32-bit-Microsoft-Office.html
+                    // * download AccessDatabaseEngine_X64.exe from https://www.microsoft.com/en-us/download/details.aspx?displaylang=en&id=13255
+                    // * run it with the /quiet option: > AccessDatabaseEngine_X64.exe /quiet
+                    // * delete or rename the HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Office\14.0\Common\FilesPaths\mso.dll registry key
+                }
+
+                return false;
+            }
             catch (InvalidOperationException ex)
             {
-                System.Windows.Forms.MessageBox.Show(ex.Message);
+                _logger.Write("Failed to open database: " + ex.Message);
 
                 // then try older driver
                 connectionString = "Provider=Microsoft.Jet.OLEDB.4.0; Data Source=" + fileName;
-                connection = new System.Data.OleDb.OleDbConnection(connectionString);
+                connection = new OdbcConnection(connectionString);
                 connection.Open();
             }
 
@@ -173,7 +190,7 @@ namespace Jamiras.Database
         /// <returns>The query string.</returns>
         public string BuildQueryString(QueryBuilder query)
         {
-            return AccessDatabaseQuery.BuildQueryString(query, Schema);
+            return QueryBuilder.BuildQueryString(query, Schema);
         }
 
         /// <summary>

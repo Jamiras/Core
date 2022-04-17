@@ -13,12 +13,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Database\AccessDatabase.cs" />
-    <Compile Remove="Database\AccessDatabaseCommand.cs" />
-    <Compile Remove="Database\AccessDatabaseQuery.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
     <_Parameter1>Jamiras.Core.Tests</_Parameter1>
     </AssemblyAttribute>
