@@ -42,7 +42,9 @@ namespace Jamiras.Services
             var message = CreateRequestMessage(request);
             _logger.Write("Requesting " + request.Url);
 
-            HttpResponseMessage response;
+            bool retry = false;
+
+            HttpResponseMessage response = null;
             try
             {
                 response = client.Send(message);
@@ -52,15 +54,46 @@ namespace Jamiras.Services
                 _logger.WriteError(taskEx.Message + ": " + message.RequestUri);
 
                 // timeout; immediately try again (once)
-                response = client.Send(message);
+                retry = true;
             }
             catch (Exception ex)
             {
                 _logger.WriteError(ex.Message + ": " + message.RequestUri);
-                if (!TryHandleException(ex))
-                    throw;
 
-                return null;
+                var socketException = ex.InnerException as System.Net.Sockets.SocketException;
+                if (socketException != null && 
+                    (socketException.SocketErrorCode == System.Net.Sockets.SocketError.TimedOut ||
+                     socketException.SocketErrorCode == System.Net.Sockets.SocketError.HostNotFound))
+                {
+                    // timeout; immediately try again (once)
+                    retry = true;
+                }
+                else
+                {
+                    if (!TryHandleException(ex))
+                        throw;
+
+                    return null;
+                }
+            }
+
+            if (retry)
+            {
+                message = CreateRequestMessage(request);
+
+                try
+                {
+                    response = client.Send(message);
+                }
+                catch (Exception ex)
+                {
+                    _logger.WriteError(ex.Message + ": " + message.RequestUri);
+
+                    if (!TryHandleException(ex))
+                        throw;
+
+                    return null;
+                }
             }
 
             return new HttpResponse(response);
