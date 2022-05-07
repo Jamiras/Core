@@ -19,9 +19,17 @@ namespace Jamiras.ViewModels.CodeEditor
         }
 
         /// <summary>
+        /// Gets the line number for the associated line.
+        /// </summary>
+        public int LineNumber
+        {
+            get { return Line.Line; }
+        }
+
+        /// <summary>
         /// Gets the associated line.
         /// </summary>
-        public LineViewModel Line { get; private set; }
+        internal LineViewModel Line { get; private set; }
 
         /// <summary>
         /// Gets the current text for the associated line.
