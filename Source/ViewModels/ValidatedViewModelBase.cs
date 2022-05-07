@@ -26,6 +26,10 @@ namespace Jamiras.ViewModels
 
         private void ValidateDefaults()
         {
+            // a static property has to be referenced to cause the other static
+            // properties to be initialized when this is called from the constructor
+            var unused = IsValidProperty.DefaultValue;
+
             foreach (var property in ModelProperty.GetPropertiesForType(GetType()))
             {
                 var value = property.DefaultValue;

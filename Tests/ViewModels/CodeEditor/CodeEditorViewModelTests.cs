@@ -9,6 +9,7 @@ using System.Windows.Input;
 namespace Jamiras.Core.Tests.ViewModels.CodeEditor
 {
     [TestFixture]
+    [Apartment(System.Threading.ApartmentState.STA)]
     class CodeEditorViewModelTests
     {
         [SetUp]

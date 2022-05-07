@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27004.2009
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32414.318
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jamiras.Core", "Jamiras.Core.csproj", "{4141F2AE-9E32-4A93-9FEA-360A7DC7D97F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jamiras.Core", "Source\Jamiras.Core.csproj", "{4141F2AE-9E32-4A93-9FEA-360A7DC7D97F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jamiras.Core.Tests", "Tests\Jamiras.Core.Tests.csproj", "{8F415F4B-4184-429F-80A2-58DA15AFB26E}"
 EndProject
@@ -46,6 +46,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {F066006F-211E-4475-9274-5C3F149C647B}
+		SolutionGuid = {2F5FAA76-2C45-41A3-81F4-8053833E641B}
 	EndGlobalSection
 EndGlobal

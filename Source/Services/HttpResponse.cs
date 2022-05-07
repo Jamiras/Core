@@ -1,18 +1,20 @@
 ﻿using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Net.Http;
 
 namespace Jamiras.Services
 {
     [DebuggerDisplay("{Status}")]
     internal class HttpResponse : IHttpResponse
     {
-        public HttpResponse(HttpWebResponse response)
+        public HttpResponse(HttpResponseMessage response)
         {
             _response = response;
         }
 
-        private readonly HttpWebResponse _response;
+        private readonly HttpResponseMessage _response;
 
         /// <summary>
         /// Gets the response status.
@@ -27,18 +29,7 @@ namespace Jamiras.Services
         /// </summary>
         public Stream GetResponseStream()
         {
-            var stream = _response.GetResponseStream();
-
-            if (_response.Headers[HttpResponseHeader.ContentEncoding] == "gzip")
-                return UnwrapGZipStream(stream);
-
-            return stream;
-        }
-
-        private static Stream UnwrapGZipStream(Stream stream)
-        {
-            // put this in a separate function so the JIT compiler doesn't evaluate GZipStream unless it's used
-            return new System.IO.Compression.GZipStream(stream, System.IO.Compression.CompressionMode.Decompress);
+            return _response.Content.ReadAsStream();
         }
 
         /// <summary>
@@ -48,7 +39,7 @@ namespace Jamiras.Services
         /// <returns>Value of tag, null if tag not found.</returns>
         public string GetHeader(string name)
         {
-            return _response.Headers.Get(name);
+            return _response.Headers.GetValues(name).First();
         }
 
         /// <summary>
@@ -60,7 +51,7 @@ namespace Jamiras.Services
         /// </remarks>
         public void Close()
         {
-            _response.Close();
+            _response.Dispose();
         }
     }
 }

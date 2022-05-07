@@ -1,189 +1,49 @@
-﻿using System;
+﻿using Jamiras.Components;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using Jamiras.Components;
 
 namespace Jamiras.Database
 {
-    [DebuggerDisplay("{_command.CommandText}")]
-    internal class AccessDatabaseQuery : IDatabaseQuery
+    /// <summary>
+    /// Class to facilitate in constructing database agnostic queries.
+    /// </summary>
+    public class QueryBuilder
     {
-        public AccessDatabaseQuery(System.Data.OleDb.OleDbConnection connection, string query)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="QueryBuilder"/> class.
+        /// </summary>
+        public QueryBuilder()
         {
-            _command = connection.CreateCommand();
-            _command.CommandText = query;
+            _fields = new List<string>();
+            _filters = new List<FilterDefinition>();
+            _joins = new List<JoinDefinition>();
+            _orderBy = new List<OrderByDefinition>();
+            _aliases = new List<AliasDefinition>();
+            _aggregateFields = new List<AggregateFieldDefinition>();
         }
 
-        private readonly System.Data.OleDb.OleDbCommand _command;
-        private System.Data.OleDb.OleDbDataReader _reader;
-        private static readonly string[] ReservedWords = { "user", "session", "when", "size", "zone" };
-
-        #region IDatabaseQuery
+        private readonly List<string> _fields;
+        private readonly List<FilterDefinition> _filters;
+        private readonly List<JoinDefinition> _joins;
+        private readonly List<OrderByDefinition> _orderBy;
+        private readonly List<AliasDefinition> _aliases;
+        private readonly List<AggregateFieldDefinition> _aggregateFields;
+        private string _filterExpression;
 
         /// <summary>
-        /// Fetches the next row of the query results.
+        /// Returns a <see cref="System.String" /> that represents this instance.
         /// </summary>
-        /// <returns>True if the next row was fetched, false if there are no more rows.</returns>
-        public bool FetchRow()
+        public override string ToString()
         {
-            try
-            {
-                if (_reader == null)
-                    _reader = _command.ExecuteReader();
-
-                return _reader.Read();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(_command.CommandText);
-                Debug.WriteLine(ex.Message);
-                throw;
-            }
+            return BuildQueryString(this, null);
         }
-
-        /// <summary>
-        /// Determines whether value of the column at the specified index is null.
-        /// </summary>
-        /// <param name="columnIndex">Index of column to examine.</param>
-        /// <returns>True if the value of the column is null. False otherwise.</returns>
-        public bool IsColumnNull(int columnIndex)
-        {
-            return _reader.IsDBNull(columnIndex);
-        }
-
-        /// <summary>
-        /// Gets the value of the column at the specified index as a byte.
-        /// </summary>
-        /// <param name="columnIndex">Index of column to examine.</param>
-        /// <returns>Value of the column as a byte.</returns>
-        public int GetByte(int columnIndex)
-        {
-            return _reader.GetByte(columnIndex);
-        }
-
-        /// <summary>
-        /// Gets the value of the column at the specified index as a short integer.
-        /// </summary>
-        /// <param name="columnIndex">Index of column to examine.</param>
-        /// <returns>Value of the column as a short integer.</returns>
-        public int GetInt16(int columnIndex)
-        {
-            return _reader.GetInt16(columnIndex);
-        }
-
-        /// <summary>
-        /// Gets the value of the column at the specified index as an integer.
-        /// </summary>
-        /// <param name="columnIndex">Index of column to examine.</param>
-        /// <returns>Value of the column as an integer.</returns>
-        public int GetInt32(int columnIndex)
-        {
-            return _reader.GetInt32(columnIndex);
-        }
-
-        /// <summary>
-        /// Gets the value of the column at the specified index as a long integer.
-        /// </summary>
-        /// <param name="columnIndex">Index of column to examine.</param>
-        /// <returns>Value of the column as a long integer.</returns>
-        public long GetInt64(int columnIndex)
-        {
-            return _reader.GetInt64(columnIndex);
-        }
-
-        /// <summary>
-        /// Gets the value of the column at the specified index as a string.
-        /// </summary>
-        /// <param name="columnIndex">Index of column to examine.</param>
-        /// <returns>Value of the column as a string.</returns>
-        public string GetString(int columnIndex)
-        {
-            return _reader.GetString(columnIndex);
-        }
-
-        /// <summary>
-        /// Gets the value of the column at the specified index as a DateTime.
-        /// </summary>
-        /// <param name="columnIndex">Index of column to examine.</param>
-        /// <returns>Value of the column as a DateTime.</returns>
-        public DateTime GetDateTime(int columnIndex)
-        {
-            return _reader.GetDateTime(columnIndex);
-        }
-
-        /// <summary>
-        /// Gets the value of the column at the specified index as a boolean.
-        /// </summary>
-        /// <param name="columnIndex">Index of column to examine.</param>
-        /// <returns>Value of the column as a boolean.</returns>
-        public bool GetBool(int columnIndex)
-        {
-            return _reader.GetBoolean(columnIndex);
-        }
-
-        /// <summary>
-        /// Gets the value of the column at the specified index as a float.
-        /// </summary>
-        /// <param name="columnIndex">Index of column to examine.</param>
-        /// <returns>Value of the column as a float.</returns>
-        public float GetFloat(int columnIndex)
-        {
-            Type columnType = _reader.GetFieldType(columnIndex);
-            if (columnType == typeof(decimal))
-                return (float)_reader.GetDecimal(columnIndex);
-            
-            if (columnType == typeof(double))
-                return (float)_reader.GetDouble(columnIndex);
-            
-            return _reader.GetFloat(columnIndex);
-        }
-
-        /// <summary>
-        /// Binds a value to a token.
-        /// </summary>
-        /// <param name="token">Token to bind to.</param>
-        /// <param name="value">Value to bind.</param>
-        public void Bind(string token, object value)
-        {
-            _command.Parameters.Add(new System.Data.OleDb.OleDbParameter(token, value));
-        }
-
-        #endregion  
-
-        #region IDisposable Members
-
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        /// <filterpriority>2</filterpriority>
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        ~AccessDatabaseQuery()
-        {
-            Dispose(false);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (_reader != null)
-            {
-                _reader.Close();
-                _reader.Dispose();
-            }
-
-            if (_command != null)
-                _command.Dispose();
-        }
-
-        #endregion
 
         #region BuildQueryString
+
+        private static readonly string[] ReservedWords = { };// "user", "session", "when", "size", "zone" };
+
 
         public static string BuildQueryString(QueryBuilder query, DatabaseSchema schema)
         {
@@ -489,7 +349,7 @@ namespace Jamiras.Database
 
                 case DataType.String:
                     builder.Append('\'');
-                    builder.Append(AccessDatabase.EscapeString((string)filter.Value));
+                    builder.Append(ServiceRepository.Instance.FindService<IDatabase>().Escape((string)filter.Value));
                     builder.Append('\'');
                     break;
 
@@ -542,5 +402,80 @@ namespace Jamiras.Database
         }
 
         #endregion
+
+        /// <summary>
+        /// Gets the collection of fields to return from the query.
+        /// </summary>
+        public ICollection<string> Fields
+        {
+            get { return _fields; }
+        }
+
+        /// <summary>
+        /// Gets the collection of filters to apply to the query.
+        /// </summary>
+        public ICollection<FilterDefinition> Filters
+        {
+            get { return _filters; }
+        }
+
+        /// <summary>
+        /// Gets the collection of joins required to perform the query.
+        /// </summary>
+        public ICollection<JoinDefinition> Joins
+        {
+            get { return _joins; }
+        }
+
+        /// <summary>
+        /// Gets the collection of sorts to apply to the results.
+        /// </summary>
+        public ICollection<OrderByDefinition> OrderBy
+        {
+            get { return _orderBy; }
+        }
+
+        /// <summary>
+        /// Gets the collection of aliases used in the query.
+        /// </summary>
+        public ICollection<AliasDefinition> Aliases
+        {
+            get { return _aliases; }
+        }
+
+        /// <summary>
+        /// Gets the collection of aggregate fields to return from the query.
+        /// </summary>
+        public ICollection<AggregateFieldDefinition> AggregateFields
+        {
+            get { return _aggregateFields; }
+        }
+
+        /// <summary>
+        /// Defines the logical expression to apply to the filters. For example (1|2)&amp;3
+        /// </summary>
+        public string FilterExpression
+        {
+            get { return _filterExpression ?? BuildDefaultFilterExpression(); }
+            set { _filterExpression = value; }
+        }
+
+        private string BuildDefaultFilterExpression()
+        {
+            if (_filters.Count == 1)
+                return "1";
+            if (_filters.Count == 0)
+                return String.Empty;
+
+            var builder = new StringBuilder();
+            builder.Append('1');
+            for (int i = 1; i < _filters.Count; i++)
+            {
+                builder.Append('&');
+                builder.Append(i + 1);
+            }
+
+            return builder.ToString();
+        }
     }
 }

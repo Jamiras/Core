@@ -16,10 +16,10 @@ jobs:
     - name: Setup dotnet
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.x
+        dotnet-version: 6.x
 
     - name: Install MSBuild
-      uses: microsoft/setup-msbuild@v1.0.2
+      uses: microsoft/setup-msbuild@v1.1
 
     - name: Install dependencies
       run: dotnet restore
@@ -29,4 +29,4 @@ jobs:
 
     - name: Run Tests
 #     run: dotnet test --verbosity normal Tests\bin\Release\Jamiras.Core.Tests.dll
-      run: dotnet test Tests\bin\Release\Jamiras.Core.Tests.dll
+      run: dotnet test Tests\bin\Release\net6.0-windows\Jamiras.Core.Tests.dll

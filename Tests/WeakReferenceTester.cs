@@ -50,11 +50,18 @@ namespace Jamiras.Core.Tests
         public bool Expire()
         {
             _strongReference = null;
+            int maxLoops = 100;
 
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
+            while (IsAlive)
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
 
-            return !IsAlive;
+                if (--maxLoops == 0)
+                    return false;
+            }
+
+            return true;
         }
 
         /// <summary>

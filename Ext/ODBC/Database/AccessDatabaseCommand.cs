@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Data.Common;
+using System.Data.Odbc;
 
 namespace Jamiras.Database
 {
     internal class AccessDatabaseCommand : IDatabaseCommand
     {
-        public AccessDatabaseCommand(System.Data.OleDb.OleDbConnection connection, string query)
+        public AccessDatabaseCommand(OdbcConnection connection, string query)
         {
             _command = connection.CreateCommand();
             _command.CommandText = query;
