@@ -15,7 +15,7 @@ namespace Jamiras.ViewModels.CodeEditor
         public LineEventArgs(LineViewModel line)
         {
             Line = line;
-            Text = line.PendingText ?? line.Text;
+            Text = line.CurrentText;
         }
 
         /// <summary>

@@ -153,13 +153,13 @@ namespace Jamiras.ViewModels.CodeEditor
         }
 
         /// <summary>
-        /// Gets the number of characters in the line
+        /// Gets the number of characters in the line.
         /// </summary>
         internal int LineLength
         {
             get
             {
-                var text = PendingText ?? Text;
+                var text = CurrentText;
                 return text.Length;
             }
         }
@@ -169,24 +169,32 @@ namespace Jamiras.ViewModels.CodeEditor
         /// </summary>
         internal void CommitPending(ref bool isWhitespaceOnly)
         {
-            var pendingText = PendingText;
-            if (pendingText != null)
-            {
-                PendingText = null;
-                if (Text == pendingText)
-                {
-                    // force update of TextPieces, even if Text didn't really change
-                    Refresh();
-                }
-                else
-                {
-                    // if another line has already indicated a non-whitespace change has occurred, we don't have to check
-                    if (isWhitespaceOnly)
-                        isWhitespaceOnly = DifferOnlyByWhitespace(Text, pendingText);
+            bool needsRefresh = false;
 
-                    Text = pendingText;
+            lock (_lockObject)
+            {
+                var pendingText = PendingText;
+                if (pendingText != null)
+                {
+                    PendingText = null;
+                    if (Text == pendingText)
+                    {
+                        // force update of TextPieces, even if Text didn't really change
+                        needsRefresh = true;
+                    }
+                    else
+                    {
+                        // if another line has already indicated a non-whitespace change has occurred, we don't have to check
+                        if (isWhitespaceOnly)
+                            isWhitespaceOnly = DifferOnlyByWhitespace(Text, pendingText);
+
+                        Text = pendingText;
+                    }
                 }
             }
+
+            if (needsRefresh)
+                Refresh();
         }
 
         private static bool IsWhitespaceOnlyChange(string str, int startIndex, int endIndex)
@@ -275,6 +283,20 @@ namespace Jamiras.ViewModels.CodeEditor
         internal string PendingText { get; set; }
 
         /// <summary>
+        /// Gets the current text value (may differ from <see cref="Text"/> if user is typing.
+        /// </summary>
+        public string CurrentText
+        {
+            get
+            {
+                lock (_lockObject)
+                {
+                    return PendingText ?? Text;
+                }
+            }
+        }
+
+        /// <summary>
         /// <see cref="ModelProperty"/> for <see cref="Text"/>
         /// </summary>
         public static readonly ModelProperty TextProperty = ModelProperty.Register(typeof(LineViewModel), "Text", typeof(string), string.Empty);
@@ -283,7 +305,7 @@ namespace Jamiras.ViewModels.CodeEditor
         /// Gets the text in the line.
         /// </summary>
         /// <remarks>
-        /// May not be updated if the user is in the middle of typing.
+        /// May not be updated if the user is in the middle of typing. Use <see cref="CurrentText"/> for that.
         /// </remarks>
         public string Text
         {
@@ -362,45 +384,48 @@ namespace Jamiras.ViewModels.CodeEditor
         /// </remarks>
         internal void Insert(int column, string str)
         {
+            var newPieces = new List<TextPiece>(TextPieces); // may call _owner.RaiseFormatLine. don't call inside lock
+
             // cursor between characters 1 and 2 is inserting at column 2, but since the string is indexed via 0-based indexing, adjust the insert location
             column--;
             Debug.Assert(column >= 0);
 
-            var text = PendingText;
-            if (text == null)
-                text = Text;
-
-            Debug.Assert(column <= text.Length);
-
-            text = text.Insert(column, str);
-            PendingText = text;
-
-            var pieces = TextPieces;
-            Debug.Assert(pieces != null);
-            var newPieces = new List<TextPiece>(pieces);
-
-            var index = column;
-            var enumerator = newPieces.GetEnumerator();
-            while (enumerator.MoveNext())
+            lock (_lockObject)
             {
-                var piece = enumerator.Current;
-                if (piece.Text.Length < index)
-                {
-                    index -= piece.Text.Length;
-                    continue;
-                }
+                var text = PendingText ?? Text;
 
-                if (piece.Text.Length == index && ReferenceEquals(piece.Foreground, Resources.Foreground)) // boundary between pieces, prefer non-default
+                Debug.Assert(column <= text.Length);
+
+                text = text.Insert(column, str);
+                PendingText = text;
+
+                var pieces = TextPieces;
+                Debug.Assert(pieces != null);
+                newPieces = new List<TextPiece>(pieces);
+
+                var index = column;
+                var enumerator = newPieces.GetEnumerator();
+                while (enumerator.MoveNext())
                 {
-                    if (enumerator.MoveNext())
+                    var piece = enumerator.Current;
+                    if (piece.Text.Length < index)
                     {
-                        piece = enumerator.Current;
-                        index = 0;
+                        index -= piece.Text.Length;
+                        continue;
                     }
-                }
 
-                piece.Text = piece.Text.Insert(index, str);
-                break;
+                    if (piece.Text.Length == index && ReferenceEquals(piece.Foreground, Resources.Foreground)) // boundary between pieces, prefer non-default
+                    {
+                        if (enumerator.MoveNext())
+                        {
+                            piece = enumerator.Current;
+                            index = 0;
+                        }
+                    }
+
+                    piece.Text = piece.Text.Insert(index, str);
+                    break;
+                }
             }
 
             Debug.Assert(newPieces.Count > 0);
@@ -419,79 +444,84 @@ namespace Jamiras.ViewModels.CodeEditor
         /// </remarks>
         internal void Remove(int startColumn, int endColumn)
         {
+            var newPieces = new List<TextPiece>(TextPieces); // may call _owner.RaiseFormatLine. don't call inside lock
+            int removeCount;
+
             Debug.Assert(endColumn >= startColumn);
 
             // deleting columns 1 through 1 (first character) is really Text[0] because it's 0-based
             startColumn--;
             Debug.Assert(startColumn >= 0);
 
-            var text = PendingText ?? Text;
-            var newPieces = new List<TextPiece>(TextPieces); // make sure TextPieces are captured before we update PendingText
-
-            endColumn--;
-            Debug.Assert(endColumn <= text.Length);
-
-            // update text
-            int removeCount = endColumn - startColumn + 1;
-            text = text.Remove(startColumn, removeCount);
-            PendingText = text;
-
-            // update the text pieces
-            var index = startColumn;
-            var pieceIndex = 0;
-            while (pieceIndex < newPieces.Count)
+            lock (_lockObject)
             {
-                var piece = newPieces[pieceIndex++];
-                if (piece.Text.Length < index)
-                {
-                    index -= piece.Text.Length;
-                    continue;
-                }
+                var text = PendingText ?? Text;
 
-                if (piece.Text.Length == index && !ReferenceEquals(piece.Foreground, Resources.Foreground)) // boundary between pieces - prefer default
+                endColumn--;
+                Debug.Assert(endColumn <= text.Length);
+
+                // update text
+                removeCount = endColumn - startColumn + 1;
+                text = text.Remove(startColumn, removeCount);
+                PendingText = text;
+
+                // update the text pieces
+                var index = startColumn;
+                var pieceIndex = 0;
+                while (pieceIndex < newPieces.Count)
                 {
-                    if (pieceIndex < newPieces.Count)
+                    var piece = newPieces[pieceIndex++];
+                    if (piece.Text.Length < index)
                     {
-                        piece = newPieces[pieceIndex++];
-                        index = 0;
-                    }
-                }
-
-                if (index + removeCount >= piece.Text.Length)
-                {
-                    if (index > 0)
-                    {
-                        removeCount -= (piece.Text.Length - index);
-                        piece.Text = piece.Text.Substring(0, index);
-                        if (removeCount == 0)
-                            break;
-
-                        Debug.Assert(pieceIndex < newPieces.Count);
-                        piece = newPieces[pieceIndex++];
-                        index = 0;
+                        index -= piece.Text.Length;
+                        continue;
                     }
 
-                    while (removeCount >= piece.Text.Length)
+                    if (piece.Text.Length == index && !ReferenceEquals(piece.Foreground, Resources.Foreground)) // boundary between pieces - prefer default
                     {
-                        removeCount -= piece.Text.Length;
-
-                        if (newPieces.Count > 1)
-                            newPieces.RemoveAt(pieceIndex - 1);
-                        else
-                            newPieces[pieceIndex - 1].Text = "";
-
-                        if (removeCount == 0)
-                            break;
-
-                        Debug.Assert(pieceIndex <= newPieces.Count);
-                        piece = newPieces[pieceIndex - 1];
+                        if (pieceIndex < newPieces.Count)
+                        {
+                            piece = newPieces[pieceIndex++];
+                            index = 0;
+                        }
                     }
+
+                    if (index + removeCount >= piece.Text.Length)
+                    {
+                        if (index > 0)
+                        {
+                            removeCount -= (piece.Text.Length - index);
+                            piece.Text = piece.Text.Substring(0, index);
+                            if (removeCount == 0)
+                                break;
+
+                            Debug.Assert(pieceIndex < newPieces.Count);
+                            piece = newPieces[pieceIndex++];
+                            index = 0;
+                        }
+
+                        while (removeCount >= piece.Text.Length)
+                        {
+                            removeCount -= piece.Text.Length;
+
+                            if (newPieces.Count > 1)
+                                newPieces.RemoveAt(pieceIndex - 1);
+                            else
+                                newPieces[pieceIndex - 1].Text = "";
+
+                            if (removeCount == 0)
+                                break;
+
+                            Debug.Assert(pieceIndex <= newPieces.Count);
+                            piece = newPieces[pieceIndex - 1];
+                        }
+                    }
+
+                    if (removeCount > 0)
+                        piece.Text = piece.Text.Remove(index, removeCount);
+
+                    break;
                 }
-
-                if (removeCount > 0)
-                    piece.Text = piece.Text.Remove(index, removeCount);
-
-                break;
             }
 
             Debug.Assert(newPieces.Count > 0);
@@ -572,11 +602,14 @@ namespace Jamiras.ViewModels.CodeEditor
         public override string ToString()
         {
             var builder = new StringBuilder();
-            builder.Append(Line);
-            if (PendingText != null)
-                builder.Append('*');
-            builder.Append(": ");
-            builder.Append(PendingText ?? Text);
+            lock (_lockObject)
+            {
+                builder.Append(Line);
+                if (PendingText != null)
+                    builder.Append('*');
+                builder.Append(": ");
+                builder.Append(PendingText ?? Text);
+            }
             return builder.ToString();
         }
     }

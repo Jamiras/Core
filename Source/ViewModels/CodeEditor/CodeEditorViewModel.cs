@@ -436,12 +436,16 @@ namespace Jamiras.ViewModels.CodeEditor
             for (int i = 0; i < _lines.Count; i++)
             {
                 var line = _lines[i];
+                string pendingText;
 
-                var pendingText = line.PendingText;
-                if (pendingText != null)
-                    updatedLines.Add(line);
-                else
-                    pendingText = line.Text;
+                lock (line._lockObject)
+                {
+                    pendingText = line.PendingText;
+                    if (pendingText != null)
+                        updatedLines.Add(line);
+                    else
+                        pendingText = line.Text;
+                }
 
                 allLines.Add(pendingText);
                 newContentLength += pendingText.Length;
@@ -944,10 +948,10 @@ namespace Jamiras.ViewModels.CodeEditor
             }
             else if (_braces.TryGetValue(c, out brace))
             {
-                var text = lineViewModel.PendingText ?? lineViewModel.Text;
+                var text = lineViewModel.CurrentText;
 
                 // typed a brace. if the next character is whitespace or punctuation, insert it and the matching character
-                if (column > lineViewModel.LineLength || Char.IsWhiteSpace(text[column - 1]) || Char.IsPunctuation(text[column - 1]))
+                if (column > text.Length || Char.IsWhiteSpace(text[column - 1]) || Char.IsPunctuation(text[column - 1]))
                 {
                     lineViewModel.Insert(column, c.ToString() + brace.ToString());
                     undoItem.After.End.Column += 2;
@@ -992,7 +996,7 @@ namespace Jamiras.ViewModels.CodeEditor
                 var lineViewModel = _lines[line - 1];
                 if (column <= lineViewModel.LineLength)
                 {
-                    var text = lineViewModel.PendingText ?? lineViewModel.Text;
+                    var text = lineViewModel.CurrentText;
                     undoItem.Before.End.Column++;
                     undoItem.BeforeText += text[column - 1];
 
@@ -1039,7 +1043,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     column--;
 
                     var lineViewModel = _lines[line - 1];
-                    var text = lineViewModel.PendingText ?? lineViewModel.Text;
+                    var text = lineViewModel.CurrentText;
 
                     if (!undoItem.After.IsEmpty)
                     {
@@ -1145,7 +1149,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     builder.AppendLine();
 
                 var line = _lines[i - 1];
-                var text = line.PendingText ?? line.Text;
+                var text = line.CurrentText;
 
                 var firstChar = (i == orderedSelection.Start.Line) ? orderedSelection.Start.Column - 1 : 0;
                 if (firstChar > text.Length)
@@ -1268,9 +1272,10 @@ namespace Jamiras.ViewModels.CodeEditor
                     return;
                 }
 
-                var remaining = (line.PendingText ?? line.Text).Substring(front.Column - 1);
-                if (front.Column <= line.LineLength)
-                    line.Remove(front.Column, line.LineLength);
+                var text = line.CurrentText;
+                var remaining = text.Substring(front.Column - 1);
+                if (front.Column <= text.Length)
+                    line.Remove(front.Column, text.Length);
 
                 line = new LineViewModel(this, line.Line + 1) { Text = remaining };
                 _lines.Insert(front.Line, line);
@@ -1311,7 +1316,7 @@ namespace Jamiras.ViewModels.CodeEditor
                 cursorColumn = line.LineLength + 1;
 
                 var startLine = _lines[front.Line];
-                line.Insert(line.LineLength + 1, startLine.PendingText ?? startLine.Text);
+                line.Insert(line.LineLength + 1, startLine.CurrentText);
 
                 _lines.RemoveAt(front.Line);
                 linesAdded--;
@@ -1439,7 +1444,7 @@ namespace Jamiras.ViewModels.CodeEditor
             if (nextWord)
             {
                 var cursorLineViewModel = _lines[newLine - 1];
-                var text = cursorLineViewModel.PendingText ?? cursorLineViewModel.Text;
+                var text = cursorLineViewModel.CurrentText;
                 var count = 0;
                 var offset = CursorColumn - 2;
                 while (offset >= 0 && Char.IsWhiteSpace(text[offset]))
@@ -1606,7 +1611,7 @@ namespace Jamiras.ViewModels.CodeEditor
             for (int i = orderedSelection.Start.Line; i <= endLine; i++)
             {
                 var line = _lines[i - 1];
-                var text = line.PendingText ?? line.Text;
+                var text = line.CurrentText;
                 if (isIndent)
                 {
                     if (!text.All(c => Char.IsWhiteSpace(c)))
@@ -1638,9 +1643,9 @@ namespace Jamiras.ViewModels.CodeEditor
             // merge the text from the next line into the current line
             var cursorLine = CursorLine;
             var cursorLineViewModel = _lines[cursorLine - 1];
-            var left = cursorLineViewModel.PendingText ?? cursorLineViewModel.Text;
+            var left = cursorLineViewModel.CurrentText;
             var nextLineViewModel = _lines[cursorLine];
-            var right = nextLineViewModel.PendingText ?? nextLineViewModel.Text;
+            var right = nextLineViewModel.CurrentText;
             cursorLineViewModel.PendingText = left + right;
 
             // merge the TextPieces so the merged text appears
@@ -1673,7 +1678,7 @@ namespace Jamiras.ViewModels.CodeEditor
             // split the current line at the cursor
             var cursorLine = CursorLine;
             var cursorLineViewModel = _lines[cursorLine - 1];
-            string text = cursorLineViewModel.PendingText ?? cursorLineViewModel.Text;
+            string text = cursorLineViewModel.CurrentText;
             var cursorColumn = CursorColumn - 1; // string index is 0-based
             string right = (cursorColumn < text.Length) ? text.Substring(cursorColumn) : String.Empty;
 
@@ -2035,7 +2040,7 @@ namespace Jamiras.ViewModels.CodeEditor
             if (lineNumber >= 1 && lineNumber <= _lines.Count)
             {
                 var lineViewModel = _lines[lineNumber - 1];
-                var text = lineViewModel.PendingText ?? lineViewModel.Text;
+                var text = lineViewModel.CurrentText;
 
                 while (column < text.Length && Char.IsWhiteSpace(text[column]))
                     column++;
