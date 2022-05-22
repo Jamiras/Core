@@ -735,6 +735,13 @@ namespace Jamiras.IO.Serialization
                 if (_value is int)
                     return (int)_value;
 
+                if (_value is string)
+                {
+                    int intValue;
+                    if (Int32.TryParse((string)_value, out intValue))
+                        return intValue;
+                }
+
                 return null;
             }
         }
@@ -801,7 +808,10 @@ namespace Jamiras.IO.Serialization
                     return (DateTime)_value;
 
                 var strValue = _value as string;
-                if (strValue != null && strValue.Length == 24 && strValue[23] == 'Z' && strValue[4] == '-' && strValue[7] == '-' && 
+                if (strValue == null)
+                    return null;
+
+                if (strValue.Length == 24 && strValue[23] == 'Z' && strValue[4] == '-' && strValue[7] == '-' &&
                     strValue[10] == 'T' && strValue[13] == ':' && strValue[16] == ':' && strValue[19] == '.')
                 {
                     int year, month, day, hour, minute, second, millisecond;
@@ -816,6 +826,10 @@ namespace Jamiras.IO.Serialization
                         return new DateTime(year, month, day, hour, minute, second, millisecond, DateTimeKind.Utc);
                     }
                 }
+
+                DateTime value;
+                if (DateTime.TryParse(strValue, out value))
+                    return value;
 
                 return null;
             }
