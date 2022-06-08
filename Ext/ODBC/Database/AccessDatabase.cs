@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using Jamiras.Components;
+using Jamiras.Services;
 using Jamiras.ViewModels;
 
 namespace Jamiras.Database
@@ -76,10 +77,24 @@ namespace Jamiras.Database
         {
             _logger.WriteVerbose("Executing query: {0}", command);
 
-            using (System.Data.Common.DbCommand cmd = _connection.CreateCommand())
+            try
             {
-                cmd.CommandText = command;
-                return cmd.ExecuteNonQuery();
+                using (System.Data.Common.DbCommand cmd = _connection.CreateCommand())
+                {
+                    cmd.CommandText = command;
+                    return cmd.ExecuteNonQuery();
+                }
+            }
+            catch (OdbcException ex)
+            {
+                var dispatcher = ServiceRepository.Instance.FindService<IExceptionDispatcher>();
+                if (dispatcher == null)
+                    throw;
+
+                if (!dispatcher.TryHandleException(ex))
+                    throw;
+
+                return 0;
             }
         }
 
