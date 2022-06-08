@@ -105,7 +105,7 @@ namespace Jamiras.ViewModels.CodeEditor.ToolWindows
             var cursorColumn = Owner.CursorColumn;
             foreach (var line in Owner.Lines)
             {
-                var lineText = line.PendingText ?? line.Text;
+                var lineText = line.CurrentText;
                 int start = 0;
                 do
                 {
@@ -240,7 +240,7 @@ namespace Jamiras.ViewModels.CodeEditor.ToolWindows
                     {
                         var searchText = SearchText.Text;
                         var lineViewModel = Owner.Lines[matchLine - 1];
-                        var lineText = lineViewModel.PendingText ?? lineViewModel.Text;
+                        var lineText = lineViewModel.CurrentText;
                         var offset = lineText.IndexOf(searchText, StringComparison.OrdinalIgnoreCase);
                         if (offset > 0)
                         {
