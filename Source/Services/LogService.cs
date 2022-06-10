@@ -42,7 +42,7 @@ namespace Jamiras.Services
 
         private bool IsEnabledForLevel(LogLevel level)
         {
-            return (level >= Level && _loggers.Count > 0);
+            return (level <= Level && _loggers.Count > 0);
         }
     }
 }
