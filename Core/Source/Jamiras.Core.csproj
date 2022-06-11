@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <Platforms>AnyCPU;x86;x64</Platforms>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <RepositoryUrl>https://github.com/Jamiras/Core</RepositoryUrl>
+    <Copyright>Copyright © 2022 Brian Weiss</Copyright>
+    <Description>Common components for other projects</Description>
+    <Authors>Jamiras</Authors>
+    <VersionPrefix>1.2.0</VersionPrefix>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+    <_Parameter1>Jamiras.Core.Tests</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+    <_Parameter1>Jamiras.UI</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+ 
+</Project>

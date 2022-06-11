@@ -1,0 +1,193 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:fields="clr-namespace:Jamiras.ViewModels.Fields"
+                    xmlns:controls="clr-namespace:Jamiras.Controls"
+                    xmlns:componentModel="clr-namespace:System.ComponentModel;assembly=System"
+                    xmlns:grid="clr-namespace:Jamiras.ViewModels.Grid">
+
+    <BooleanToVisibilityConverter x:Key="boolToVisConverter" />
+
+    <DataTemplate x:Key="errorIconTemplate">
+        <Grid SnapsToDevicePixels="True" Margin="0,0,-8,0" Visibility="{Binding ElementName=placeHolder, Path=AdornedElement.Visiblity}">
+            <Image Source="/Jamiras.UI;component/Resources/error10.png" 
+                   RenderOptions.BitmapScalingMode="NearestNeighbor"
+                   ToolTip="{Binding Path=(componentModel:IDataErrorInfo.Error)}"
+                   HorizontalAlignment="Right" VerticalAlignment="Center"
+                   SnapsToDevicePixels="True" Height="10" Width="10" />
+            <AdornedElementPlaceholder x:Name="placeHolder" />
+        </Grid>
+    </DataTemplate>
+
+    <Style TargetType="{x:Type Label}" x:Key="fieldLabelStyle">
+        <Setter Property="Content" Value="{Binding Label}" />
+        <Setter Property="AutomationProperties.AutomationId" Value="{Binding Name, StringFormat='{}{0}Label'}" />
+        <Setter Property="AutomationProperties.Name" Value="{Binding Label, StringFormat='{}{0} Label'}" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="VerticalAlignment" Value="Bottom" />
+        <Setter Property="Margin" Value="-2,-2,0,-4" />
+        <Setter Property="controls:Validation.ErrorTemplate" Value="{StaticResource errorIconTemplate}" />
+        <Setter Property="controls:Validation.IsValid" Value="{Binding IsValid}" />
+    </Style>
+
+    <Style TargetType="{x:Type TextBox}" x:Key="textFieldBaseTextBoxStyle">
+        <Setter Property="Text" Value="{Binding Text}" />
+        <Setter Property="Validation.ErrorTemplate" Value="{x:Null}" />
+        <Setter Property="Margin" Value="2,0,2,2" />
+        <Setter Property="AutomationProperties.AutomationId" Value="{Binding Name}" />
+        <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />
+        <Setter Property="MaxLength" Value="{Binding MaxLength}" />
+        <Setter Property="IsEnabled" Value="{Binding IsEnabled}" />
+    </Style>
+    
+    <Style TargetType="{x:Type TextBox}" x:Key="textFieldTextBoxStyle"
+           BasedOn="{StaticResource textFieldBaseTextBoxStyle}">
+        <Setter Property="controls:TextPattern.Pattern" Value="{Binding Pattern}" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsMultiline}" Value="True">
+                <Setter Property="TextWrapping" Value="Wrap" />
+                <Setter Property="AcceptsReturn" Value="True" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsTextBindingDelayed}" Value="True">
+                <Setter Property="Text" Value="{Binding Text, UpdateSourceTrigger=PropertyChanged}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="{x:Type controls:AutoCompleteTextBox}" x:Key="autoCompleteFieldStyle">
+        <Setter Property="AutoCompleteText" Value="{Binding Text}" />
+        <Setter Property="Margin" Value="2,0,2,2" />
+        <Setter Property="AutomationProperties.AutomationId" Value="{Binding Name}" />
+        <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />
+        <Setter Property="MaxLength" Value="{Binding MaxLength}" />
+        <Setter Property="Suggestions" Value="{Binding Suggestions}" />
+        <Setter Property="SelectedId" Value="{Binding SelectedId}" />
+        <Setter Property="IsEnabled" Value="{Binding IsEnabled}" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsFixedSelection}" Value="True">
+                <Setter Property="MatchColor" Value="White" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="{x:Type controls:DatePicker}" x:Key="dateFieldDatePickerStyle">
+        <Setter Property="SelectedDate" Value="{Binding DateTime, ValidatesOnDataErrors=True}" />
+        <Setter Property="Margin" Value="2,0,2,2" />
+        <Setter Property="AutomationProperties.AutomationId" Value="{Binding Name}" />
+        <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />
+        <Setter Property="IsEnabled" Value="{Binding IsEnabled}" />
+    </Style>
+    
+    <Style TargetType="{x:Type ComboBox}" x:Key="lookupFieldComboBoxStyle">
+        <Setter Property="ItemsSource" Value="{Binding Items}" />
+        <Setter Property="SelectedValuePath" Value="Id" />
+        <Setter Property="DisplayMemberPath" Value="Label" />
+        <Setter Property="SelectedValue" Value="{Binding SelectedId}" />
+        <Setter Property="Margin" Value="2,0,2,2" />
+        <Setter Property="AutomationProperties.AutomationId" Value="{Binding Name}" />
+        <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />
+        <Setter Property="IsEnabled" Value="{Binding IsEnabled}" />
+    </Style>
+
+    <DataTemplate DataType="{x:Type fields:TextFieldViewModel}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Label Style="{StaticResource fieldLabelStyle}"
+                   Target="{Binding ElementName=textBox}" />
+            <TextBox Style="{StaticResource textFieldTextBoxStyle}"
+                     Grid.Row="1" Name="textBox"/>
+        </Grid>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type fields:IntegerFieldViewModel}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Label Style="{StaticResource fieldLabelStyle}"
+                   Target="{Binding ElementName=textBox}" />
+            <TextBox Style="{StaticResource textFieldBaseTextBoxStyle}"
+                     Grid.Row="1" Name="textBox"
+                     TextAlignment="Right" />
+        </Grid>
+    </DataTemplate>
+    
+    <DataTemplate DataType="{x:Type fields:CurrencyFieldViewModel}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Label Style="{StaticResource fieldLabelStyle}"
+                   Target="{Binding ElementName=textBox}" />
+            <TextBox Style="{StaticResource textFieldBaseTextBoxStyle}"
+                     Grid.Row="1" Name="textBox"
+                     TextAlignment="Right" />
+        </Grid>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type fields:DecimalFieldViewModel}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Label Style="{StaticResource fieldLabelStyle}"
+                   Target="{Binding ElementName=textBox}" />
+            <TextBox Style="{StaticResource textFieldBaseTextBoxStyle}"
+                     Grid.Row="1" Name="textBox"
+                     TextAlignment="Right" />
+        </Grid>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type fields:LookupFieldViewModel}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Label Style="{StaticResource fieldLabelStyle}"
+                   Target="{Binding ElementName=comboBox}" />
+            <ComboBox Style="{StaticResource lookupFieldComboBoxStyle}"
+                      Grid.Row="1" Name="comboBox" />
+        </Grid>
+    </DataTemplate>
+    
+    <DataTemplate DataType="{x:Type fields:AutoCompleteFieldViewModel}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Label Style="{StaticResource fieldLabelStyle}"
+                   Target="{Binding ElementName=textBox}" />
+            <controls:AutoCompleteTextBox Style="{StaticResource autoCompleteFieldStyle}"
+                                          Grid.Row="1" Name="textBox"/>
+        </Grid>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type fields:DateFieldViewModel}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Label Style="{StaticResource fieldLabelStyle}"
+                   Target="{Binding ElementName=datePicker}" />
+            <controls:DatePicker Style="{StaticResource dateFieldDatePickerStyle}"
+                                 Grid.Row="1" Name="datePicker"/>
+        </Grid>
+    </DataTemplate>
+    
+    <DataTemplate DataType="{x:Type grid:GridViewModel}">
+        <controls:GridView Margin="2" CanRemove="{Binding CanRemove}" CanReorder="{Binding CanReorder}" 
+                           CanAddRowsDynamically="{Binding CanAddRowsDynamically}" 
+                           GenerateDynamicRowMethod="{Binding GenerateDynamicRow}"
+                           Columns="{Binding Columns}" RowViewModels="{Binding Rows}" 
+                           DoubleClickCommand="{Binding DoubleClickCommand}" />
+    </DataTemplate>
+</ResourceDictionary>

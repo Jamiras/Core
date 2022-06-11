@@ -1,0 +1,239 @@
+﻿<UserControl x:Class="Jamiras.Controls.CodeEditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:jamiras="clr-namespace:Jamiras.Controls"
+             xmlns:toolwindows="clr-namespace:Jamiras.ViewModels.CodeEditor.ToolWindows"
+             SnapsToDevicePixels="True"
+             IsTabStop="True"
+             Focusable="True"
+             FocusVisualStyle="{x:Null}"
+             jamiras:CommandBinding.FocusIfTrue="{Binding IsFocusRequested}"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Styles/NoBorderButtonStyle.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <Storyboard x:Key="blinkAnimation">
+                <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity" Duration="0:0:1.0" RepeatBehavior="Forever">
+                    <DiscreteDoubleKeyFrame Value="0" KeyTime="0:0:0.5" />
+                    <DiscreteDoubleKeyFrame Value="1" KeyTime="0:0:1.0" />
+                </DoubleAnimationUsingKeyFrames>
+            </Storyboard>
+
+            <DataTemplate DataType="{x:Type toolwindows:GotoLineToolWindowViewModel}">
+                <TextBox Text="{Binding LineNumber.Text}" Margin="0" MaxLength="{Binding LineNumber.MaxLength}" 
+                         FocusVisualStyle="{x:Null}" BorderThickness="0"                         
+                         jamiras:CommandBinding.SelectAllOnFocus="True"
+                         jamiras:CommandBinding.FocusIfTrue="{Binding ShouldFocusLineNumber}" />
+            </DataTemplate>
+
+            <Style x:Key="toolWindowButton" TargetType="{x:Type Button}" BasedOn="{StaticResource NoBorderButtonStyle}">
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="HorizontalAlignment" Value="Center" />
+                <Setter Property="Width" Value="19" />
+                <Setter Property="Height" Value="19" />
+                <Setter Property="Margin" Value="0" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+            </Style>
+
+            <Style x:Key="tookWindowButtonImage" TargetType="{x:Type Image}">
+                <Setter Property="Width" Value="14" />
+                <Setter Property="Height" Value="14" />
+                <Setter Property="Margin" Value="-4" />
+                <Setter Property="SnapsToDevicePixels" Value="True" />
+            </Style>
+
+            <DataTemplate DataType="{x:Type toolwindows:ReplaceToolWindowViewModel}">
+                <Grid Width="300">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="1" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox Text="{Binding SearchText.Text, UpdateSourceTrigger=PropertyChanged}" Margin="0" MaxLength="{Binding SearchText.MaxLength}" 
+                             FocusVisualStyle="{x:Null}" BorderThickness="0"                        
+                             jamiras:CommandBinding.SelectAllOnFocus="True"
+                             jamiras:CommandBinding.FocusIfTrue="{Binding ShouldFocusSearchText}" />
+
+                    <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="Gray" Margin="0,0,4,0">
+                        <TextBlock Text="{Binding Index}" Margin="0,0,-2,0" />
+                        <Run Text="/" />
+                        <TextBlock Text="{Binding MatchCount}" Margin="-2,0,0,0" />
+                    </TextBlock>
+
+                    <Button Grid.Column="1" Style="{StaticResource toolWindowButton}" Command="{Binding FindPreviousCommand}" ToolTip="Find Previous">
+                        <Image Source="/Jamiras.UI;component/Resources/LeftArrow14.png" Style="{StaticResource tookWindowButtonImage}" />
+                    </Button>
+
+                    <Button Grid.Column="2" Style="{StaticResource toolWindowButton}" Command="{Binding FindNextCommand}" ToolTip="Find Next">
+                        <Image Source="/Jamiras.UI;component/Resources/RightArrow14.png" Style="{StaticResource tookWindowButtonImage}" />
+                    </Button>
+
+                    <TextBox Grid.Row="2" Text="{Binding ReplaceText.Text, UpdateSourceTrigger=PropertyChanged}" Margin="0" MaxLength="{Binding ReplaceText.MaxLength}" 
+                             FocusVisualStyle="{x:Null}" BorderThickness="0"
+                             jamiras:CommandBinding.SelectAllOnFocus="True" />
+
+                    <Button Grid.Row="2" Grid.Column="1" Style="{StaticResource toolWindowButton}" Command="{Binding ReplaceCommand}" ToolTip="Replace">
+                        <Image Source="/Jamiras.UI;component/Resources/Replace14.png" Style="{StaticResource tookWindowButtonImage}" />
+                    </Button>
+
+                    <Button Grid.Row="2" Grid.Column="2" Style="{StaticResource toolWindowButton}" Command="{Binding ReplaceAllCommand}" ToolTip="Replace All">
+                        <Image Source="/Jamiras.UI;component/Resources/ReplaceAll14.png" Style="{StaticResource tookWindowButtonImage}" />
+                    </Button>
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type toolwindows:FindToolWindowViewModel}">
+                <Grid Width="300">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox Text="{Binding SearchText.Text, UpdateSourceTrigger=PropertyChanged}" Margin="0" MaxLength="{Binding SearchText.MaxLength}" 
+                             FocusVisualStyle="{x:Null}" BorderThickness="0"                        
+                             jamiras:CommandBinding.SelectAllOnFocus="True"
+                             jamiras:CommandBinding.FocusIfTrue="{Binding ShouldFocusSearchText}" />
+
+                    <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="Gray" Margin="0,0,4,0">
+                        <TextBlock Text="{Binding Index}" Margin="0,0,-2,0" />
+                        <Run Text="/" />
+                        <TextBlock Text="{Binding MatchCount}" Margin="-2,0,0,0" />
+                    </TextBlock>
+
+                    <Button Grid.Column="1" Style="{StaticResource toolWindowButton}" Command="{Binding FindPreviousCommand}" ToolTip="Find Previous">
+                        <Image Source="/Jamiras.UI;component/Resources/LeftArrow14.png" Style="{StaticResource tookWindowButtonImage}" />
+                    </Button>
+
+                    <Button Grid.Column="2" Style="{StaticResource toolWindowButton}" Command="{Binding FindNextCommand}" ToolTip="Find Next">
+                        <Image Source="/Jamiras.UI;component/Resources/RightArrow14.png" Style="{StaticResource tookWindowButtonImage}" />
+                    </Button>
+                </Grid>
+            </DataTemplate>
+
+            <BooleanToVisibilityConverter x:Key="boolToVisConverter" />
+            
+            <DataTemplate x:Key="lineTemplate">
+                <Grid HorizontalAlignment="Stretch" Background="{Binding Resources.Background.Brush}" Margin="2,0,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{Binding DataContext.LineNumberColumnWidth, ElementName=codeEditorLines}" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding Line}" 
+                            FontFamily="{Binding Resources.FontName, Mode=OneTime}"
+                            FontSize="{Binding Resources.FontSize, Mode=OneTime}"
+                            Foreground="{Binding Resources.LineNumber.Brush}"
+                            Margin="0,0,8,0" HorizontalAlignment="Right" />
+                    <Border Grid.Column="1" Background="{Binding Resources.Selection.Brush}" Margin="{Binding SelectionLocation}" Width="{Binding SelectionWidth}" HorizontalAlignment="Left" />
+                    <jamiras:CodeEditorTextBlock Grid.Column="1" SnapsToDevicePixels="True"
+                                             FontFamily="{Binding Resources.FontName, Mode=OneTime}"
+                                             FontSize="{Binding Resources.FontSize, Mode=OneTime}"
+                                             Foreground="{Binding Resources.Foreground.Brush}" 
+                                             TextPieces="{Binding TextPieces}" />
+
+                    <Border Grid.Column="1" BorderThickness="1" BorderBrush="{Binding Resources.Foreground.Brush}" SnapsToDevicePixels="True"
+                            Margin="{Binding CursorLocation}" Width="1" VerticalAlignment="Stretch" HorizontalAlignment="Left">
+                        <Border.Style>
+                            <Style TargetType="{x:Type Border}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CursorColumn}" Value="0">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsFocused, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type jamiras:CodeEditorView}}}" Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <Trigger Property="Visibility" Value="Visible">
+                                        <Trigger.EnterActions>
+                                            <BeginStoryboard Name="blink" Storyboard="{StaticResource blinkAnimation}" />
+                                        </Trigger.EnterActions>
+                                        <Trigger.ExitActions>
+                                            <StopStoryboard BeginStoryboardName="blink" />
+                                        </Trigger.ExitActions>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                    </Border>
+                </Grid>
+            </DataTemplate>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Border BorderBrush="Gray" BorderThickness="1">
+        <Grid Background="{Binding Resources.Background.Brush}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="{Binding DataContext.LineNumberColumnWidth, ElementName=codeEditorLines}" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- lines -->
+            <ItemsControl Grid.ColumnSpan="2" ItemsSource="{Binding Lines}"
+                          x:Name="codeEditorLines"
+                          VirtualizingStackPanel.IsVirtualizing="True"
+                          VirtualizingStackPanel.VirtualizationMode="Recycling"
+                          ScrollViewer.CanContentScroll="True"
+                          ItemTemplate="{StaticResource lineTemplate}"
+                          HorizontalContentAlignment="Stretch"
+                          IsTabStop="False">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.Template>
+                    <ControlTemplate>
+                        <ScrollViewer x:Name="linesScrollViewer" Focusable="False" Background="{Binding Resources.Background.Brush}"
+                                      VerticalScrollBarVisibility="Auto" SnapsToDevicePixels="True">
+                            <ItemsPresenter />
+                        </ScrollViewer>
+                    </ControlTemplate>
+                </ItemsControl.Template>
+            </ItemsControl>
+
+            <!-- line number/line separator -->
+            <Border BorderThickness="0,0,1,0" Margin="0,0,2,0" IsHitTestVisible="False" 
+                    BorderBrush="{Binding Resources.LineNumber.Brush}" VerticalAlignment="Stretch" HorizontalAlignment="Right" />
+
+            <!-- tool window -->
+            <Grid Grid.ColumnSpan="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" MinWidth="200" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Border Grid.Column="2" BorderThickness="1,0,0,2" BorderBrush="#404040" Background="#E0E0E0"                        
+                        Visibility="{Binding IsToolWindowVisible, Converter={StaticResource boolToVisConverter}}"
+                        InputScope="">
+                    <Grid>
+                        <Border Background="#C0C0C0" BorderThickness="0,0,0,1" BorderBrush="#404040" Height="16"
+                                VerticalAlignment="Top">
+                            <TextBlock Text="{Binding ToolWindow.Caption}" FontSize="10" Margin="2,0,0,0" />
+                        </Border>
+                        <Button VerticalAlignment="Top" HorizontalAlignment="Right" Height="16" Width="16" Margin="0,-1,-1,0"
+                                Style="{StaticResource NoBorderButtonStyle}"
+                                Command="{Binding ToolWindow.CloseCommand}">
+                            <TextBlock Text="x" Margin="0,-6,0,0" Foreground="White" VerticalAlignment="Top" HorizontalAlignment="Center" />
+                        </Button>
+                        <ContentPresenter Margin="0,16,0,0" Content="{Binding ToolWindow}" />
+                    </Grid>
+                </Border>
+            </Grid>
+                    
+        </Grid>
+    </Border>
+    
+</UserControl>
