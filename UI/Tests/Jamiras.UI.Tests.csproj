@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <Platforms>AnyCPU</Platforms>
+    <Platforms>AnyCPU;x86</Platforms>
     <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>disable</Nullable>
     <Authors>Jamiras</Authors>

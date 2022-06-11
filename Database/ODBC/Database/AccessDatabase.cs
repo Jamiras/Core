@@ -5,7 +5,6 @@ using System.IO;
 using System.Text;
 using Jamiras.Components;
 using Jamiras.Services;
-using Jamiras.ViewModels;
 
 namespace Jamiras.Database
 {
@@ -162,7 +161,7 @@ namespace Jamiras.Database
                 if (ex.Message.Contains("[IM002]"))
                 {
                     if (IntPtr.Size != 4 && File.Exists(fileName))
-                        MessageBoxViewModel.ShowMessage("Access driver not found - assuming 64-bit access driver not installed");
+                        throw new NotSupportedException("Access driver not found - assuming 64-bit access driver not installed", ex);
 
                     // https://knowledge.autodesk.com/support/autocad/learn-explore/caas/sfdcarticles/sfdcarticles/How-to-install-64-bit-Microsoft-Database-Drivers-alongside-32-bit-Microsoft-Office.html
                     // * download AccessDatabaseEngine_X64.exe from https://www.microsoft.com/en-us/download/details.aspx?displaylang=en&id=13255
