@@ -73,11 +73,11 @@
                     </TextBlock>
 
                     <Button Grid.Column="1" Style="{StaticResource toolWindowButton}" Command="{Binding FindPreviousCommand}" ToolTip="Find Previous">
-                        <Image Source="/Jamiras.UI;component/Resources/LeftArrow14.png" Style="{StaticResource tookWindowButtonImage}" />
+                        <Image Source="/Jamiras.UI.WPF;component/Resources/LeftArrow14.png" Style="{StaticResource tookWindowButtonImage}" />
                     </Button>
 
                     <Button Grid.Column="2" Style="{StaticResource toolWindowButton}" Command="{Binding FindNextCommand}" ToolTip="Find Next">
-                        <Image Source="/Jamiras.UI;component/Resources/RightArrow14.png" Style="{StaticResource tookWindowButtonImage}" />
+                        <Image Source="/Jamiras.UI.WPF;component/Resources/RightArrow14.png" Style="{StaticResource tookWindowButtonImage}" />
                     </Button>
 
                     <TextBox Grid.Row="2" Text="{Binding ReplaceText.Text, UpdateSourceTrigger=PropertyChanged}" Margin="0" MaxLength="{Binding ReplaceText.MaxLength}" 
@@ -85,11 +85,11 @@
                              jamiras:CommandBinding.SelectAllOnFocus="True" />
 
                     <Button Grid.Row="2" Grid.Column="1" Style="{StaticResource toolWindowButton}" Command="{Binding ReplaceCommand}" ToolTip="Replace">
-                        <Image Source="/Jamiras.UI;component/Resources/Replace14.png" Style="{StaticResource tookWindowButtonImage}" />
+                        <Image Source="/Jamiras.UI.WPF;component/Resources/Replace14.png" Style="{StaticResource tookWindowButtonImage}" />
                     </Button>
 
                     <Button Grid.Row="2" Grid.Column="2" Style="{StaticResource toolWindowButton}" Command="{Binding ReplaceAllCommand}" ToolTip="Replace All">
-                        <Image Source="/Jamiras.UI;component/Resources/ReplaceAll14.png" Style="{StaticResource tookWindowButtonImage}" />
+                        <Image Source="/Jamiras.UI.WPF;component/Resources/ReplaceAll14.png" Style="{StaticResource tookWindowButtonImage}" />
                     </Button>
                 </Grid>
             </DataTemplate>
@@ -113,11 +113,11 @@
                     </TextBlock>
 
                     <Button Grid.Column="1" Style="{StaticResource toolWindowButton}" Command="{Binding FindPreviousCommand}" ToolTip="Find Previous">
-                        <Image Source="/Jamiras.UI;component/Resources/LeftArrow14.png" Style="{StaticResource tookWindowButtonImage}" />
+                        <Image Source="/Jamiras.UI.WPF;component/Resources/LeftArrow14.png" Style="{StaticResource tookWindowButtonImage}" />
                     </Button>
 
                     <Button Grid.Column="2" Style="{StaticResource toolWindowButton}" Command="{Binding FindNextCommand}" ToolTip="Find Next">
-                        <Image Source="/Jamiras.UI;component/Resources/RightArrow14.png" Style="{StaticResource tookWindowButtonImage}" />
+                        <Image Source="/Jamiras.UI.WPF;component/Resources/RightArrow14.png" Style="{StaticResource tookWindowButtonImage}" />
                     </Button>
                 </Grid>
             </DataTemplate>
