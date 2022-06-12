@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <Platforms>AnyCPU;x86</Platforms>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <Nullable>disable</Nullable>
+    <UseWPF>true</UseWPF>
+    <RepositoryUrl>https://github.com/Jamiras/Core</RepositoryUrl>
+    <Copyright>Copyright © 2022 Brian Weiss</Copyright>
+    <Description>Common components for WPF projects</Description>
+    <Authors>Jamiras</Authors>
+    <VersionPrefix>1.2.0</VersionPrefix>
+    <RootNamespace>Jamiras</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+    <_Parameter1>Jamiras.UI.WPF.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Core\Source\Jamiras.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Calendar14.png" />
+    <Resource Include="Resources\Error10.png" />
+    <Resource Include="Resources\LeftArrow14.png" />
+    <Resource Include="Resources\Replace14.png" />
+    <Resource Include="Resources\ReplaceAll14.png" />
+    <Resource Include="Resources\RightArrow14.png" />
+  </ItemGroup>
+ 
+</Project>
