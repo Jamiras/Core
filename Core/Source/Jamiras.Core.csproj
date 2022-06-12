@@ -17,7 +17,7 @@
     <_Parameter1>Jamiras.Core.Tests</_Parameter1>
     </AssemblyAttribute>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-    <_Parameter1>Jamiras.UI</_Parameter1>
+    <_Parameter1>Jamiras.UI.WPF</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
  
