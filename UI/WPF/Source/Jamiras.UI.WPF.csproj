@@ -11,6 +11,7 @@
     <Description>Common components for WPF projects</Description>
     <Authors>Jamiras</Authors>
     <VersionPrefix>1.2.0</VersionPrefix>
+    <RootNamespace>Jamiras</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
