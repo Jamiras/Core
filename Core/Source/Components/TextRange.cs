@@ -110,5 +110,21 @@ namespace Jamiras.Components
                 Start = temp;
             }
         }
+
+        /// <summary>
+        /// Creates a range that contains the current range and the provided range.
+        /// </summary>
+        public TextRange Union(TextRange other)
+        {
+            if (other.Start.Line == 0 && other.End.Column == 0)
+                return this;
+            if (this.Start.Line == 0 && this.End.Column == 0)
+                return other;
+
+            return new TextRange(
+                (this.Start < other.Start) ? this.Start : other.Start,
+                (this.End > other.End) ? this.End : other.End
+            );
+        }
     }
 }
