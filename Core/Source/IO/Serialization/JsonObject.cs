@@ -351,6 +351,7 @@ namespace Jamiras.IO.Serialization
                 tokenizer.Advance();
                 tokenizer.SkipWhitespace();
 
+                bool negative = false;
                 Token value;
                 switch (tokenizer.NextChar)
                 {
@@ -410,6 +411,12 @@ namespace Jamiras.IO.Serialization
                         ParseArray(fieldName.ToString(), tokenizer);
                         break;
 
+                    case '-':
+                        tokenizer.Advance();
+                        if (!Char.IsDigit(tokenizer.NextChar))
+                            break;
+                        negative = true;
+                        goto case '0';
                     case '0':
                     case '1':
                     case '2':
@@ -424,11 +431,15 @@ namespace Jamiras.IO.Serialization
                         if (value.Contains('.'))
                         {
                             var dVal = Double.Parse(value.ToString());
+                            if (negative)
+                                dVal = -dVal;
                             AddField(fieldName.ToString(), dVal);
                         }
                         else
                         {
                             var iVal = Int32.Parse(value.ToString());
+                            if (negative)
+                                iVal = -iVal;
                             AddField(fieldName.ToString(), iVal);
                         }
                         break;

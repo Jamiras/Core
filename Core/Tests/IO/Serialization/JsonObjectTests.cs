@@ -31,6 +31,14 @@ namespace Jamiras.Core.Tests.IO.Serialization
         }
 
         [Test]
+        public void TestNegativeIntegerField()
+        {
+            var o = new JsonObject("{ \"foo\" : -1234 }");
+            Assert.That(o.GetField("foo").Type, Is.EqualTo(JsonFieldType.Integer));
+            Assert.That(o.GetField("foo").IntegerValue, Is.EqualTo(-1234));
+        }
+
+        [Test]
         public void TestIntegerFromStringField()
         {
             var o = new JsonObject("{ \"foo\" : \"1234\" }");
