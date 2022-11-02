@@ -13,66 +13,61 @@ namespace Jamiras.UI.WPF.Services.Impl
 
         public void SetData(string text)
         {
+            // https://stackoverflow.com/questions/68666/clipbrd-e-cant-open-error-when-setting-the-clipboard-from-net
+            for (int i = 0; i < 10; i++)
+            {
+                try
+                {
+                    Clipboard.SetText(text);
+                    return;
+                }
+                catch (COMException ex)
+                {
+                    if ((uint)ex.ErrorCode != CLIPBRD_E_CANT_OPEN)
+                        throw;
+                }
+
+                Thread.Sleep(10);
+            }
+
+            // could not get a handle to the clipboard after 100ms, try a bigger hammer.
+            // https://stackoverflow.com/questions/12769264/openclipboard-failed-when-copy-pasting-data-from-wpf-datagrid
+            // this has it's own internal loop. if it fails, just report the error.
             try
             {
-                Clipboard.SetText(text);
+                Clipboard.SetDataObject(text, true);
             }
             catch (COMException ex)
             {
                 if ((uint)ex.ErrorCode != CLIPBRD_E_CANT_OPEN)
                     throw;
 
-                // another application has the clipboard open, wait 100ms and try again.
-                Thread.Sleep(100);
-
-                try
-                {
-                    Clipboard.SetText(text);
-                }
-                catch (COMException ex2)
-                {
-                    if ((uint)ex2.ErrorCode != CLIPBRD_E_CANT_OPEN)
-                        throw;
-
-                    // another application still has the clipboard open, see if we can force ownership by clearing the clipboard.
-                    Clipboard.Clear();
-
-                    // if this doesn't work, let the exception bubble up.
-                    Clipboard.SetText(text);
-                }
+                MessageBox.Show(ex.Message, "Copy to Clipboard failed", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
         public string GetText()
         {
-
-            try
+            // https://stackoverflow.com/questions/68666/clipbrd-e-cant-open-error-when-setting-the-clipboard-from-net
+            for (int i = 0; i < 10; i++)
             {
-                if (Clipboard.ContainsText())
-                    return Clipboard.GetText();
-            }
-            catch (COMException ex)
-            {
-                if ((uint)ex.ErrorCode != CLIPBRD_E_CANT_OPEN)
-                    throw;
-
-                // another application has the clipboard open, wait 100ms and try again.
-                Thread.Sleep(100);
-
                 try
                 {
                     if (Clipboard.ContainsText())
                         return Clipboard.GetText();
-                }
-                catch (COMException ex2)
-                {
-                    if ((uint)ex2.ErrorCode != CLIPBRD_E_CANT_OPEN)
-                        throw;
 
-                    // another application still has the clipboard open, act like there's nothing available
+                    return null;
                 }
+                catch (COMException ex)
+                {
+                    if ((uint)ex.ErrorCode != CLIPBRD_E_CANT_OPEN)
+                        throw;
+                }
+
+                Thread.Sleep(10);
             }
 
+            // another application still has the clipboard open, act like there's nothing available
             return null;
         }
     }
