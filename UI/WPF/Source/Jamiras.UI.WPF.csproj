@@ -10,7 +10,7 @@
     <Copyright>Copyright © 2022 Brian Weiss</Copyright>
     <Description>Common components for WPF projects</Description>
     <Authors>Jamiras</Authors>
-    <VersionPrefix>1.2.0</VersionPrefix>
+    <VersionPrefix>1.2.1</VersionPrefix>
     <RootNamespace>Jamiras</RootNamespace>
   </PropertyGroup>
 
