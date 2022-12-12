@@ -203,7 +203,8 @@
 
             <!-- line number/line separator -->
             <Border BorderThickness="0,0,1,0" Margin="0,0,2,0" IsHitTestVisible="False" 
-                    BorderBrush="{Binding Resources.LineNumber.Brush}" VerticalAlignment="Stretch" HorizontalAlignment="Right" />
+                    BorderBrush="{Binding Resources.LineNumber.Brush}" VerticalAlignment="Stretch" HorizontalAlignment="Right"
+                    x:Name="LineNum"/>
 
             <!-- tool window -->
             <Grid Grid.ColumnSpan="2">

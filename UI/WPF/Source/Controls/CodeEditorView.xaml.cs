@@ -39,6 +39,10 @@ namespace Jamiras.Controls
             if (descriptor != null)
                 descriptor.AddValueChanged(CodeLinesScrollViewer, OnVerticalOffsetChanged);
 
+            descriptor = DependencyPropertyDescriptor.FromProperty(ScrollViewer.HorizontalOffsetProperty, typeof(ScrollViewer));
+            if (descriptor != null)
+                descriptor.AddValueChanged(CodeLinesScrollViewer, OnHorizontalOffsetChanged);
+
             OnViewportHeightChanged(CodeLinesScrollViewer, EventArgs.Empty);
             RestoreScrollOffset();
             EnsureCursorVisible();
@@ -52,12 +56,15 @@ namespace Jamiras.Controls
             get { return (ScrollViewer)VisualTreeHelper.GetChild(codeEditorLines, 0); }
         }
 
+
         private void RestoreScrollOffset()
         {
             if (IsLoaded && ViewModel != null)
             {
                 double scrollOffset = (double)ViewModel.GetValue(EditorScrollOffsetProperty);
+                double scrollOffsetHorizontal = (double)ViewModel.GetValue(HorizontalScrollOffsetProperty);
                 CodeLinesScrollViewer.ScrollToVerticalOffset(scrollOffset);
+                CodeLinesScrollViewer.ScrollToHorizontalOffset(scrollOffsetHorizontal);
             }
         }
 
@@ -68,11 +75,30 @@ namespace Jamiras.Controls
         }
 
         private static readonly ModelProperty EditorScrollOffsetProperty = ModelProperty.Register(typeof(CodeEditorView), null, typeof(double), 0.0);
+        private static readonly ModelProperty HorizontalScrollOffsetProperty = ModelProperty.Register(typeof(CodeEditorView), null, typeof(double), 0.0);
 
         private void OnVerticalOffsetChanged(object sender, EventArgs e)
         {
             if (ViewModel != null)
                 ViewModel.SetValueCore(EditorScrollOffsetProperty, ((ScrollViewer)sender).VerticalOffset);
+        }
+
+        private void OnHorizontalOffsetChanged(object sender, EventArgs e)
+        {
+            if (ViewModel != null)
+                ViewModel.SetValueCore(HorizontalScrollOffsetProperty, ((ScrollViewer)sender).HorizontalOffset);
+
+            // show / hide the line number border
+            Border linenum = this.FindName("LineNum") as Border;
+            if ( (double)ViewModel.GetValue(HorizontalScrollOffsetProperty) <= 0.1 )
+            {
+                linenum.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                linenum.Visibility = Visibility.Hidden;
+            }
+            
         }
 
         private void OnDataContextChanged(object sender, EventArgs e)
@@ -115,7 +141,7 @@ namespace Jamiras.Controls
 
         private void OnCursorLineChanged(object sender, ModelPropertyChangedEventArgs e)
         {
-            EnsureCursorVisible();
+           EnsureCursorVisible();
         }
 
         private void OnCursorColumnChanged(object sender, ModelPropertyChangedEventArgs e)
@@ -255,7 +281,7 @@ namespace Jamiras.Controls
         private static int GetColumn(CodeEditorViewModel viewModel, Point mousePosition)
         {
             var characterWidth = viewModel.Resources.CharacterWidth;
-            int column = (int)((mousePosition.X - 2 - viewModel.LineNumberColumnWidth + 1) / characterWidth) + 1;
+            int column = (int)((mousePosition.X - 2 - viewModel.LineNumberColumnWidth + (double)viewModel.GetValue(HorizontalScrollOffsetProperty) + 1) / characterWidth) + 1;
             if (column < 1)
                 column = 1;
             return column;
