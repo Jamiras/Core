@@ -277,11 +277,22 @@ namespace Jamiras.Controls
 
         private static int GetColumn(CodeEditorViewModel viewModel, Point mousePosition)
         {
+            // mousePosition is relative to CodeEditorView.
+            // adjust for the line number column (and its margin)
+            var editorX = mousePosition.X - viewModel.LineNumberColumnWidth - 2;
+
+            // adjust for the horizontal scroll offset
+            editorX += (double)viewModel.GetValue(HorizontalScrollOffsetProperty);
+
+            // if clicking in the right fourth of a character, put the cursor after the character
             var characterWidth = viewModel.Resources.CharacterWidth;
-            int column = (int)((mousePosition.X - 2 - viewModel.LineNumberColumnWidth + (double)viewModel.GetValue(HorizontalScrollOffsetProperty) + 1) / characterWidth) + 1;
-            if (column < 1)
-                column = 1;
-            return column;
+            editorX += characterWidth / 4;
+
+            // convert the editor relative point to a column index (1-based)
+            int column = (int)(editorX / characterWidth) + 1;
+
+            // if clicking in the line number area, still return column 1
+            return (column < 1) ? 1 : column;
         }
 
         private DateTime doubleClickTime;
