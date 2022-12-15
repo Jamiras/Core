@@ -125,7 +125,8 @@
             <BooleanToVisibilityConverter x:Key="boolToVisConverter" />
 
             <DataTemplate x:Key="lineNumberTemplate">
-                <Grid HorizontalAlignment="Stretch" Background="{Binding Resources.Background.Brush}" Margin="2,0,0,0">
+                <Grid HorizontalAlignment="Stretch" Background="{Binding Resources.Background.Brush}"
+                      Margin="2,0,0,0" Cursor="Arrow">
                     <TextBlock Text="{Binding Line}" 
                            FontFamily="{Binding Resources.FontName, Mode=OneTime}"
                            FontSize="{Binding Resources.FontSize, Mode=OneTime}"
@@ -134,9 +135,13 @@
                 </Grid>
             </DataTemplate>
             <DataTemplate x:Key="lineTemplate">
-                <Grid HorizontalAlignment="Stretch" Background="{Binding Resources.Background.Brush}" Margin="2,0,0,0">
-                    <Border Background="{Binding Resources.Selection.Brush}" Margin="{Binding SelectionLocation}" Width="{Binding SelectionWidth}" HorizontalAlignment="Left" />
-                    <jamiras:CodeEditorTextBlock SnapsToDevicePixels="True"
+                <Grid HorizontalAlignment="Stretch" Background="{Binding Resources.Background.Brush}" Cursor="IBeam">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="4" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="1" Background="{Binding Resources.Selection.Brush}" Margin="{Binding SelectionLocation}" Width="{Binding SelectionWidth}" HorizontalAlignment="Left" />
+                    <jamiras:CodeEditorTextBlock Grid.Column="1" SnapsToDevicePixels="True"
                                                  FontFamily="{Binding Resources.FontName, Mode=OneTime}"
                                                  FontSize="{Binding Resources.FontSize, Mode=OneTime}"
                                                  Foreground="{Binding Resources.Foreground.Brush}" 
@@ -201,7 +206,7 @@
                 </ItemsControl.Template>
             </ItemsControl>
 
-            <Border BorderThickness="0,0,1,0" Margin="0,0,2,0" IsHitTestVisible="False"
+            <Border BorderThickness="0,0,1,0" Margin="0,0,0,0" IsHitTestVisible="False"
                     BorderBrush="{Binding Resources.LineNumber.Brush}" VerticalAlignment="Stretch" HorizontalAlignment="Right" />
 
             <!-- lines -->
