@@ -1954,7 +1954,7 @@ namespace Jamiras.ViewModels.CodeEditor
             }
         }
 
-        private TextRange GetSelection()
+        internal TextRange GetSelection()
         {
             if (HasSelection())
                 return new TextRange(_selectionStartLine, _selectionStartColumn, _selectionEndLine, _selectionEndColumn);

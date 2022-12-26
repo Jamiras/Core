@@ -295,7 +295,8 @@ namespace Jamiras.Controls
             return (column < 1) ? 1 : column;
         }
 
-        private DateTime doubleClickTime;
+        private DateTime _doubleClickTime;
+        private bool _lineSelectionMode = false;
 
         /// <summary>
         /// Raises the <see cref="E:MouseLeftButtonDown" /> event.
@@ -312,7 +313,17 @@ namespace Jamiras.Controls
                     if (line != null)
                     {
                         var moveCursorFlags = ((Keyboard.Modifiers & ModifierKeys.Shift) != 0) ? CodeEditorViewModel.MoveCursorFlags.Highlighting : CodeEditorViewModel.MoveCursorFlags.None;
-                        ViewModel.MoveCursorTo(line.Line, GetColumn(ViewModel, position), moveCursorFlags);
+                        if (moveCursorFlags == CodeEditorViewModel.MoveCursorFlags.None && position.X < ViewModel.LineNumberColumnWidth)
+                        {
+                            ViewModel.MoveCursorTo(line.Line, 1, moveCursorFlags);
+                            ViewModel.MoveCursorTo(line.Line + 1, 1, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+                            _lineSelectionMode = true;
+                        }
+                        else
+                        {
+                            ViewModel.MoveCursorTo(line.Line, GetColumn(ViewModel, position), moveCursorFlags);
+                            _lineSelectionMode = false;
+                        }
                     }
 
                     Focus();
@@ -340,7 +351,7 @@ namespace Jamiras.Controls
                         e.Handled = true;
                     }
 
-                    doubleClickTime = DateTime.UtcNow;
+                    _doubleClickTime = DateTime.UtcNow;
                 }
             }
 
@@ -357,14 +368,37 @@ namespace Jamiras.Controls
             {
                 if (!(e.OriginalSource is System.Windows.Controls.Primitives.Thumb)) // ignore when the user is dragging the scrollbar
                 {
-                    if (DateTime.UtcNow - doubleClickTime > TimeSpan.FromSeconds(1)) // prevent trigger when mouse moves during double click
+                    if (DateTime.UtcNow - _doubleClickTime > TimeSpan.FromSeconds(1)) // prevent trigger when mouse moves during double click
                     {
                         var position = e.GetPosition(this);
                         var line = GetLine(position);
-                        if (line != null)
-                            ViewModel.MoveCursorTo(line.Line, GetColumn(ViewModel, position), CodeEditorViewModel.MoveCursorFlags.Highlighting);
-                        else
+                        if (line == null)
+                        {
                             ViewModel.MoveCursorTo(ViewModel.LineCount, Int32.MaxValue, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+                        }
+                        else if (_lineSelectionMode)
+                        {
+                            var selection = ViewModel.GetSelection();
+                            if (line.Line < selection.Start.Line)
+                            {
+                                if (selection.Start.Column == 1)
+                                {
+                                    var startLine = ViewModel.Lines[selection.Start.Line - 1];
+                                    ViewModel.MoveCursorTo(selection.Start.Line, startLine.LineLength + 1, CodeEditorViewModel.MoveCursorFlags.None);
+                                }
+                                ViewModel.MoveCursorTo(line.Line, 1, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+                            }
+                            else
+                            {
+                                if (selection.Start.Column != 1)
+                                    ViewModel.MoveCursorTo(selection.Start.Line, 1, CodeEditorViewModel.MoveCursorFlags.None);
+                                ViewModel.MoveCursorTo(line.Line + 1, 1, CodeEditorViewModel.MoveCursorFlags.Highlighting);
+                            }
+                        }
+                        else
+                        {
+                            ViewModel.MoveCursorTo(line.Line, GetColumn(ViewModel, position), CodeEditorViewModel.MoveCursorFlags.Highlighting);
+                        }
                     }
                 }
             }
