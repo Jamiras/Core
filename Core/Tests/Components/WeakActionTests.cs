@@ -109,12 +109,12 @@ namespace Jamiras.Core.Tests.Components
         {
             // in .NET Core, WeakReferences have to be created in a different scope than
             // where they're used in order for the Garbage Collector to act on them.
-            var createWeakReferenceTester = () =>
+            Func<WeakReferenceTester<TestClass>> createWeakReferenceTester = () =>
             {
                 return new WeakReferenceTester<TestClass>(() => new TestClass());
             };
 
-            var createWeakAction = (WeakReferenceTester<TestClass> weakTarget) =>
+            Func<WeakReferenceTester<TestClass>,WeakAction<int>> createWeakAction = (WeakReferenceTester<TestClass> weakTarget) =>
             {
                 return new WeakAction<int>(weakTarget.Target.SetValue);
             };
@@ -199,12 +199,12 @@ namespace Jamiras.Core.Tests.Components
         {
             // in .NET Core, WeakReferences have to be created in a different scope than
             // where they're used in order for the Garbage Collector to act on them.
-            var createWeakReferenceTester = () =>
+            Func<WeakReferenceTester<TestClass>> createWeakReferenceTester = () =>
             {
                 return new WeakReferenceTester<TestClass>(() => new TestClass());
             };
 
-            var createWeakAction = (WeakReferenceTester<TestClass> weakTarget) =>
+            Func<WeakReferenceTester<TestClass>,WeakAction<int,int>> createWeakAction = (WeakReferenceTester<TestClass> weakTarget) =>
             {
                 return new WeakAction<int, int>(weakTarget.Target.SetValues);
             };

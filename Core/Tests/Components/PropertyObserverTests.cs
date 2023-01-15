@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using Jamiras.Components;
 using NUnit.Framework;
 
@@ -66,7 +67,7 @@ namespace Jamiras.Core.Tests.Components
         {
             // in .NET Core, WeakReferences have to be created in a different scope than
             // where they're used in order for the Garbage Collector to act on them.
-            var createWeakReferenceTester = (PropertyObserverTests owner) =>
+            Func<PropertyObserverTests,WeakReferenceTester<WeakReferenceHelper>> createWeakReferenceTester = (PropertyObserverTests owner) =>
             {
                 var tester = new WeakReferenceTester<WeakReferenceHelper>(() => new WeakReferenceHelper(owner));
                 _observer.RegisterHandler("NewProperty", tester.Target.SourcePropertyChanged);
