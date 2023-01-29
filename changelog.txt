@@ -1,3 +1,30 @@
+v1.3.0 - 29 Jan 2023
+* auto-show horizontal scrollbar in code editor
+* ability to select entire lines in code editor by clicking on line number
+
+v1.2.1 - 14 Nov 2022
+* Add TextRange.Union
+* Fix negative integer handling in JsonObject
+* Fix crash if clipboard is not available
+
+v1.2.0 - 14 Jun 2022
+* Upgrade to .NET Core 6.0
+* Extract UI code into separate DLL
+* Add SecretTextFieldViewModel
+* Allow JsonField.IntegerValue to convert string fields
+* Improve thread-safety when updating LineViewModel text
+* LineViewModel is no longer exposed through LineEventArgs. Individual read-only properties are exposed instead
+
+v1.1.8 - 4 Jan 2022
+* update to .NET 4.0
+* support for taskbar progress
+* use hours for estimates over 120 minutes
+
+v1.1.7 - 21 Aug 2021
+* add PushState/PopState to Tokenizer
+* raise CodeEditor.LineChanged event for merged/split lines
+* add CodeEditor.TypeCharacter for subclass testing
+
 v1.1.6 - 27 Feb 2021
 * add TextLocation and TextRange
 * several small performance improvements to CodeEditor
