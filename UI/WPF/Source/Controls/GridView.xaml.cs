@@ -1,19 +1,19 @@
-﻿using System;
+﻿using Jamiras.DataModels;
+using Jamiras.ViewModels;
+using Jamiras.ViewModels.Grid;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
-using System.Windows.Media;
-using Jamiras.DataModels;
-using Jamiras.ViewModels;
-using Jamiras.ViewModels.Grid;
-using System.ComponentModel;
-using System.Collections.ObjectModel;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace Jamiras.Controls
 {
@@ -522,17 +522,12 @@ namespace Jamiras.Controls
             }
         }
 
-        private class NewRowFocusHelper
+        private class NewRowFocusHelper : RowFocusHelper
         {
             public NewRowFocusHelper(int rowIndex, int columnIndex)
+                : base(rowIndex, columnIndex)
             {
-                _rowIndex = rowIndex;
-                _columnIndex = columnIndex;
             }
-
-            private readonly int _rowIndex;
-            private readonly int _columnIndex;
-            private FrameworkElement _container;
 
             public void ItemContainerGeneratorStatusChanged(object sender, EventArgs e)
             {
@@ -554,8 +549,27 @@ namespace Jamiras.Controls
                 ((FrameworkElement)sender).Loaded -= ContainerLoaded;
                 FocusChild();
             }
+        }
 
-            private void FocusChild()
+        private class RowFocusHelper
+        {
+            public RowFocusHelper(FrameworkElement container, int rowIndex, int columnIndex)
+                : this(rowIndex, columnIndex)
+            {
+                _container = container;
+            }
+
+            protected RowFocusHelper(int rowIndex, int columnIndex)
+            {
+                _rowIndex = rowIndex;
+                _columnIndex = columnIndex;
+            }
+
+            protected readonly int _rowIndex;
+            protected readonly int _columnIndex;
+            protected FrameworkElement _container;
+
+            public void FocusChild()
             {
                 var gridRow = FindGridRow(_container);
                 if (_columnIndex == -1)
@@ -609,6 +623,76 @@ namespace Jamiras.Controls
 
                 return null;
             }
+        }
+
+        protected override void OnPreviewKeyDown(KeyEventArgs e)
+        {
+            if (e.Key == Key.Down || e.Key == Key.Up)
+            {
+                GridRowViewModel row = null;
+                int column = -1;
+                DependencyObject obj = Keyboard.FocusedElement as DependencyObject;
+                while (obj != null)
+                {
+                    var element = obj as FrameworkElement;
+                    if (element != null)
+                    {
+                        row = element.DataContext as GridRowViewModel;
+                        if (row != null)
+                        {
+                            obj = Keyboard.FocusedElement as DependencyObject;
+                            while (obj != null && !ReferenceEquals(obj, element) && column == -1)
+                            {
+                                for (int i = 0; i < row.Cells.Length; i++)
+                                {
+                                    var childElement = obj as FrameworkElement;
+                                    if (childElement != null)
+                                    {
+                                        if (ReferenceEquals(childElement.DataContext, row.Cells[i]))
+                                        {
+                                            column = i;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                obj = VisualTreeHelper.GetParent(obj);
+                            }
+
+                            break;
+                        }
+                    }
+
+                    obj = VisualTreeHelper.GetParent(obj);
+                }
+
+                if (row != null)
+                {
+                    var index = RowViewModels.IndexOf(row);
+                    if (index != -1)
+                    {
+                        if (e.Key == Key.Up && index > 0)
+                            index--;
+                        else if (e.Key == Key.Down && index < RowViewModels.Count - 1)
+                            index++;
+                        else
+                            index = -1;
+
+                        if (index != -1)
+                        {
+                            var rowsList = (ItemsControl)FindName("rowsList");
+                            var container = (FrameworkElement)rowsList.ItemContainerGenerator.ContainerFromIndex(index);
+                            if (container != null)
+                            {
+                                new RowFocusHelper(container, index, column).FocusChild();
+                                e.Handled = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            base.OnPreviewKeyDown(e);
         }
     }
 
