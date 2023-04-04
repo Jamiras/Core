@@ -268,13 +268,28 @@ namespace Jamiras.ViewModels.CodeEditor
             return true;
         }
 
+        internal bool IsVisible { get; set; }
+
         /// <summary>
         /// Reconstructs the syntax highlighting for the line.
         /// </summary>
         public override void Refresh()
         {
-            // reset dependent property to uninitialized value - if it triggers a PropertyChanged event, bound record will ask for the updated value and it will be re-evaluated.
-            SetValue(TextPiecesProperty, TextPiecesProperty.DefaultValue);
+            if (IsVisible)
+            {
+                if (IsValueUninitialized(TextPiecesProperty))
+                    return;
+
+                var oldPieces = TextPieces;
+                var newPieces = (IEnumerable<TextPiece>)GetTextPieces(this);
+                if (TextPiecesChanged(oldPieces, newPieces))
+                    SetValue(TextPiecesProperty, newPieces);
+            }
+            else
+            {
+                // reset dependent property to uninitialized value - if it triggers a PropertyChanged event, bound record will ask for the updated value and it will be re-evaluated.
+                SetValue(TextPiecesProperty, TextPiecesProperty.DefaultValue);
+            }
         }
 
         /// <summary>
@@ -346,6 +361,26 @@ namespace Jamiras.ViewModels.CodeEditor
             }
 
             return e.BuildTextPieces();
+        }
+
+        private static bool TextPiecesChanged(IEnumerable<TextPiece> oldPieces, IEnumerable<TextPiece> newPieces)
+        {
+            var oldEnumerator = oldPieces.GetEnumerator();
+            var newEnumerator = newPieces.GetEnumerator();
+
+            while (oldEnumerator.MoveNext())
+            {
+                if (!newEnumerator.MoveNext())
+                    return true;
+
+                if (oldEnumerator.Current != newEnumerator.Current)
+                    return true;
+            }
+
+            if (newEnumerator.MoveNext())
+                return true;
+
+            return false;
         }
 
         /// <summary>

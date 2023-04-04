@@ -30,6 +30,37 @@ namespace Jamiras.ViewModels.CodeEditor
         /// Gets or sets whether an error indicator should be drawn for the text.
         /// </summary>
         public bool IsError { get; set; }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            var that = obj as TextPiece;
+            if (that == null)
+                return false;
+
+            return this.IsError == that.IsError && this.Text == that.Text &&
+                this.ToolTip == that.ToolTip && this.Foreground == that.Foreground;
+        }
+
+        public static bool operator ==(TextPiece left, TextPiece right)
+        {
+            if (ReferenceEquals(left, null))
+                return ReferenceEquals(right, null);
+
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(TextPiece left, TextPiece right)
+        {
+            if (ReferenceEquals(left, null))
+                return !ReferenceEquals(right, null);
+
+            return !left.Equals(right);
+        }
     }
 
     /// <summary>

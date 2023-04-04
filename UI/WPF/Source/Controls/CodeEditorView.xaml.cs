@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Shapes;
 
 namespace Jamiras.Controls
 {
@@ -70,13 +71,46 @@ namespace Jamiras.Controls
                 CodeLinesScrollViewer.ScrollToVerticalOffset(scrollOffset);
                 CodeLinesScrollViewer.ScrollToHorizontalOffset(scrollOffsetHorizontal);
                 CodeLineNumbersScrollViewer.ScrollToVerticalOffset(scrollOffset);
+
+                UpdateVisibleLines(scrollOffset);
             }
+        }
+
+        private void UpdateVisibleLines(double scrollOffset)
+        {
+            int firstLine = Math.Max(0, (int)Math.Floor(scrollOffset));
+            int lastLine = Math.Min(ViewModel.LineCount, firstLine + ViewModel.VisibleLines);
+            for (int i = 0; i < firstLine; i++)
+                ViewModel.Lines[i].IsVisible = false;
+            for (int i = firstLine; i < lastLine; i++)
+                ViewModel.Lines[i].IsVisible = true;
+            for (int i = lastLine; i < ViewModel.LineCount; i++)
+                ViewModel.Lines[i].IsVisible = false;
         }
 
         private void OnViewportHeightChanged(object sender, EventArgs e)
         {
             if (ViewModel != null)
-                ViewModel.VisibleLines = (int)CodeLinesScrollViewer.ViewportHeight;
+            {
+                int oldValue = ViewModel.VisibleLines;
+                int newValue = (int)CodeLinesScrollViewer.ViewportHeight;
+                ViewModel.VisibleLines = newValue;
+
+                int firstLine = (int)Math.Floor((double)ViewModel.GetValue(EditorScrollOffsetProperty));
+                oldValue = Math.Min(firstLine + oldValue, ViewModel.LineCount);
+                newValue = Math.Min(firstLine + newValue, ViewModel.LineCount);
+
+                if (oldValue > newValue)
+                {
+                    for (int i = newValue + 1; i <= oldValue; i++)
+                        ViewModel.Lines[i].IsVisible = false;
+                }
+                else
+                {
+                    for (int i = oldValue; i < newValue; i++)
+                        ViewModel.Lines[i].IsVisible = true;
+                }
+            }
         }
 
         private static readonly ModelProperty EditorScrollOffsetProperty = ModelProperty.Register(typeof(CodeEditorView), null, typeof(double), 0.0);
@@ -87,7 +121,10 @@ namespace Jamiras.Controls
             var offset = ((ScrollViewer)sender).VerticalOffset;
 
             if (ViewModel != null)
+            {
                 ViewModel.SetValueCore(EditorScrollOffsetProperty, offset);
+                UpdateVisibleLines(offset);
+            }
 
             CodeLineNumbersScrollViewer.ScrollToVerticalOffset(offset);
         }
