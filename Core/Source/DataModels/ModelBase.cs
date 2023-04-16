@@ -50,6 +50,19 @@ namespace Jamiras.DataModels
         }
 
         /// <summary>
+        /// Gets whether or not a value has been calculated for a dependancy property.
+        /// </summary>
+        /// <param name="property">The <see cref="ModelProperty"/> to query.</param>
+        /// <returns><c>true</c> if a value has been calculated, <c>false</c> if not.</returns>
+        protected bool IsValueUninitialized(ModelProperty property)
+        {
+            if (property.DefaultValue is ModelProperty.UnitializedValue)
+                return !_values.ContainsKey(property.Key);
+
+            return false;
+        }
+
+        /// <summary>
         /// Sets the value of a <see cref="ModelProperty"/> for this instance.
         /// </summary>
         /// <param name="property">The <see cref="ModelProperty"/> to update.</param>
