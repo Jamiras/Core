@@ -1,3 +1,7 @@
+v1.3.1 - 23 Apr 2023
+* allow up/down navigation in grid
+* don't force TextPiece recalculation of offscreen lines
+
 v1.3.0 - 29 Jan 2023
 * auto-show horizontal scrollbar in code editor
 * ability to select entire lines in code editor by clicking on line number
