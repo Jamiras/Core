@@ -97,7 +97,7 @@ namespace Jamiras.Controls
                 ViewModel.VisibleLines = newValue;
 
                 int firstLine = (int)Math.Floor((double)ViewModel.GetValue(EditorScrollOffsetProperty));
-                oldValue = Math.Min(firstLine + oldValue, ViewModel.LineCount);
+                oldValue = Math.Min(firstLine + oldValue, ViewModel.LineCount - 1);
                 newValue = Math.Min(firstLine + newValue, ViewModel.LineCount);
 
                 if (oldValue > newValue)
