@@ -1,3 +1,6 @@
+v1.3.2 - 16 Jul 2023
+* fix exception when viewport height change causes last line of editor to be hidden
+
 v1.3.1 - 23 Apr 2023
 * allow up/down navigation in grid
 * don't force TextPiece recalculation of offscreen lines
