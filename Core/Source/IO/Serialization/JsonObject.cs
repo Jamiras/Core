@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Text;
 
@@ -430,7 +431,7 @@ namespace Jamiras.IO.Serialization
                         value = tokenizer.ReadNumber();
                         if (value.Contains('.'))
                         {
-                            var dVal = Double.Parse(value.ToString());
+                            var dVal = Double.Parse(value.ToString(), CultureInfo.InvariantCulture);
                             if (negative)
                                 dVal = -dVal;
                             AddField(fieldName.ToString(), dVal);
@@ -500,7 +501,7 @@ namespace Jamiras.IO.Serialization
                     var value = tokenizer.ReadNumber();
                     if (value.Contains('.'))
                     {
-                        var dVal = Double.Parse(value.ToString());
+                        var dVal = Double.Parse(value.ToString(), CultureInfo.InvariantCulture);
                         dbls.Add(dVal);
                     }
                     else

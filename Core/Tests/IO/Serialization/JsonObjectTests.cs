@@ -55,6 +55,17 @@ namespace Jamiras.Core.Tests.IO.Serialization
         }
 
         [Test]
+        public void TestDecimalFieldCulture()
+        {
+            using (var cultureOverride = new CultureOverride("fr-FR"))
+            {
+                var o = new JsonObject("{ \"foo\" : 1234.5678 }");
+                Assert.That(o.GetField("foo").Type, Is.EqualTo(JsonFieldType.Double));
+                Assert.That(o.GetField("foo").DoubleValue, Is.EqualTo(1234.5678));
+            }
+        }
+
+        [Test]
         public void TestTrueField()
         {
             var o = new JsonObject("{ \"foo\" : true }");
