@@ -276,5 +276,25 @@ namespace Jamiras.ViewModels
                 messageBoxViewModel.ShowDialog();
             }
         }
+
+        /// <summary>
+        /// Shows the provided message in a simple dialog with an error icon.
+        /// </summary>
+        /// <param name="message">The message to display.</param>
+        /// <param name="detail">Additional information to display.</param>
+        /// <param name="title">The title to use for the dialog.</param>
+        public static void ShowErrorMessage(string message, string detail, string title)
+        {
+            var vm = new TaskDialogViewModel(message, detail);
+            vm.DialogTitle = title;
+            vm.SetIcon(Icon.Error);
+
+            if (!vm.ShowTaskDialog())
+            {
+                var messageBoxViewModel = new MessageBoxViewModel(message + "\n\n" + detail);
+                messageBoxViewModel.DialogTitle = title;
+                messageBoxViewModel.ShowDialog();
+            }
+        }
     }
 }
