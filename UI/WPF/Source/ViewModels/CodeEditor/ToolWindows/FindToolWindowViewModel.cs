@@ -128,7 +128,13 @@ namespace Jamiras.ViewModels.CodeEditor.ToolWindows
 
             // force OnIndexChanged by toggling to 0 briefly before setting the actual new value
             Index = 0;
-            Index = nextIndex + 1;
+            if (_matches.Count > 0)
+            {
+                if (nextIndex < 1)
+                    Index = 1;
+                else
+                    Index = nextIndex + 1;
+            }
         }
 
         /// <summary>
@@ -149,7 +155,7 @@ namespace Jamiras.ViewModels.CodeEditor.ToolWindows
         {
             var vm = (FindToolWindowViewModel)sender;
             var index = (int)e.NewValue;
-            if (index == 0)
+            if (index <= 0)
                 return;
 
             index--;
