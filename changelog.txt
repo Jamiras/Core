@@ -2,6 +2,7 @@ v1.3.3 - 4 Mar 2024
 * Add SoftwareVersion struct
 * Add overload to TaskDialogViewModel.ShowErrorMessage that accepts a dialog title
 * Fix exception parsing JSON with decimals in some locales
+* Fix find at end of editor not wrapping to start of editor
 
 v1.3.2 - 16 Jul 2023
 * Fix exception when viewport height change causes last line of editor to be hidden
