@@ -1,13 +1,18 @@
+v1.3.3 - 4 Mar 2024
+* Add SoftwareVersion struct
+* Add overload to TaskDialogViewModel.ShowErrorMessage that accepts a dialog title
+* Fix exception parsing JSON with decimals in some locales
+
 v1.3.2 - 16 Jul 2023
-* fix exception when viewport height change causes last line of editor to be hidden
+* Fix exception when viewport height change causes last line of editor to be hidden
 
 v1.3.1 - 23 Apr 2023
-* allow up/down navigation in grid
-* don't force TextPiece recalculation of offscreen lines
+* Allow up/down navigation in grid
+* Don't force TextPiece recalculation of offscreen lines
 
 v1.3.0 - 29 Jan 2023
-* auto-show horizontal scrollbar in code editor
-* ability to select entire lines in code editor by clicking on line number
+* Auto-show horizontal scrollbar in code editor
+* Ability to select entire lines in code editor by clicking on line number
 
 v1.2.1 - 14 Nov 2022
 * Add TextRange.Union
