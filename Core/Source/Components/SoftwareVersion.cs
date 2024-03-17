@@ -228,5 +228,13 @@ namespace Jamiras.Components
         {
             return left._version >= right._version;
         }
+
+        /// <summary>
+        /// Returns the newer of this version and another version.
+        /// </summary>
+        public SoftwareVersion OrNewer(SoftwareVersion that)
+        {
+            return (that > this) ? that : this;
+        }
     }
 }

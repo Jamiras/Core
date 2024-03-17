@@ -68,6 +68,8 @@ namespace Jamiras.Core.Tests.Components
                     Assert.That(version1 > version2, Is.False);
                     Assert.That(version1 <= version2, Is.True);
                     Assert.That(version1 >= version2, Is.True);
+
+                    Assert.That(version1.OrNewer(version2), Is.EqualTo(version1));
                     break;
 
                 case '<':
@@ -78,6 +80,8 @@ namespace Jamiras.Core.Tests.Components
                     Assert.That(version1 > version2, Is.False);
                     Assert.That(version1 <= version2, Is.True);
                     Assert.That(version1 >= version2, Is.False);
+
+                    Assert.That(version1.OrNewer(version2), Is.EqualTo(version2));
                     break;
 
                 case '>':
@@ -88,6 +92,8 @@ namespace Jamiras.Core.Tests.Components
                     Assert.That(version1 > version2, Is.True);
                     Assert.That(version1 <= version2, Is.False);
                     Assert.That(version1 >= version2, Is.True);
+
+                    Assert.That(version1.OrNewer(version2), Is.EqualTo(version1));
                     break;
             }
         }
