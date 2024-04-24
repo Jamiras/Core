@@ -762,7 +762,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     break;
 
                 case Key.A:
-                    if ((e.Modifiers & ModifierKeys.Control) != 0)
+                    if (e.Modifiers == ModifierKeys.Control)
                     {
                         SelectAll();
                         e.Handled = true;
@@ -774,7 +774,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     break;
 
                 case Key.C:
-                    if ((e.Modifiers & ModifierKeys.Control) != 0)
+                    if (e.Modifiers == ModifierKeys.Control)
                     {
                         CopySelection();
                         e.Handled = true;
@@ -786,7 +786,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     break;
 
                 case Key.X:
-                    if ((e.Modifiers & ModifierKeys.Control) != 0)
+                    if (e.Modifiers == ModifierKeys.Control)
                     {
                         CutSelection();
                         e.Handled = true;
@@ -798,7 +798,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     break;
 
                 case Key.V:
-                    if ((e.Modifiers & ModifierKeys.Control) != 0)
+                    if (e.Modifiers == ModifierKeys.Control)
                     {
                         HandlePaste();
                         e.Handled = true;
@@ -822,7 +822,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     break;
 
                 case Key.Y:
-                    if ((e.Modifiers & ModifierKeys.Control) != 0)
+                    if (e.Modifiers == ModifierKeys.Control)
                     {
                         HandleRedo();
                         e.Handled = true;
@@ -834,7 +834,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     break;
 
                 case Key.G:
-                    if ((e.Modifiers & ModifierKeys.Control) != 0)
+                    if (e.Modifiers == ModifierKeys.Control)
                     {
                         HandleGotoLine();
                         e.Handled = true;
@@ -846,7 +846,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     break;
 
                 case Key.F:
-                    if ((e.Modifiers & ModifierKeys.Control) != 0)
+                    if (e.Modifiers == ModifierKeys.Control)
                     {
                         HandleFind();
                         e.Handled = true;
@@ -866,7 +866,7 @@ namespace Jamiras.ViewModels.CodeEditor
                     break;
 
                 case Key.H:
-                    if ((e.Modifiers & ModifierKeys.Control) != 0)
+                    if (e.Modifiers == ModifierKeys.Control)
                     {
                         HandleReplace();
                         e.Handled = true;
@@ -877,15 +877,21 @@ namespace Jamiras.ViewModels.CodeEditor
                     }
                     break;
 
+                case Key.LeftAlt:
+                case Key.LeftCtrl:
+                case Key.LeftShift:
+                case Key.RightAlt:
+                case Key.RightCtrl:
+                case Key.RightShift:
+                    // these will never generate a character by themselves. ignore them.
+                    break;
+
                 default:
-                    if ((e.Modifiers & ModifierKeys.Control) == 0)
+                    char c = e.GetChar();
+                    if (c != '\0')
                     {
-                        char c = e.GetChar();
-                        if (c != '\0')
-                        {
-                            HandleCharacter(c);
-                            e.Handled = true;
-                        }
+                        HandleCharacter(c);
+                        e.Handled = true;
                     }
                     break;
             }
