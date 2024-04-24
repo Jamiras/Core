@@ -84,7 +84,7 @@ namespace Jamiras.ViewModels.CodeEditor.ToolWindows
         {
             if (String.Compare(Owner.GetSelectedText(), SearchText.Text, StringComparison.OrdinalIgnoreCase) == 0)
             {
-                Owner.ReplaceSelection(ReplaceText.Text);
+                Owner.ReplaceSelection(ReplaceText.Text ?? "");
                 RemoveCurrentMatch();
             }
         }
