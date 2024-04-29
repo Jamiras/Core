@@ -1233,6 +1233,9 @@ namespace Jamiras.ViewModels.CodeEditor
         /// <param name="newText">The new text.</param>
         internal void ReplaceSelection(string newText)
         {
+            if (newText == null)
+                throw new ArgumentNullException(nameof(newText));
+
             BeginUndo();
 
             var selection = GetSelection();
