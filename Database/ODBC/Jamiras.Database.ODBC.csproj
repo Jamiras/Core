@@ -9,7 +9,7 @@
     <Copyright>Copyright © 2024 Brian Weiss</Copyright>
     <Description>ODBC extensions</Description>
     <Authors>Jamiras</Authors>
-    <VersionPrefix>1.3.3</VersionPrefix>
+    <VersionPrefix>1.3.4</VersionPrefix>
     <Platforms>AnyCPU;x86</Platforms>
   </PropertyGroup>
 

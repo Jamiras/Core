@@ -1,3 +1,7 @@
+v1.3.4 - 22 May 2024
+* Allow character chords containing Ctrl (i.e. Ctrl+Alt+4 for left curly brace on French keyboards) in code editor
+* Fix exception doing a search and replace of some string to empty string in code editor
+
 v1.3.3 - 4 Mar 2024
 * Add SoftwareVersion struct
 * Add overload to TaskDialogViewModel.ShowErrorMessage that accepts a dialog title
