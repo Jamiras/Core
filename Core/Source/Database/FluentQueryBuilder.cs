@@ -1,6 +1,7 @@
 ﻿using Jamiras.Components;
 using Jamiras.DataModels;
 using Jamiras.DataModels.Metadata;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
@@ -21,13 +22,22 @@ namespace Jamiras.Database
         {
             _queryBuilder = new QueryBuilder();
             _database = database;
+            _bindings = null;
+
             Metadata = metadata;
         }
 
         private readonly QueryBuilder _queryBuilder;
         private readonly IDatabase _database;
+        private Dictionary<string, object> _bindings;
 
         internal DatabaseModelMetadata Metadata { get; private set; }
+
+        private void Bind(string bindingName, object value)
+        {
+            _bindings ??= new Dictionary<string, object>();
+            _bindings.Add(bindingName, value);
+        }
 
         private string GetColumnName(ModelProperty property)
         {
@@ -60,6 +70,21 @@ namespace Jamiras.Database
         }
 
         /// <summary>
+        /// Adds a filter to the query.
+        /// </summary>
+        /// <param name="property">Property to filter on.</param>
+        /// <param name="value">Value to filter on.</param>
+        /// <returns><see cref="FluentQueryBuilder{T}"/> for chaining.</returns>
+        public FluentQueryBuilder<T> WhereLike(ModelProperty property, string value)
+        {
+            var columnName = GetColumnName(property);
+            var bindingName = '@' + columnName;
+            Bind(bindingName, value);
+            _queryBuilder.Filters.Add(new FilterDefinition(GetColumnName(property), FilterOperation.Like, bindingName));
+            return this;
+        }
+
+        /// <summary>
         /// Constructs a query from the <see cref="FluentQueryBuilder{T}"/>.
         /// </summary>
         public string ToSql()
@@ -79,18 +104,52 @@ namespace Jamiras.Database
             return builder;
         }
 
+        private void ApplyBindings(IDatabaseQuery query)
+        {
+            if (_bindings != null)
+            {
+                foreach (var binding in _bindings)
+                    query.Bind(binding.Key, binding.Value);
+            }
+        }
+
+        private void LogQuery(QueryBuilder builder)
+        {
+            var sql = builder.ToString();
+
+            if (_bindings != null)
+            {
+                foreach (var binding in _bindings)
+                    sql = sql.Replace(binding.Key, '[' + binding.Value.ToString() + ']');
+            }
+
+#if DEBUG
+            if (builder.Limit != 0)
+            {
+                // Access database doesn't support limit in the query, but report it in the log
+                var temp = new StringBuilder();
+                ServiceRepository.Instance.FindService<IDatabase>().AppendQueryRange(temp, 1, 0);
+                if (temp.Length == 0)
+                    sql += " (LIMIT 1)";
+            }
+#endif
+
+            Debug.WriteLine(">> " + sql);
+        }
+
         /// <summary>
         /// Returns a collection of models matching the query.
         /// </summary>
         public List<T> Get()
         {
             var builder = GetBuilder();
-
-            Debug.WriteLine(">> " + builder.ToString());
+            LogQuery(builder);
 
             var list = new List<T>();
 
             var query = _database.PrepareQuery(builder);
+            ApplyBindings(query);
+
             while (query.FetchRow())
             {
                 T item = new T();
@@ -110,16 +169,12 @@ namespace Jamiras.Database
             var builder = GetBuilder();
             builder.Limit = 1;
             builder.Offset = 0;
-
-#if DEBUG
-            // Access database doesn't support limit in the query, but report it in the log
-            var temp = new StringBuilder();
-            ServiceRepository.Instance.FindService<IDatabase>().AppendQueryRange(temp, 1, 0);
-            Debug.WriteLine(">> " + builder.ToString() + (temp.Length == 0 ? " (LIMIT 1)" : ""));
-#endif
+            LogQuery(builder);
 
             T item = null;
             var query = _database.PrepareQuery(builder);
+            ApplyBindings(query);
+
             if (query.FetchRow())
             {
                 item = new T();
