@@ -1,4 +1,7 @@
-﻿using Jamiras.DataModels.Database;
+﻿using Jamiras.Components;
+using Jamiras.Database;
+using Jamiras.DataModels.Database;
+using Jamiras.DataModels.Metadata;
 
 namespace Jamiras.DataModels
 {
@@ -8,7 +11,24 @@ namespace Jamiras.DataModels
     public abstract class DatabaseModelBase<T> : DataModelBase
         where T : DataModelBase, new()
     {
+        /// <summary>
+        /// Constructs a <see cref="QueryBuilder{T}"/> with the specified filter.
+        /// </summary>
+        /// <param name="property">Property to filter on.</param>
+        /// <param name="value">Value to filter on.</param>
+        /// <returns><see cref="QueryBuilder{T}"/> for building the query.</returns>
         public static QueryBuilder<T> Where(ModelProperty property, int value)
+        {
+            return new QueryBuilder<T>().Where(property, value);
+        }
+
+        /// <summary>
+        /// Constructs a <see cref="QueryBuilder{T}"/> with the specified filter.
+        /// </summary>
+        /// <param name="property">Property to filter on.</param>
+        /// <param name="value">Value to filter on.</param>
+        /// <returns><see cref="QueryBuilder{T}"/> for building the query.</returns>
+        public static QueryBuilder<T> Where(ModelProperty property, string value)
         {
             return new QueryBuilder<T>().Where(property, value);
         }
@@ -22,6 +42,17 @@ namespace Jamiras.DataModels
         {
             var builder = new QueryBuilder<T>();
             return builder.Where(builder.Metadata.PrimaryKeyProperty, id).First();
+        }
+
+        /// <summary>
+        /// Writes any modifications made to the model to the database.
+        /// </summary>
+        /// <returns><c>true</c> if modifications where written, <c>false</c> if not.</returns>
+        public bool Commit()
+        {
+            var database = ServiceRepository.Instance.FindService<IDatabase>();
+            var metadata = (DatabaseModelMetadata)ServiceRepository.Instance.FindService<IDataModelMetadataRepository>().GetModelMetadata(typeof(T));
+            return metadata.Commit(this, database);
         }
     }
 }

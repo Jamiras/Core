@@ -35,12 +35,33 @@ namespace Jamiras.DataModels.Database
             return fieldMetadata.FieldName;
         }
 
+        /// <summary>
+        /// Adds a filter to the query.
+        /// </summary>
+        /// <param name="property">Property to filter on.</param>
+        /// <param name="value">Value to filter on.</param>
+        /// <returns><see cref="QueryBuilder{T}"/> for chaining.</returns>
         public QueryBuilder<T> Where(ModelProperty property, int value)
         {
             _queryBuilder.Filters.Add(new FilterDefinition(GetColumnName(property), FilterOperation.Equals, value));
             return this;
         }
 
+        /// <summary>
+        /// Adds a filter to the query.
+        /// </summary>
+        /// <param name="property">Property to filter on.</param>
+        /// <param name="value">Value to filter on.</param>
+        /// <returns><see cref="QueryBuilder{T}"/> for chaining.</returns>
+        public QueryBuilder<T> Where(ModelProperty property, string value)
+        {
+            _queryBuilder.Filters.Add(new FilterDefinition(GetColumnName(property), FilterOperation.Equals, value));
+            return this;
+        }
+
+        /// <summary>
+        /// Constructs a query from the <see cref="QueryBuilder{T}"/>.
+        /// </summary>
         public string ToSql()
         {
             return _queryBuilder.ToString();
@@ -58,6 +79,9 @@ namespace Jamiras.DataModels.Database
             return builder;
         }
 
+        /// <summary>
+        /// Returns a collection of models matching the query.
+        /// </summary>
         public List<T> Get()
         {
             var builder = GetBuilder();
@@ -78,6 +102,9 @@ namespace Jamiras.DataModels.Database
             return list;
         }
 
+        /// <summary>
+        /// Returns the first model matching the query (<c>null</c> if not found).
+        /// </summary>
         public T First()
         {
             var builder = GetBuilder();
