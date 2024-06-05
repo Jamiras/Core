@@ -1,6 +1,7 @@
 ﻿using Jamiras.Components;
 using Jamiras.Database;
 using Jamiras.DataModels.Metadata;
+using System.Collections.Generic;
 
 namespace Jamiras.DataModels
 {
@@ -10,6 +11,8 @@ namespace Jamiras.DataModels
     public abstract class DatabaseModelBase<T> : DataModelBase
         where T : DataModelBase, new()
     {
+        private Dictionary<int, DataModelBase> _relatedModels = null;
+
         /// <summary>
         /// Constructs a <see cref="FluentQueryBuilder{T}"/> with the specified filter.
         /// </summary>
@@ -52,6 +55,25 @@ namespace Jamiras.DataModels
             var database = ServiceRepository.Instance.FindService<IDatabase>();
             var metadata = (DatabaseModelMetadata)ServiceRepository.Instance.FindService<IDataModelMetadataRepository>().GetModelMetadata(typeof(T));
             return metadata.Commit(this, database);
+        }
+
+        protected T GetRelatedModel<T>(ModelProperty foriegnKeyProperty)
+            where T : DataModelBase, new()
+        {
+            _relatedModels ??= new Dictionary<int, DataModelBase>();
+
+            DataModelBase model;
+            if (!_relatedModels.TryGetValue(foriegnKeyProperty.Key, out model))
+            {
+                var id = (int)GetValue(foriegnKeyProperty);
+
+                var builder = new FluentQueryBuilder<T>();
+                model = builder.Where(builder.Metadata.PrimaryKeyProperty, id).First();
+
+                _relatedModels[foriegnKeyProperty.Key] = model;
+            }
+
+            return model as T;
         }
     }
 }
