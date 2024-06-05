@@ -1,6 +1,5 @@
 ﻿using Jamiras.Components;
 using Jamiras.Database;
-using Jamiras.DataModels.Database;
 using Jamiras.DataModels.Metadata;
 
 namespace Jamiras.DataModels
@@ -12,25 +11,25 @@ namespace Jamiras.DataModels
         where T : DataModelBase, new()
     {
         /// <summary>
-        /// Constructs a <see cref="QueryBuilder{T}"/> with the specified filter.
+        /// Constructs a <see cref="FluentQueryBuilder{T}"/> with the specified filter.
         /// </summary>
         /// <param name="property">Property to filter on.</param>
         /// <param name="value">Value to filter on.</param>
-        /// <returns><see cref="QueryBuilder{T}"/> for building the query.</returns>
-        public static QueryBuilder<T> Where(ModelProperty property, int value)
+        /// <returns><see cref="FluentQueryBuilder{T}"/> for building the query.</returns>
+        public static FluentQueryBuilder<T> Where(ModelProperty property, int value)
         {
-            return new QueryBuilder<T>().Where(property, value);
+            return new FluentQueryBuilder<T>().Where(property, value);
         }
 
         /// <summary>
-        /// Constructs a <see cref="QueryBuilder{T}"/> with the specified filter.
+        /// Constructs a <see cref="FluentQueryBuilder{T}"/> with the specified filter.
         /// </summary>
         /// <param name="property">Property to filter on.</param>
         /// <param name="value">Value to filter on.</param>
-        /// <returns><see cref="QueryBuilder{T}"/> for building the query.</returns>
-        public static QueryBuilder<T> Where(ModelProperty property, string value)
+        /// <returns><see cref="FluentQueryBuilder{T}"/> for building the query.</returns>
+        public static FluentQueryBuilder<T> Where(ModelProperty property, string value)
         {
-            return new QueryBuilder<T>().Where(property, value);
+            return new FluentQueryBuilder<T>().Where(property, value);
         }
 
         /// <summary>
@@ -40,7 +39,7 @@ namespace Jamiras.DataModels
         /// <returns>Found model, <c>null</c> if not found.</returns>
         public static T Get(int id)
         {
-            var builder = new QueryBuilder<T>();
+            var builder = new FluentQueryBuilder<T>();
             return builder.Where(builder.Metadata.PrimaryKeyProperty, id).First();
         }
 

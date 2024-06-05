@@ -1,23 +1,23 @@
 ﻿using Jamiras.Components;
-using Jamiras.Database;
+using Jamiras.DataModels;
 using Jamiras.DataModels.Metadata;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
-namespace Jamiras.DataModels.Database
+namespace Jamiras.Database
 {
     [DebuggerDisplay("{_queryBuilder.ToString()}")]
-    public class QueryBuilder<T>
+    public class FluentQueryBuilder<T>
         where T : DataModelBase, new()
     {
-        public QueryBuilder()
+        public FluentQueryBuilder()
             : this(ServiceRepository.Instance.FindService<IDatabase>(),
                    (DatabaseModelMetadata)ServiceRepository.Instance.FindService<IDataModelMetadataRepository>().GetModelMetadata(typeof(T)))
         {
         }
 
-        public QueryBuilder(IDatabase database, DatabaseModelMetadata metadata)
+        public FluentQueryBuilder(IDatabase database, DatabaseModelMetadata metadata)
         {
             _queryBuilder = new QueryBuilder();
             _database = database;
@@ -40,8 +40,8 @@ namespace Jamiras.DataModels.Database
         /// </summary>
         /// <param name="property">Property to filter on.</param>
         /// <param name="value">Value to filter on.</param>
-        /// <returns><see cref="QueryBuilder{T}"/> for chaining.</returns>
-        public QueryBuilder<T> Where(ModelProperty property, int value)
+        /// <returns><see cref="FluentQueryBuilder{T}"/> for chaining.</returns>
+        public FluentQueryBuilder<T> Where(ModelProperty property, int value)
         {
             _queryBuilder.Filters.Add(new FilterDefinition(GetColumnName(property), FilterOperation.Equals, value));
             return this;
@@ -52,15 +52,15 @@ namespace Jamiras.DataModels.Database
         /// </summary>
         /// <param name="property">Property to filter on.</param>
         /// <param name="value">Value to filter on.</param>
-        /// <returns><see cref="QueryBuilder{T}"/> for chaining.</returns>
-        public QueryBuilder<T> Where(ModelProperty property, string value)
+        /// <returns><see cref="FluentQueryBuilder{T}"/> for chaining.</returns>
+        public FluentQueryBuilder<T> Where(ModelProperty property, string value)
         {
             _queryBuilder.Filters.Add(new FilterDefinition(GetColumnName(property), FilterOperation.Equals, value));
             return this;
         }
 
         /// <summary>
-        /// Constructs a query from the <see cref="QueryBuilder{T}"/>.
+        /// Constructs a query from the <see cref="FluentQueryBuilder{T}"/>.
         /// </summary>
         public string ToSql()
         {

@@ -21,5 +21,9 @@
     <_Parameter1>Jamiras.UI.WPF</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="DataModels\Database\" />
+  </ItemGroup>
  
 </Project>
