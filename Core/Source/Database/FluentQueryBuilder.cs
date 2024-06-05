@@ -147,6 +147,10 @@ namespace Jamiras.Database
 
             var list = new List<T>();
 
+#if DEBUG
+            var stopwatch = Stopwatch.StartNew();
+#endif
+
             var query = _database.PrepareQuery(builder);
             ApplyBindings(query);
 
@@ -157,7 +161,10 @@ namespace Jamiras.Database
                 list.Add(item);
             }
 
-            Debug.WriteLine("<< {0} rows returned", list.Count);
+#if DEBUG
+            stopwatch.Stop();
+            Debug.WriteLine("<< {0}ms: {1} rows returned", stopwatch.Elapsed.TotalMilliseconds, list.Count);
+#endif
             return list;
         }
 
@@ -172,6 +179,11 @@ namespace Jamiras.Database
             LogQuery(builder);
 
             T item = null;
+
+#if DEBUG
+            var stopwatch = Stopwatch.StartNew();
+#endif
+
             var query = _database.PrepareQuery(builder);
             ApplyBindings(query);
 
@@ -179,12 +191,12 @@ namespace Jamiras.Database
             {
                 item = new T();
                 Metadata.PopulateItem(item, _database, query);
-                Debug.WriteLine("<< {0} rows returned", 1);
             }
-            else
-            {
-                Debug.WriteLine("<< {0} rows returned", 0);
-            }
+
+#if DEBUG
+            stopwatch.Stop();
+            Debug.WriteLine("<< {0}ms: {1} rows returned", stopwatch.Elapsed.TotalMilliseconds, item != null ? 1 : 0);
+#endif
 
             return item;
         }
