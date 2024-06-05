@@ -260,16 +260,43 @@ namespace Jamiras.DataModels.Metadata
         {
         }
 
+        private void CopyValueToModel(ModelBase model, IDatabaseQuery query, int index, int modelPropertyKey, FieldMetadata fieldMetadata)
+        {
+            var property = ModelProperty.GetPropertyForKey(modelPropertyKey);
+            var value = GetQueryValue(query, index, fieldMetadata);
+            value = CoerceValueFromDatabase(property, fieldMetadata, value);
+            model.SetValueCore(property, value);
+        }
+
         // internal for access from DatabaseModelCollectionMetadata
         internal void PopulateItem(ModelBase model, IDatabase database, IDatabaseQuery query)
         {
             int index = 0;
             foreach (var kvp in AllFieldMetadata)
+                CopyValueToModel(model, query, index++, kvp.Key, kvp.Value);
+
+            InitializeExistingRecord(model, database);
+
+            var dataModel = model as DataModelBase;
+            if (dataModel != null && dataModel.IsModified)
+                dataModel.AcceptChanges();
+        }
+
+        // internal for access from FluentQueryBuilder
+        internal void PopulateItem(ModelBase model, QueryBuilder builder, IDatabase database, IDatabaseQuery query)
+        {
+            int index = 0;
+            foreach (var field in builder.Fields)
             {
-                var property = ModelProperty.GetPropertyForKey(kvp.Key);
-                var value = GetQueryValue(query, index, kvp.Value);
-                value = CoerceValueFromDatabase(property, kvp.Value, value);
-                model.SetValueCore(property, value);
+                foreach (var kvp in AllFieldMetadata)
+                {
+                    if (kvp.Value.FieldName == field)
+                    {
+                        CopyValueToModel(model, query, index, kvp.Key, kvp.Value);
+                        break;
+                    }
+                }
+
                 index++;
             }
 

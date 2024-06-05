@@ -2,6 +2,7 @@
 using Jamiras.DataModels;
 using Jamiras.DataModels.Metadata;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
@@ -94,7 +95,18 @@ namespace Jamiras.Database
 
         private QueryBuilder GetBuilder()
         {
-            var builder = Metadata.BuildQueryExpression(_database);
+            var builder = new QueryBuilder();
+            if (_queryBuilder.Fields.Count > 0)
+            {
+                foreach (var field in _queryBuilder.Fields)
+                    builder.Fields.Add(field);
+            }
+            else
+            {
+                foreach (var metadata in Metadata.AllFieldMetadata.Values)
+                    builder.Fields.Add(metadata.FieldName);
+            }
+
             builder.Limit = _queryBuilder.Limit;
             builder.Offset = _queryBuilder.Offset;
 
@@ -157,7 +169,7 @@ namespace Jamiras.Database
             while (query.FetchRow())
             {
                 T item = new T();
-                Metadata.PopulateItem(item, _database, query);
+                Metadata.PopulateItem(item, builder, _database, query);
                 list.Add(item);
             }
 
@@ -190,7 +202,7 @@ namespace Jamiras.Database
             if (query.FetchRow())
             {
                 item = new T();
-                Metadata.PopulateItem(item, _database, query);
+                Metadata.PopulateItem(item, builder, _database, query);
             }
 
 #if DEBUG
