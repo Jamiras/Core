@@ -12,10 +12,16 @@ namespace Jamiras.Database
         {
             _command = connection.CreateCommand();
             _command.CommandText = query;
+
+            Limit = Offset = 0;
         }
 
         private readonly OdbcCommand _command;
         private OdbcDataReader _reader;
+
+        public int Limit { get; set; }
+        public int Offset { get; set; }
+        private int _numRead = 0;
 
         #region IDatabaseQuery
 
@@ -32,9 +38,24 @@ namespace Jamiras.Database
                     if (_command.Parameters.Count > 0)
                         ReplaceParameters();
                     _reader = _command.ExecuteReader();
+
+                    // Access doesn't support offset in query, do it manually
+                    for (int i = 0; i < Offset; i++)
+                    {
+                        if (!_reader.Read())
+                            return false;
+                    }
                 }
 
-                return _reader.Read();
+                // Access doesn't support limit in query, do it manually
+                if (Limit > 0 && _numRead == Limit)
+                    return false;
+
+                if (!_reader.Read())
+                    return false;
+
+                _numRead++;
+                return true;
             }
             catch (Exception ex)
             {

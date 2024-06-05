@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 
 namespace Jamiras.Database
 {
@@ -60,6 +61,14 @@ namespace Jamiras.Database
         /// <param name="query">The <see cref="QueryBuilder"/> to build the query string from.</param>
         /// <returns>The query string.</returns>
         string BuildQueryString(QueryBuilder query);
+
+        /// <summary>
+        /// Constructs a database-specific query subclause for limiting the range of rows returned.
+        /// </summary>
+        /// <param name="builder">The <see cref="StringBuilder"/> to write the range to.</param>
+        /// <param name="limit">The number of rows to return.</param>
+        /// <param name="offset">The number of rows to skip.</param>
+        void AppendQueryRange(StringBuilder builder, int limit, int offset);
 
         /// <summary>
         /// Gets the schema for the database.

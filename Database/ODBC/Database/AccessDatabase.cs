@@ -53,7 +53,12 @@ namespace Jamiras.Database
         /// <returns>A query result row enumerator.</returns>
         public IDatabaseQuery PrepareQuery(QueryBuilder query)
         {
-            return PrepareQuery(BuildQueryString(query));
+            _logger.WriteVerbose("Preparing query: {0}", query);
+            return new AccessDatabaseQuery(_connection, BuildQueryString(query))
+            {
+                Limit = query.Limit,
+                Offset = query.Offset
+            };
         }
 
         /// <summary>
@@ -205,6 +210,17 @@ namespace Jamiras.Database
         public string BuildQueryString(QueryBuilder query)
         {
             return QueryBuilder.BuildQueryString(query, Schema);
+        }
+
+        /// <summary>
+        /// Constructs a database-specific query subclause for limiting the range of rows returned.
+        /// </summary>
+        /// <param name="builder">The <see cref="StringBuilder"/> to write the range to.</param>
+        /// <param name="limit">The number of rows to return.</param>
+        /// <param name="offset">The number of rows to skip.</param>
+        public void AppendQueryRange(StringBuilder builder, int limit, int offset)
+        {
+            // Access doesn't support range limitations.
         }
 
         /// <summary>

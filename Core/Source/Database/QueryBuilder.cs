@@ -22,6 +22,7 @@ namespace Jamiras.Database
             _orderBy = new List<OrderByDefinition>();
             _aliases = new List<AliasDefinition>();
             _aggregateFields = new List<AggregateFieldDefinition>();
+            Limit = Offset = 0;
         }
 
         private readonly List<string> _fields;
@@ -31,6 +32,16 @@ namespace Jamiras.Database
         private readonly List<AliasDefinition> _aliases;
         private readonly List<AggregateFieldDefinition> _aggregateFields;
         private string _filterExpression;
+
+        /// <summary>
+        /// Gets or sets the number of rows to return (0=unlimited).
+        /// </summary>
+        public int Limit { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of rows to skip.
+        /// </summary>
+        public int Offset { get; set; }
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.
@@ -64,6 +75,8 @@ namespace Jamiras.Database
                 builder.Length -= 7;
 
             AppendOrderBy(builder, query);
+
+            AppendLimitOffset(builder, query);
 
             return builder.ToString();
         }
@@ -102,6 +115,12 @@ namespace Jamiras.Database
 
         private static void AppendQueryFields(StringBuilder builder, QueryBuilder query)
         {
+            if (query.Fields.Count == 0)
+            {
+                builder.Append('*');
+                return;
+            }
+
             foreach (var field in query.Fields)
             {
                 AppendFieldName(builder, field);
@@ -399,6 +418,12 @@ namespace Jamiras.Database
 
                 builder.Length -= 2;
             }
+        }
+
+        private static void AppendLimitOffset(StringBuilder builder, QueryBuilder query)
+        {
+            if (query.Limit != 0 || query.Offset != 0)
+                ServiceRepository.Instance.FindService<IDatabase>().AppendQueryRange(builder, query.Limit, query.Offset);
         }
 
         #endregion
