@@ -50,6 +50,32 @@ namespace Jamiras.Components
             private int _inputIndex;
             private int _tokenStart;
 
+            public override string ToString()
+            {
+                var builder = new StringBuilder();
+                builder.Append(GetType().Name);
+                builder.Append(' ');
+                builder.Append('"');
+
+                if (NextChar != '\0')
+                {
+                    builder.Append(NextChar);
+
+                    if (_stop - _inputIndex > 19)
+                    {
+                        builder.Append(_input.Substring(_inputIndex, 16));
+                        builder.Append("...");
+                    }
+                    else
+                    {
+                        builder.Append(_input.Substring(_inputIndex, _stop - _inputIndex));
+                    }
+                }
+
+                builder.Append('"');
+                return builder.ToString();
+            }
+
             internal override void StartToken()
             {
                 _tokenStart = _inputIndex - 1;
