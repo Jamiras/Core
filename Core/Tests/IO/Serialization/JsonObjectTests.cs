@@ -82,6 +82,26 @@ namespace Jamiras.Core.Tests.IO.Serialization
         }
 
         [Test]
+        public void TestTrueFromIntegerField()
+        {
+            var o = new JsonObject("{ \"foo\" : 1 }");
+            Assert.That(o.GetField("foo").Type, Is.EqualTo(JsonFieldType.Integer));
+            Assert.That(o.GetField("foo").BooleanValue, Is.True);
+
+            o = new JsonObject("{ \"foo\" : 99 }");
+            Assert.That(o.GetField("foo").Type, Is.EqualTo(JsonFieldType.Integer));
+            Assert.That(o.GetField("foo").BooleanValue, Is.True);
+        }
+
+        [Test]
+        public void TestFalseFromIntegerField()
+        {
+            var o = new JsonObject("{ \"foo\" : 0 }");
+            Assert.That(o.GetField("foo").Type, Is.EqualTo(JsonFieldType.Integer));
+            Assert.That(o.GetField("foo").BooleanValue, Is.False);
+        }
+
+        [Test]
         public void TestNullField()
         {
             var o = new JsonObject("{ \"foo\" : null }");

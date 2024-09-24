@@ -733,6 +733,9 @@ namespace Jamiras.IO.Serialization
                 if (_value is bool)
                     return (bool)_value;
 
+                if (_value is int)
+                    return (int)_value != 0;
+
                 return false;
             }
         }
