@@ -1,3 +1,7 @@
+v1.3.5 - 01 Oct 2024
+* Allow JsonField.BooleanValue to convert integer fields
+* Improve debugger display string for StringTokenizer
+
 v1.3.4 - 22 May 2024
 * Allow character chords containing Ctrl (i.e. Ctrl+Alt+4 for left curly brace on French keyboards) in code editor
 * Fix exception doing a search and replace of some string to empty string in code editor
