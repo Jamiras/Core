@@ -1,3 +1,6 @@
+v1.3.6 - 10 Mar 2025
+* Use native WINAPIs for clipboard access to avoid CLIPBRD_E_CANT_OPEN error
+
 v1.3.5 - 01 Oct 2024
 * Allow JsonField.BooleanValue to convert integer fields
 * Improve debugger display string for StringTokenizer

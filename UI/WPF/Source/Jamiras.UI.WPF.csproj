@@ -7,10 +7,10 @@
     <Nullable>disable</Nullable>
     <UseWPF>true</UseWPF>
     <RepositoryUrl>https://github.com/Jamiras/Core</RepositoryUrl>
-    <Copyright>Copyright © 2024 Brian Weiss</Copyright>
+    <Copyright>Copyright © 2025 Brian Weiss</Copyright>
     <Description>Common components for WPF projects</Description>
     <Authors>Jamiras</Authors>
-    <VersionPrefix>1.3.5</VersionPrefix>
+    <VersionPrefix>1.3.6</VersionPrefix>
     <RootNamespace>Jamiras</RootNamespace>
   </PropertyGroup>
 
