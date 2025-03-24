@@ -18,13 +18,13 @@ namespace Jamiras.ViewModels.Grid
         /// <param name="header">The column header text.</param>
         /// <param name="sourceProperty">The property bound to the column.</param>
         /// <param name="metadata">Information about the data for the column.</param>
-        public DateColumnDefinition(string header, ModelProperty sourceProperty, DateTimeFieldMetadata metadata)
+        public DateColumnDefinition(string header, ModelProperty sourceProperty, DateFieldMetadata metadata)
             : base(header, sourceProperty)
         {
             _metadata = metadata;
         }
 
-        private readonly DateTimeFieldMetadata _metadata;
+        private readonly DateFieldMetadata _metadata;
 
         private static readonly IConverter _dateConverter = new DelegateConverter(ConvertDate, null);
 

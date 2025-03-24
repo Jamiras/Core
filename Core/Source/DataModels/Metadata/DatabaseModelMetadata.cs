@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -197,13 +198,13 @@ namespace Jamiras.DataModels.Metadata
                 query.Filters.Add(new FilterDefinition(fieldMetadata.FieldName, FilterOperation.Equals, FilterValueToken));
             }
 
-            return database.BuildQueryString(query);
+            return query.BuildQueryString();
         }
 
         // internal for access from DatabaseModelCollectionMetadata
         internal QueryBuilder BuildQueryExpression(IDatabase database)
         {
-            var query = new QueryBuilder();
+            var query = database.CreateQueryBuilder();
 
             var aliases = new Dictionary<FieldMetadata, string>();
             foreach (var kvp in _tableMetadata)
@@ -312,6 +313,9 @@ namespace Jamiras.DataModels.Metadata
             if (fieldMetadata is DateTimeFieldMetadata)
                 return query.GetDateTime(index);
 
+            if (fieldMetadata is DateFieldMetadata)
+                return query.GetDateTime(index);
+
             if (fieldMetadata is BooleanFieldMetadata)
                 return query.GetBool(index);
 
@@ -334,8 +338,13 @@ namespace Jamiras.DataModels.Metadata
             if (property.PropertyType.IsEnum && databaseValue is int)
                 return Enum.ToObject(property.PropertyType, (int)databaseValue);
 
-            if (property.PropertyType == typeof(Date) && databaseValue is DateTime)
-                return Date.FromDateTime((DateTime)databaseValue);
+            if (property.PropertyType == typeof(Date))
+            {
+                if (databaseValue is DateTime)
+                    return Date.FromDateTime((DateTime)databaseValue);
+                if (databaseValue is null)
+                    return Date.Empty;
+            }
 
             return databaseValue;
         }
@@ -413,7 +422,6 @@ namespace Jamiras.DataModels.Metadata
 
         private static void AppendQueryNull(StringBuilder builder)
         {
-
             if (builder[builder.Length - 1] == '=')
             {
                 for (int i = builder.Length - 8; i >= 0; i--)
@@ -517,9 +525,12 @@ namespace Jamiras.DataModels.Metadata
 
         private bool CreateRow(ModelBase model, IDatabase database, string tableName, IEnumerable<int> tablePropertyKeys, ModelProperty joinProperty, string joinFieldName)
         {
+            var queryBuilder = database.CreateQueryBuilder();
+
             bool onlyDefaults = (joinFieldName != null);
             var properties = new List<ModelProperty>();
             var refreshProperties = new List<ModelProperty>();
+            var emptyStringProperties = new List<ModelProperty>();
             foreach (var propertyKey in tablePropertyKeys)
             {
                 var property = ModelProperty.GetPropertyForKey(propertyKey);
@@ -539,143 +550,76 @@ namespace Jamiras.DataModels.Metadata
             if (properties.Count == 0 || onlyDefaults)
                 return true;
 
-            var builder = new StringBuilder();
-            builder.Append("INSERT INTO ");
-            builder.Append(tableName);
-            builder.Append(" (");
-
-            if (joinFieldName != null)
-            {
-                builder.Append('[');
-                builder.Append(GetFieldName(joinFieldName));
-                builder.Append("], ");
-            }
-
-            foreach (var property in properties)
-            {
-                var fieldMetadata = GetFieldMetadata(property);
-                var fieldName = GetFieldName(fieldMetadata.FieldName);
-                builder.Append('[');
-                builder.Append(fieldName);
-                builder.Append("], ");
-            }
-
-            builder.Length -= 2;
-            builder.Append(") VALUES (");
-
             if (joinFieldName != null)
             {
                 var fieldMetadata = GetFieldMetadata(joinProperty);
                 var value = model.GetValue(joinProperty);
                 value = CoerceValueToDatabase(joinProperty, fieldMetadata, value);
-                AppendQueryValue(builder, value, GetFieldMetadata(joinProperty), database);
-                builder.Append(", ");
+                queryBuilder.Values.Add(joinFieldName, value);
             }
-
-            var values = new TinyDictionary<FieldMetadata, object>();
 
             foreach (var property in properties)
             {
                 var fieldMetadata = GetFieldMetadata(property);
                 var value = model.GetValue(property);
+                value = CoerceValueToDatabase(property, fieldMetadata, value);
+                queryBuilder.Values.Add(fieldMetadata.FieldName, value);
 
-                object previousValue;
-                if (values.TryGetValue(fieldMetadata, out previousValue))
-                {
-                    if (!Object.Equals(value, previousValue))
-                        throw new InvalidOperationException("Cannot set " + fieldMetadata.FieldName + " to '" + previousValue  +"' and '" + value + "'");
-                }
-                else
-                {
-                    value = CoerceValueToDatabase(property, fieldMetadata, value);
-                    values[fieldMetadata] = value;
-
-                    AppendQueryValue(builder, value, fieldMetadata, database);
-                    builder.Append(", ");
-                }
+                // string properties set to empty string may be committed as null.
+                // ignore them when trying to match the refresh properties.
+                if (fieldMetadata is StringFieldMetadata && value is string && (string)value == "")
+                    emptyStringProperties.Add(property);
             }
-
-            builder.Length -= 2;
-            builder.Append(')');
 
             try
             {
-                if (database.ExecuteCommand(builder.ToString()) == 0)
+                if (database.ExecuteCommand(queryBuilder) == 0)
                     return false;
 
                 if (refreshProperties.Count > 0)
+                {
+                    foreach (var property in emptyStringProperties)
+                        properties.Remove(property);
+
                     RefreshAfterCommit(model, database, refreshProperties, properties);
+                }
 
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message + ": " + builder.ToString());
+                Debug.WriteLine(ex.Message + ": " + queryBuilder.ToString());
                 return false;
             }
         }
 
         private void RefreshAfterCommit(ModelBase model, IDatabase database, IEnumerable<ModelProperty> refreshProperties, IEnumerable<ModelProperty> propertiesToMatch)
         {
-            var builder = new StringBuilder();
-            builder.Append("SELECT ");
-
-            string tableName = null;
+            var builder = database.CreateQueryBuilder();
+            string primaryTableName = null;
             foreach (var property in refreshProperties)
             {
                 var fieldMetadata = GetFieldMetadata(property);
                 if (fieldMetadata is AutoIncrementFieldMetadata)
-                {
-                    builder.Append("MAX(");
-                    builder.Append(fieldMetadata.FieldName);
-                    builder.Append(")");
-                }
+                    builder.Fields.Add(String.Format("MAX({0})", fieldMetadata.FieldName));
                 else
+                    builder.Fields.Add(fieldMetadata.FieldName);
+
+                if (primaryTableName == null)
                 {
-                    builder.Append(fieldMetadata.FieldName);
+                    var idx = fieldMetadata.FieldName.IndexOf('.');
+                    primaryTableName = fieldMetadata.FieldName.Substring(0, idx);
                 }
-
-                builder.Append(", ");
-
-                if (tableName == null)
-                    tableName = GetTableName(fieldMetadata.FieldName);
             }
-
-            if (tableName == null)
-                return;
-
-            builder.Length -= 2;
-            builder.Append(" FROM ");
-            builder.Append(tableName);
-            builder.Append(" WHERE ");
 
             foreach (var property in propertiesToMatch)
             {
                 var fieldMetadata = GetFieldMetadata(property);
                 var value = model.GetValue(property);
                 value = CoerceValueToDatabase(property, fieldMetadata, value);
-                builder.Append('[');
 
-                var foreignKeyMetadata = fieldMetadata as ForeignKeyFieldMetadata;
-                if (foreignKeyMetadata != null)
-                {
-                    var fieldName = fieldMetadata.FieldName;
-                    if (fieldName.Length < tableName.Length + 1 || fieldName[tableName.Length] != '.' || !fieldName.StartsWith(tableName))
-                        fieldName = foreignKeyMetadata.RelatedField.FieldName;
-
-                    builder.Append(fieldName);
-                }
-                else
-                {
-                    builder.Append(fieldMetadata.FieldName);                    
-                }
-
-                builder.Append(']');
-                builder.Append('=');
-                AppendQueryValue(builder, value, fieldMetadata, database);
-                builder.Append(" AND ");
+                AddFilter(builder, fieldMetadata, value, primaryTableName);
             }
-            builder.Length -= 5;
 
             var queryString = builder.ToString();
             using (var query = database.PrepareQuery(queryString))
@@ -692,7 +636,29 @@ namespace Jamiras.DataModels.Metadata
                         index++;
                     }
                 }
+            } 
+        }
+
+        private static void AddFilter(QueryBuilder builder, FieldMetadata fieldMetadata, object value, string primaryTableName)
+        {
+            var fieldName = fieldMetadata.FieldName;
+
+            var foreignKeyMetadata = fieldMetadata as ForeignKeyFieldMetadata;
+            if (foreignKeyMetadata != null)
+            {
+                if (!fieldName.StartsWith(primaryTableName + '.'))
+                    fieldName = foreignKeyMetadata.RelatedField.FieldName;
             }
+
+            var dataType = FilterDefinition.GetDataType(value);
+            if (dataType == DataType.DateTime)
+            {
+                var dttm = (DateTime)value;
+                if (dttm.Hour == 0 && dttm.Minute == 0 && dttm.Second == 0)
+                    dataType = DataType.Date;
+            }
+
+            builder.Filters.Add(new FilterDefinition(fieldName, FilterOperation.Equals, value, dataType));
         }
 
         /// <summary>
@@ -778,39 +744,24 @@ namespace Jamiras.DataModels.Metadata
 
             if (modifiedProperties.Count > 0)
             {
-                var builder = new StringBuilder();
-                builder.Append("UPDATE ");
-                builder.Append(tableName);
-                builder.Append(" SET ");
+                var builder = database.CreateQueryBuilder();
+                if (whereProperty == PrimaryKeyProperty)
+                    builder.Filters.Add(new FilterDefinition(whereFieldName, FilterOperation.Equals, (int)model.GetValue(whereProperty)));
+                else
+                    builder.Filters.Add(new FilterDefinition(whereFieldName, FilterOperation.Equals, model.GetValue(whereProperty).ToString()));
 
                 foreach (var property in modifiedProperties)
                 {
                     var fieldMetadata = GetFieldMetadata(property);
 
-                    builder.Append(fieldMetadata.FieldName);
-                    builder.Append('=');
-
                     var value = model.GetValue(property);
                     value = CoerceValueToDatabase(property, fieldMetadata, value);
-                    AppendQueryValue(builder, value, fieldMetadata, database);
-
-                    builder.Append(", ");
+                    builder.Values.Add(fieldMetadata.FieldName, value);
                 }
-
-                builder.Length -= 2;
-
-                builder.Append(" WHERE ");
-                builder.Append(whereFieldName);
-                builder.Append("=");
-
-                var whereFieldMetadata = GetFieldMetadata(whereProperty);
-                var whereValue = model.GetValue(whereProperty);
-                whereValue = CoerceValueToDatabase(whereProperty, whereFieldMetadata, whereValue);
-                AppendQueryValue(builder, whereValue, whereFieldMetadata, database);
 
                 try
                 {
-                    if (database.ExecuteCommand(builder.ToString()) != 1)
+                    if (database.ExecuteCommand(builder) != 1)
                         return false;
                 }
                 catch (Exception)

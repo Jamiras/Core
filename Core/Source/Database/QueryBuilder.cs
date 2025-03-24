@@ -1,4 +1,5 @@
 ﻿using Jamiras.Components;
+using Jamiras.DataModels.Metadata;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,22 +15,27 @@ namespace Jamiras.Database
         /// <summary>
         /// Initializes a new instance of the <see cref="QueryBuilder"/> class.
         /// </summary>
-        public QueryBuilder()
+        public QueryBuilder(DatabaseSchema schema)
         {
+            _schema = schema ?? ServiceRepository.Instance.FindService<IDatabase>().Schema;
             _fields = new List<string>();
             _filters = new List<FilterDefinition>();
             _joins = new List<JoinDefinition>();
             _orderBy = new List<OrderByDefinition>();
             _aliases = new List<AliasDefinition>();
             _aggregateFields = new List<AggregateFieldDefinition>();
+            _values = new Dictionary<string, object>();
         }
 
+        private readonly DatabaseSchema _schema;
         private readonly List<string> _fields;
         private readonly List<FilterDefinition> _filters;
         private readonly List<JoinDefinition> _joins;
         private readonly List<OrderByDefinition> _orderBy;
         private readonly List<AliasDefinition> _aliases;
         private readonly List<AggregateFieldDefinition> _aggregateFields;
+        private readonly Dictionary<string, object> _values;
+        private Dictionary<string, string> _bindings;
         private string _filterExpression;
 
         /// <summary>
@@ -37,7 +43,13 @@ namespace Jamiras.Database
         /// </summary>
         public override string ToString()
         {
-            return BuildQueryString(this, null);
+            if (_values.Count == 0)
+                return BuildQueryString();
+
+            if (_filters.Count == 0)
+                return BuildInsertString();
+
+            return BuildUpdateString();
         }
 
         #region BuildQueryString
@@ -45,45 +57,149 @@ namespace Jamiras.Database
         private static readonly string[] ReservedWords = { };// "user", "session", "when", "size", "zone" };
 
 
-        public static string BuildQueryString(QueryBuilder query, DatabaseSchema schema)
+        public string BuildQueryString()
         {
-            if (schema == null)
-                schema = ServiceRepository.Instance.FindService<IDatabase>().Schema;
-
-            var tables = GetTables(query);
+            var tables = GetTables();
 
             var builder = new StringBuilder();
             builder.Append("SELECT ");
-            AppendQueryFields(builder, query);
+            AppendQueryFields(builder);
             builder.Append(" FROM ");
-            AppendJoinTree(builder, query, tables, schema);
+            AppendJoinTree(builder, tables);
             builder.Append(" WHERE ");
 
-            bool wherePresent = AppendFilters(builder, query);
+            bool wherePresent = AppendFilters(builder);
             if (!wherePresent)
                 builder.Length -= 7;
 
-            AppendOrderBy(builder, query);
+            AppendOrderBy(builder);
 
             return builder.ToString();
         }
 
-        private static List<string> GetTables(QueryBuilder query)
+        public string BuildInsertString()
+        {
+            if (_values.Count == 0)
+                throw new NotSupportedException("No values provided");
+
+            if (_bindings != null)
+                _bindings.Clear();
+
+            var builder = new StringBuilder();
+            builder.Append("INSERT INTO ");
+
+            var tableName = _values.First().Key;
+            var index = tableName.IndexOf('.');
+            if (index == -1)
+                throw new NotSupportedException("Could not extract table name from value map");
+            builder.Append(tableName, 0, index);
+            tableName = tableName.Substring(0, index + 1);
+
+            builder.Append(" (");
+
+            foreach (var value in _values)
+            {
+                if (!value.Key.StartsWith(tableName))
+                    throw new NotSupportedException("Cannot update multiple tables");
+
+                builder.Append(value.Key, tableName.Length, value.Key.Length - tableName.Length);
+                builder.Append(", ");
+            }
+            builder.Length -= 2;
+
+            builder.Append(") VALUES (");
+
+            TableSchema tableSchema = null;
+            if (_schema != null)
+                tableSchema = _schema.GetTableSchema(tableName.Substring(0, index));
+
+            foreach (var value in _values)
+            {
+                if (tableSchema != null)
+                {
+                    var columnName = value.Key.Substring(index + 1);
+                    var column = tableSchema.Columns.FirstOrDefault(c => c.FieldName == columnName);
+                    AppendValue(builder, value.Value, column is ForeignKeyFieldMetadata);
+                }
+                else
+                {
+                    AppendValue(builder, value.Value, false);
+                }
+                builder.Append(", ");
+            }
+            builder.Length -= 2;
+            builder.Append(')');
+
+            return builder.ToString();
+        }
+
+        public string BuildUpdateString()
+        {
+            if (_values.Count == 0)
+                throw new NotSupportedException("No values provided");
+
+            if (_bindings != null)
+                _bindings.Clear();
+
+            var builder = new StringBuilder();
+            builder.Append("UPDATE ");
+
+            var tableName = _values.First().Key;
+            var index = tableName.IndexOf('.');
+            if (index == -1)
+                throw new NotSupportedException("Could not extract table name from value map");
+            builder.Append(tableName, 0, index);
+            tableName = tableName.Substring(0, index + 1);
+
+            builder.Append(" SET ");
+
+            TableSchema tableSchema = null;
+            if (_schema != null)
+                tableSchema = _schema.GetTableSchema(tableName.Substring(0, index));
+
+            foreach (var value in _values)
+            {
+                if (!value.Key.StartsWith(tableName))
+                    throw new NotSupportedException("Cannot update multiple tables");
+
+                builder.Append(value.Key, tableName.Length, value.Key.Length - tableName.Length);
+                builder.Append('=');
+
+                if (tableSchema != null)
+                {
+                    var column = tableSchema.Columns.FirstOrDefault(c => c.FieldName == value.Key);
+                    AppendValue(builder, value.Value, column is ForeignKeyFieldMetadata);
+                }
+                else
+                {
+                    AppendValue(builder, value.Value, false);
+                }
+                builder.Append(", ");
+            }
+            builder.Length -= 2;
+
+            builder.Append(" WHERE ");
+            AppendFilters(builder);
+
+            return builder.ToString();
+        }
+
+        private List<string> GetTables()
         {
             var tables = new List<string>();
-            foreach (var field in query.Fields)
+            foreach (var field in Fields)
                 AddTable(tables, field);
 
-            foreach (var filter in query.Filters)
+            foreach (var filter in Filters)
                 AddTable(tables, filter.ColumnName);
 
-            foreach (var join in query.Joins)
+            foreach (var join in Joins)
             {
                 AddTable(tables, join.LocalKeyFieldName);
                 AddTable(tables, join.RemoteKeyFieldName);
             }
 
-            foreach (var orderBy in query.OrderBy)
+            foreach (var orderBy in OrderBy)
                 AddTable(tables, orderBy.ColumnName);
 
             return tables;
@@ -91,7 +207,11 @@ namespace Jamiras.Database
 
         private static void AddTable(List<string> tables, string field)
         {
-            int idx = field.IndexOf('.');
+            int idx = field.IndexOf('(');
+            if (idx != -1)
+                field = field.Substring(idx + 1);
+
+            idx = field.IndexOf('.');
             if (idx > 0)
             {
                 string table = field.Substring(0, idx);
@@ -100,9 +220,9 @@ namespace Jamiras.Database
             }
         }
 
-        private static void AppendQueryFields(StringBuilder builder, QueryBuilder query)
+        private void AppendQueryFields(StringBuilder builder)
         {
-            foreach (var field in query.Fields)
+            foreach (var field in Fields)
             {
                 AppendFieldName(builder, field);
                 builder.Append(", ");
@@ -118,12 +238,12 @@ namespace Jamiras.Database
             return (fieldName[tableName.Length] == '.');
         }
 
-        private static void AppendJoinTree(StringBuilder builder, QueryBuilder query, List<string> tables, DatabaseSchema schema)
+        private void AppendJoinTree(StringBuilder builder, List<string> tables)
         {
             string primaryTable = tables[0];
             if (tables.Count == 1)
             {
-                AppendTable(builder, query, primaryTable);
+                AppendTable(builder, primaryTable);
                 return;
             }
 
@@ -131,10 +251,10 @@ namespace Jamiras.Database
             for (int i = 1; i < tables.Count; i++)
                 builder.Append('(');
 
-            AppendTable(builder, query, primaryTable);
+            AppendTable(builder, primaryTable);
 
-            var joins = new List<JoinDefinition>(query.Joins);
-            if (schema != null)
+            var joins = new List<JoinDefinition>(Joins);
+            if (_schema != null)
             {
                 for (int i = 0; i < tables.Count; i++)
                 {
@@ -143,11 +263,11 @@ namespace Jamiras.Database
                     var join = joins.FirstOrDefault(j => IsFieldForTable(j.RemoteKeyFieldName, tableName));
                     if (join.JoinType == JoinType.None)
                     {
-                        var alias = query.Aliases.FirstOrDefault(a => a.Alias == tableName);
+                        var alias = Aliases.FirstOrDefault(a => a.Alias == tableName);
                         if (!String.IsNullOrEmpty(alias.TableName))
                             tableName = alias.TableName;
 
-                        join = schema.GetJoin(primaryTable, tableName);
+                        join = _schema.GetJoin(primaryTable, tableName);
                         if (join.JoinType == JoinType.None)
                             throw new InvalidOperationException("No join defined between " + primaryTable + " and " + tableName);
 
@@ -185,7 +305,7 @@ namespace Jamiras.Database
                         else
                             throw new InvalidOperationException("Unsupported join type: " + join.JoinType);
 
-                        AppendTable(builder, query, table);
+                        AppendTable(builder, table);
                         builder.Append(" ON ");
                         AppendFieldName(builder, fieldName);
                         builder.Append('=');
@@ -201,9 +321,9 @@ namespace Jamiras.Database
                 throw new InvalidOperationException("No join defined between " + primaryTable + " and " + tables[0]);
         }
 
-        private static void AppendTable(StringBuilder builder, QueryBuilder query, string tableName)
+        private void AppendTable(StringBuilder builder, string tableName)
         {
-            foreach (var alias in query.Aliases)
+            foreach (var alias in Aliases)
             {
                 if (alias.Alias == tableName)
                 {
@@ -217,20 +337,20 @@ namespace Jamiras.Database
             builder.Append(tableName);
         }
 
-        private static bool AppendFilters(StringBuilder builder, QueryBuilder query)
+        private bool AppendFilters(StringBuilder builder)
         {
-            if (query.Filters.Count == 0)
+            if (Filters.Count == 0)
                 return false;
 
-            if (query.Filters.Count == 1)
+            if (Filters.Count == 1)
             {
-                foreach (var filter in query.Filters)
+                foreach (var filter in Filters)
                     AppendFilter(builder, filter);
 
                 return true;
             }
 
-            var filterExpression = query.FilterExpression;
+            var filterExpression = FilterExpression;
 
             int idx = 0;
             while (idx < filterExpression.Length)
@@ -266,7 +386,7 @@ namespace Jamiras.Database
 
                 if (val > 0)
                 {
-                    var filter = query.Filters.ElementAt(val - 1);
+                    var filter = Filters.ElementAt(val - 1);
                     AppendFilter(builder, filter);
                 }
             }
@@ -274,7 +394,7 @@ namespace Jamiras.Database
             return true;
         }
 
-        private static void AppendFilter(StringBuilder builder, FilterDefinition filter)
+        private void AppendFilter(StringBuilder builder, FilterDefinition filter)
         {
             AppendFieldName(builder, filter.ColumnName);
 
@@ -329,18 +449,23 @@ namespace Jamiras.Database
                     break;
 
                 case DataType.Boolean:
-                    if ((bool)filter.Value)
-                        builder.Append("YES");
-                    else
-                        builder.Append("NO");
+                    AppendBoolean(builder, (bool)filter.Value);
                     break;
 
                 case DataType.Date:
-                    builder.AppendFormat("#{0}#", ((DateTime)filter.Value).ToShortDateString());
+                    if (filter.Value is DateTime)
+                    {
+                        var dttm = (DateTime)filter.Value;
+                        AppendDate(builder, new Date(dttm.Month, dttm.Day, dttm.Year));
+                    }
+                    else
+                    {
+                        AppendDate(builder, (Date)filter.Value);
+                    }
                     break;
 
                 case DataType.DateTime:
-                    builder.AppendFormat("#{0}#", (DateTime)filter.Value);
+                    AppendDateTime(builder, (DateTime)filter.Value);
                     break;
 
                 case DataType.Integer:
@@ -358,8 +483,93 @@ namespace Jamiras.Database
             }
         }
 
+        private void AppendValue(StringBuilder builder, object value, bool isForeignKey)
+        {
+            if (value == null)
+            {
+                builder.Append("NULL");
+            }
+            else if (value is int || value.GetType().IsEnum)
+            {
+                var iVal = (int)value;
+                if (iVal == 0 && isForeignKey)
+                    builder.Append("NULL");
+                else
+                    builder.Append(iVal);
+            }
+            else if (value is string)
+            {
+                var sVal = (string)value;
+                if (sVal.Length == 0)
+                    builder.Append("NULL");
+                else
+                    builder.Append(AddBinding(sVal));
+            }
+            else if (value is double)
+            {
+                var dVal = (double)value;
+                builder.Append(dVal);
+            }
+            else if (value is float)
+            {
+                var dVal = (float)value;
+                builder.Append(dVal);
+            }
+            else if (value is DateTime)
+            {
+                AppendDateTime(builder, (DateTime)value);
+            }
+            else if (value is Date)
+            {
+                var date = (Date)value;
+                if (date.IsEmpty)
+                    builder.Append("NULL");
+                else
+                    AppendDate(builder, (Date)value);
+            }
+            else if (value is bool)
+            {
+                AppendBoolean(builder, (bool)value);
+            }
+            else
+            {
+                throw new NotSupportedException(value.GetType().Name);
+            }
+        }
+
+        protected virtual void AppendBoolean(StringBuilder builder, bool value)
+        {
+            builder.Append(value ? "1" : "0");
+        }
+
+        protected virtual void AppendDateTime(StringBuilder builder, DateTime value)
+        {
+            builder.AppendFormat("'{0:D4}-{1:D2}-{2:D2} {3:D2}:{4:D2}:{5:D2}'", value.Year, value.Month, value.Day, value.Hour, value.Minute, value.Second);
+        }
+
+        protected virtual void AppendDate(StringBuilder builder, Date value)
+        {
+            builder.AppendFormat("'{0:D4}-{1:D2}-{2:D2}'", value.Year, value.Month, value.Day);
+        }
+
+        private string AddBinding(string value)
+        {
+            if (_bindings == null)
+                _bindings = new Dictionary<string, string>();
+
+            var key = "@" + (_bindings.Count + 1);
+            _bindings[key] = value;
+            return key;
+        }
+
         private static void AppendFieldName(StringBuilder builder, string fieldName)
         {
+            if (fieldName.IndexOf('(') != -1)
+            {
+                builder.Append(fieldName);
+                return;
+            }    
+
             int idx = fieldName.IndexOf('.');
             if (idx > 0)
             {
@@ -381,13 +591,13 @@ namespace Jamiras.Database
             builder.Append(fieldName);
         }
 
-        private static void AppendOrderBy(StringBuilder builder, QueryBuilder query)
+        private void AppendOrderBy(StringBuilder builder)
         {
-            if (query.OrderBy.Count > 0)
+            if (OrderBy.Count > 0)
             {
                 builder.Append(" ORDER BY ");
 
-                foreach (var orderBy in query.OrderBy)
+                foreach (var orderBy in OrderBy)
                 {
                     builder.Append(orderBy.ColumnName);
 
@@ -398,6 +608,19 @@ namespace Jamiras.Database
                 }
 
                 builder.Length -= 2;
+            }
+        }
+
+        #endregion
+
+        #region Bind
+
+        public void Bind(IDatabaseCommand command)
+        {
+            if (_bindings != null)
+            {
+                foreach (var binding in _bindings)
+                    command.BindString(binding.Key, binding.Value);
             }
         }
 
@@ -476,6 +699,14 @@ namespace Jamiras.Database
             }
 
             return builder.ToString();
+        }
+
+        /// <summary>
+        /// Gets the collection of values to update.
+        /// </summary>
+        public IDictionary<string, object> Values
+        {
+            get { return _values; }
         }
     }
 }

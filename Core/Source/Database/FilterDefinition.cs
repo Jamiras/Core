@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Jamiras.Components;
+using System;
 using System.Diagnostics;
 
 namespace Jamiras.Database
@@ -85,6 +86,34 @@ namespace Jamiras.Database
         private readonly object _value;
         private readonly FilterOperation _operation;
         private readonly DataType _dataType;
+
+        /// <summary>
+        /// Gets the <see cref="DataType"/> of a <paramref name="value"/>.
+        /// </summary>
+        /// <param name="value">Value to get the DataType of.</param>
+        /// <returns>DataType of the value, or None if null or not supported</returns>
+        public static DataType GetDataType(object value)
+        {
+            if (value is int)
+                return DataType.Integer;
+
+            if (value is string)
+                return DataType.String;
+
+            if (value is bool)
+                return DataType.Boolean;
+
+            if (value is DateTime)
+                return DataType.DateTime;
+
+            if (value is Date)
+                return DataType.Date;
+
+            if (value is Enum)
+                return DataType.Integer;
+
+            return DataType.None;
+        }
 
         /// <summary>
         /// Gets the column name to filter on.

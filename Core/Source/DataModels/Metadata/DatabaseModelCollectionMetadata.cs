@@ -218,7 +218,7 @@ namespace Jamiras.DataModels.Metadata
 
             CustomizeQuery(queryExpression);
 
-            return database.BuildQueryString(queryExpression);
+            return queryExpression.BuildQueryString();
         }
 
         /// <summary>

@@ -41,6 +41,13 @@ namespace Jamiras.Database
         int ExecuteCommand(string command);
 
         /// <summary>
+        /// Executes an update or insert command.
+        /// </summary>
+        /// <param name="query">Command to execute.</param>
+        /// <returns>Number of affected rows.</returns>
+        int ExecuteCommand(QueryBuilder query);
+
+        /// <summary>
         /// Escapes a value for a query string.
         /// </summary>
         /// <param name="value">Value to escape.</param>
@@ -55,11 +62,10 @@ namespace Jamiras.Database
         string Escape(DateTime date);
 
         /// <summary>
-        /// Constructs a database-specific query string from a <see cref="QueryBuilder"/>.
+        /// Constructs a <see cref="QueryBuilder"/> for making a database-specific query.
         /// </summary>
-        /// <param name="query">The <see cref="QueryBuilder"/> to build the query string from.</param>
-        /// <returns>The query string.</returns>
-        string BuildQueryString(QueryBuilder query);
+        /// <returns>The <see cref="QueryBuilder"/> to build the query string from.</param>
+        QueryBuilder CreateQueryBuilder();
 
         /// <summary>
         /// Gets the schema for the database.

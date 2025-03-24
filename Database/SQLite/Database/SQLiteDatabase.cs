@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Data.Odbc;
+using Microsoft.Data.Sqlite;
 using System.Diagnostics;
-using System.IO;
 using System.Text;
 using Jamiras.Components;
 using Jamiras.Services;
@@ -9,14 +8,14 @@ using Jamiras.Services;
 namespace Jamiras.Database
 {
     /// <summary>
-    /// <see cref="IDatabase"/> implementation for Microsoft Access databases.
+    /// <see cref="IDatabase"/> implementation for Sqlite databases.
     /// </summary>
     [Export(typeof(IDatabase))]
     [DebuggerDisplay("{_connection.DataSource}")]
-    public class AccessDatabase : IDatabase
+    public class SQLiteDatabase : IDatabase
     {
-        private readonly ILogger _logger = Logger.GetLogger("AccessDatabase");
-        private OdbcConnection _connection;
+        private readonly ILogger _logger = Logger.GetLogger("SQLiteDatabase");
+        private SqliteConnection _connection;
 
         /// <summary>
         /// Disconnects from the database.
@@ -43,7 +42,7 @@ namespace Jamiras.Database
         public IDatabaseQuery PrepareQuery(string query)
         {
             _logger.WriteVerbose("Preparing query: {0}", query);
-            return new AccessDatabaseQuery(_connection, query);
+            return new SQLiteDatabaseQuery(_connection, query);
         }
 
         /// <summary>
@@ -64,7 +63,7 @@ namespace Jamiras.Database
         public IDatabaseCommand PrepareCommand(string command)
         {
             _logger.WriteVerbose("Preparing query: {0}", command);
-            return new AccessDatabaseCommand(_connection, command);
+            return new SQLiteDatabaseCommand(_connection, command);
         }
 
         /// <summary>
@@ -84,7 +83,7 @@ namespace Jamiras.Database
                     return cmd.ExecuteNonQuery();
                 }
             }
-            catch (OdbcException ex)
+            catch (SqliteException ex)
             {
                 var dispatcher = ServiceRepository.Instance.FindService<IExceptionDispatcher>();
                 if (dispatcher == null)
@@ -109,11 +108,11 @@ namespace Jamiras.Database
 
             try
             {
-                var cmd = new AccessDatabaseCommand(_connection, command);
+                var cmd = new SQLiteDatabaseCommand(_connection, command);
                 query.Bind(cmd);
                 return cmd.Execute();
             }
-            catch (OdbcException ex)
+            catch (SqliteException ex)
             {
                 var dispatcher = ServiceRepository.Instance.FindService<IExceptionDispatcher>();
                 if (dispatcher == null)
@@ -169,45 +168,24 @@ namespace Jamiras.Database
         }
 
         /// <summary>
-        /// Attempts to open an Access database.
+        /// Attempts to open an Sqlite database.
         /// </summary>
-        /// <param name="fileName">Path to the Access database.</param>
+        /// <param name="fileName">Path to the Sqlite database.</param>
         public bool Connect(string fileName)
         {
             _logger.Write("Opening database: {0}", fileName);
 
-            // try newer driver first
-            string connectionString = "Driver={Microsoft Access Driver (*.mdb, *.accdb)}; DBQ=" + fileName;
-            var connection = new OdbcConnection(connectionString);
+            string connectionString = "Data Source=" + fileName;
+            var connection = new SqliteConnection(connectionString);
             try
             {
                 connection.Open();
             }
-            catch (OdbcException ex)
+            catch (SqliteException ex)
             {
                 _logger.Write("Failed to open database: " + ex.Message);
-
-                if (ex.Message.Contains("[IM002]"))
-                {
-                    if (IntPtr.Size != 4 && File.Exists(fileName))
-                        throw new NotSupportedException("Access driver not found - assuming 64-bit access driver not installed", ex);
-
-                    // https://knowledge.autodesk.com/support/autocad/learn-explore/caas/sfdcarticles/sfdcarticles/How-to-install-64-bit-Microsoft-Database-Drivers-alongside-32-bit-Microsoft-Office.html
-                    // * download AccessDatabaseEngine_X64.exe from https://www.microsoft.com/en-us/download/details.aspx?displaylang=en&id=13255
-                    // * run it with the /quiet option: > AccessDatabaseEngine_X64.exe /quiet
-                    // * delete or rename the HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Office\14.0\Common\FilesPaths\mso.dll registry key
-                }
 
                 return false;
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.Write("Failed to open database: " + ex.Message);
-
-                // then try older driver
-                connectionString = "Provider=Microsoft.Jet.OLEDB.4.0; Data Source=" + fileName;
-                connection = new OdbcConnection(connectionString);
-                connection.Open();
             }
 
             while (connection.State == System.Data.ConnectionState.Connecting)
@@ -232,7 +210,7 @@ namespace Jamiras.Database
         /// <returns>The <see cref="QueryBuilder"/> to build the query string from.</param>
         public QueryBuilder CreateQueryBuilder()
         {
-            return new AccessQueryBuilder(Schema);
+            return new SQLiteQueryBuilder(Schema);
         }
 
         /// <summary>

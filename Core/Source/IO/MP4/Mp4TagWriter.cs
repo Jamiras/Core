@@ -579,6 +579,9 @@ namespace Jamiras.IO.MP4
                     WriteUInt32(writer, FREE_TAG);
                     writer.Write(new byte[freeBlockSize - 8]);
 
+                    if (freeIndex == _blocks.Count)
+                        _blocks.Add(new Mp4Block { Address = writePosition, Size = freeBlockSize, Tag = "free" });
+
                     // adjust for the new free block
                     var additionalSpaceUsed = writePosition - _blocks[freeIndex].Address + freeBlockSize;
                     writePosition = writer.BaseStream.Position;
@@ -594,18 +597,21 @@ namespace Jamiras.IO.MP4
 
                     // update all the pointers in the stco (sample table chunk offset)
                     // there can be multiple tracks, so look for all stco's.
-                    foreach (var block in _blocks)
+                    if (additionalSpaceUsed > 0)
                     {
-                        if (block.Tag == "moov.trak.mdia.minf.stbl.stco")
+                        foreach (var block in _blocks)
                         {
-                            writer.BaseStream.Position = block.Address + 16;
-                            reader.BaseStream.Position = block.Address + 12;
-                            uint entries = ReadUInt32(reader);
-                            for (int i = 0; i < entries; i++)
+                            if (block.Tag == "moov.trak.mdia.minf.stbl.stco")
                             {
-                                uint offset = ReadUInt32(reader);
-                                offset += (uint)additionalSpaceUsed;
-                                WriteUInt32(writer, offset);
+                                writer.BaseStream.Position = block.Address + 16;
+                                reader.BaseStream.Position = block.Address + 12;
+                                uint entries = ReadUInt32(reader);
+                                for (int i = 0; i < entries; i++)
+                                {
+                                    uint offset = ReadUInt32(reader);
+                                    offset += (uint)additionalSpaceUsed;
+                                    WriteUInt32(writer, offset);
+                                }
                             }
                         }
                     }

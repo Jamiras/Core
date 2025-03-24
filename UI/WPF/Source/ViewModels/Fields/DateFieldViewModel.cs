@@ -16,6 +16,18 @@ namespace Jamiras.ViewModels.Fields
         /// </summary>
         /// <param name="label">The field label.</param>
         /// <param name="metadata">Information about the field.</param>
+        public DateFieldViewModel(string label, DateFieldMetadata metadata)
+        {
+            Label = label;
+
+            SetBinding(DateTimeProperty, new ModelBinding(this, DateProperty, new DateToDateTimeConverter()));
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DateFieldViewModel"/> class.
+        /// </summary>
+        /// <param name="label">The field label.</param>
+        /// <param name="metadata">Information about the field.</param>
         public DateFieldViewModel(string label, DateTimeFieldMetadata metadata)
         {
             Label = label;
