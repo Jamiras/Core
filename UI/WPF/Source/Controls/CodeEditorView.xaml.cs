@@ -312,7 +312,7 @@ namespace Jamiras.Controls
             return line;
         }
 
-        private static int GetColumn(CodeEditorViewModel viewModel, Point mousePosition)
+        private static int GetColumn(CodeEditorViewModel viewModel, LineViewModel line, Point mousePosition)
         {
             // mousePosition is relative to CodeEditorView.
             // adjust for the line number column (and its margin)
@@ -321,15 +321,7 @@ namespace Jamiras.Controls
             // adjust for the horizontal scroll offset
             editorX += (double)viewModel.GetValue(HorizontalScrollOffsetProperty);
 
-            // if clicking in the right fourth of a character, put the cursor after the character
-            var characterWidth = viewModel.Resources.CharacterWidth;
-            editorX += characterWidth / 4;
-
-            // convert the editor relative point to a column index (1-based)
-            int column = (int)(editorX / characterWidth) + 1;
-
-            // if clicking in the line number area, still return column 1
-            return (column < 1) ? 1 : column;
+            return viewModel.Resources.GetNearestCharacterIndex(line.Text, editorX);
         }
 
         private DateTime _doubleClickTime;
@@ -358,7 +350,7 @@ namespace Jamiras.Controls
                         }
                         else
                         {
-                            ViewModel.MoveCursorTo(line.Line, GetColumn(ViewModel, position), moveCursorFlags);
+                            ViewModel.MoveCursorTo(line.Line, GetColumn(ViewModel, line, position), moveCursorFlags);
                             _lineSelectionMode = false;
                         }
                     }
@@ -384,7 +376,7 @@ namespace Jamiras.Controls
                     var line = GetLine(position);
                     if (line != null)
                     {
-                        ViewModel.HighlightWordAt(line.Line, GetColumn(ViewModel, position));
+                        ViewModel.HighlightWordAt(line.Line, GetColumn(ViewModel, line, position));
                         e.Handled = true;
                     }
 
@@ -434,7 +426,7 @@ namespace Jamiras.Controls
                         }
                         else
                         {
-                            ViewModel.MoveCursorTo(line.Line, GetColumn(ViewModel, position), CodeEditorViewModel.MoveCursorFlags.Highlighting);
+                            ViewModel.MoveCursorTo(line.Line, GetColumn(ViewModel, line, position), CodeEditorViewModel.MoveCursorFlags.Highlighting);
                         }
                     }
                 }
