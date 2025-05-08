@@ -89,7 +89,7 @@ namespace Jamiras.ViewModels.CodeEditor
             if (selectionStart == 0)
                 return new Thickness();
 
-            var pixelWidth = viewModel.Resources.GetPixelWidth(viewModel.Text, 0, selectionStart - 1);
+            var pixelWidth = viewModel.Resources.GetPixelWidth(viewModel.CurrentText, 0, selectionStart - 1);
             return new Thickness(Math.Ceiling(pixelWidth), 0, 0, 0);
         }
 
@@ -116,9 +116,9 @@ namespace Jamiras.ViewModels.CodeEditor
 
             var selectionEnd = viewModel.SelectionEnd;
             if (selectionStart > selectionEnd)
-                return -viewModel.Resources.GetPixelWidth(viewModel.Text, selectionEnd, selectionStart - selectionEnd);
+                return -viewModel.Resources.GetPixelWidth(viewModel.CurrentText, selectionEnd, selectionStart - selectionEnd);
 
-            return viewModel.Resources.GetPixelWidth(viewModel.Text, selectionStart, selectionEnd - selectionStart);
+            return viewModel.Resources.GetPixelWidth(viewModel.CurrentText, selectionStart, selectionEnd - selectionStart);
         }
 
         private static readonly ModelProperty CursorColumnProperty = ModelProperty.Register(typeof(LineViewModel), "CursorColumn", typeof(int), 0);
@@ -150,7 +150,7 @@ namespace Jamiras.ViewModels.CodeEditor
             if (viewModel.CursorColumn < 1)
                 return new Thickness(0, 0, 0, 0);
 
-            var pixelWidth = viewModel.Resources.GetPixelWidth(viewModel.Text, 0, viewModel.CursorColumn - 1);
+            var pixelWidth = viewModel.Resources.GetPixelWidth(viewModel.CurrentText, 0, viewModel.CursorColumn - 1);
             return new Thickness((int)Math.Ceiling(pixelWidth), 0, 0, 0);
         }
 

@@ -1816,7 +1816,8 @@ namespace Jamiras.ViewModels.CodeEditor
                 column = 1;
 
             // update the virtual cursor column
-            var maxColumn = _lines[line - 1].LineLength + 1;
+            var currentLineViewModel = _lines[line - 1];
+            var maxColumn = currentLineViewModel.LineLength + 1;
 
             if ((flags & MoveCursorFlags.RememberColumn) != 0)
             {
@@ -1833,7 +1834,8 @@ namespace Jamiras.ViewModels.CodeEditor
             }
 
             // if the new cursor position is in the middle of a surrogate pair, move right
-            if (column < maxColumn && Char.IsLowSurrogate(_lines[line - 1].Text[column - 1]))
+            var text = currentLineViewModel.CurrentText;
+            if (column < text.Length && Char.IsLowSurrogate(text[column - 1]))
                 column++;
 
             // if the cursor moved and we're not typing, stop trying to match braces
