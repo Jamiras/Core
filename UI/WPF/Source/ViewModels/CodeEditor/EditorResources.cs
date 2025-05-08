@@ -239,6 +239,9 @@ namespace Jamiras.ViewModels.CodeEditor
 
             // string contains non-ASCII characters. Find the column before and after
             // the target pixel
+            if (Char.IsHighSurrogate(text[column - 1]))
+                ++column;
+
             var textBlock = new TextBlock
             {
                 Text = text.Substring(0, column),
@@ -251,7 +254,10 @@ namespace Jamiras.ViewModels.CodeEditor
             var width = textBlock.ActualWidth;
             do
             {
-                --column;
+                column--;
+                if (Char.IsLowSurrogate(text[column]))
+                    column--;
+
                 textBlock.Text = text.Substring(0, column);
                 textBlock.Measure(new Size(Double.PositiveInfinity, Double.PositiveInfinity));
                 textBlock.Arrange(new Rect(textBlock.DesiredSize));
@@ -262,7 +268,11 @@ namespace Jamiras.ViewModels.CodeEditor
                     // if clicking in the right fourth of a character, put the cursor after the character
                     var charWidth = width - newWidth;
                     if (width - pixelOffset < charWidth / 4)
-                        ++column;
+                    {
+                        column++;
+                        if (column < text.Length && Char.IsLowSurrogate(text[column]))
+                            column++;
+                    }
                     return column + 1;
                 }
                 width = newWidth;
