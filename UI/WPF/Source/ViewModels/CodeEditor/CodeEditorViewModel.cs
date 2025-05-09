@@ -1491,7 +1491,7 @@ namespace Jamiras.ViewModels.CodeEditor
                 if (newLine > 1)
                 {
                     newLine--;
-                    newColumn = cursorLineViewModel.LineLength + 1;
+                    newColumn = _lines[newLine - 1].LineLength + 1;
                 }
             }
             else
