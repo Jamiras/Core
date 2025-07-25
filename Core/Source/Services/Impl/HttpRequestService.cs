@@ -74,7 +74,8 @@ namespace Jamiras.Core.Services.Impl
                 var socketException = ex.InnerException as System.Net.Sockets.SocketException;
                 if (socketException != null &&
                     (socketException.SocketErrorCode == System.Net.Sockets.SocketError.TimedOut ||
-                     socketException.SocketErrorCode == System.Net.Sockets.SocketError.HostNotFound))
+                     socketException.SocketErrorCode == System.Net.Sockets.SocketError.HostNotFound ||
+                     socketException.SocketErrorCode == System.Net.Sockets.SocketError.NetworkUnreachable))
                 {
                     // timeout; immediately try again (once)
                     retry = true;
