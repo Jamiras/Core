@@ -89,8 +89,8 @@ namespace Jamiras.ViewModels.CodeEditor
             if (selectionStart == 0)
                 return new Thickness();
 
-            var offset = (selectionStart - 1) * viewModel.Resources.CharacterWidth;
-            return new Thickness(offset, 0.0, 0.0, 0.0);
+            var pixelWidth = viewModel.Resources.GetPixelWidth(viewModel.CurrentText, 0, selectionStart - 1);
+            return new Thickness(Math.Ceiling(pixelWidth), 0, 0, 0);
         }
 
         private static readonly ModelProperty SelectionWidthProperty =
@@ -111,7 +111,14 @@ namespace Jamiras.ViewModels.CodeEditor
             if (selectionStart == 0)
                 return 0.0;
 
-            return (viewModel.SelectionEnd - selectionStart + 1) * viewModel.Resources.CharacterWidth;
+            // selection indices are 1-based
+            selectionStart--;
+
+            var selectionEnd = viewModel.SelectionEnd;
+            if (selectionStart > selectionEnd)
+                return -viewModel.Resources.GetPixelWidth(viewModel.CurrentText, selectionEnd, selectionStart - selectionEnd);
+
+            return viewModel.Resources.GetPixelWidth(viewModel.CurrentText, selectionStart, selectionEnd - selectionStart);
         }
 
         private static readonly ModelProperty CursorColumnProperty = ModelProperty.Register(typeof(LineViewModel), "CursorColumn", typeof(int), 0);
@@ -139,8 +146,12 @@ namespace Jamiras.ViewModels.CodeEditor
         private static object GetCursorLocation(ModelBase model)
         {
             var viewModel = (LineViewModel)model;
-            var offset = (viewModel.CursorColumn - 1) * viewModel.Resources.CharacterWidth;
-            return new Thickness((int)offset, 0, 0, 0);
+
+            if (viewModel.CursorColumn < 1)
+                return new Thickness(0, 0, 0, 0);
+
+            var pixelWidth = viewModel.Resources.GetPixelWidth(viewModel.CurrentText, 0, viewModel.CursorColumn - 1);
+            return new Thickness((int)Math.Ceiling(pixelWidth), 0, 0, 0);
         }
 
         /// <summary>

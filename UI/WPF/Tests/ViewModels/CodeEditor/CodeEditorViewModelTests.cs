@@ -1416,5 +1416,70 @@ namespace Jamiras.UI.WPF.Tests.ViewModels.CodeEditor
             CompleteTyping();
             Assert.That(bracingViewModel.Lines[0].Text, Is.EqualTo("a() (b().c()"));
         }
+
+        [Test]
+        public void TestEmoticonCursorMovement()
+        {
+            viewModel.SetContent(
+                "// This is a simple line of text\n" +
+                "// But this has 🌎🌎🌎 emoticons\n" +
+                "// And more normal text comes after\n"
+                );
+
+            viewModel.MoveCursorTo(2, 15, CodeEditorViewModel.MoveCursorFlags.None);
+
+            viewModel.HandleKey(Key.Right, ModifierKeys.None); // move over "s"
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(16));
+
+            viewModel.HandleKey(Key.Right, ModifierKeys.None); // move over " "
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(17));
+
+            viewModel.HandleKey(Key.Right, ModifierKeys.None); // move over "🌎"
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(19));
+
+            viewModel.HandleKey(Key.Right, ModifierKeys.None); // move over "🌎"
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(21));
+
+            viewModel.HandleKey(Key.Right, ModifierKeys.None); // move over "🌎"
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(23));
+
+            viewModel.HandleKey(Key.Right, ModifierKeys.None); // move over " "
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(24));
+
+            viewModel.HandleKey(Key.Left, ModifierKeys.None); // move over " "
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(23));
+
+            viewModel.HandleKey(Key.Left, ModifierKeys.None); // move over "🌎"
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(21));
+
+            viewModel.HandleKey(Key.Up, ModifierKeys.None);
+            Assert.That(viewModel.CursorLine, Is.EqualTo(1));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(21));
+
+            viewModel.HandleKey(Key.Left, ModifierKeys.None);
+            Assert.That(viewModel.CursorLine, Is.EqualTo(1));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(20));
+
+            viewModel.HandleKey(Key.Down, ModifierKeys.None); // move down into middle of emoticon, shift to after emoticon
+            Assert.That(viewModel.CursorLine, Is.EqualTo(2));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(21));
+
+            viewModel.HandleKey(Key.Down, ModifierKeys.None); // cursor "remembers" it was at column 20
+            Assert.That(viewModel.CursorLine, Is.EqualTo(3));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(20));
+
+            viewModel.HandleKey(Key.Left, ModifierKeys.None);
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(19));
+
+            viewModel.HandleKey(Key.Left, ModifierKeys.None);
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(18));
+
+            viewModel.HandleKey(Key.Up, ModifierKeys.None); // move up into middle of emoticon, shift to after emoticon
+            Assert.That(viewModel.CursorLine, Is.EqualTo(2));
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(19));
+
+            viewModel.HandleKey(Key.Left, ModifierKeys.None); // move over "🌎"
+            Assert.That(viewModel.CursorColumn, Is.EqualTo(17));
+        }
     }
 }

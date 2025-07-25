@@ -1450,9 +1450,9 @@ namespace Jamiras.ViewModels.CodeEditor
             var newLine = CursorLine;
             var newColumn = CursorColumn;
 
+            var cursorLineViewModel = _lines[newLine - 1];
             if (nextWord)
             {
-                var cursorLineViewModel = _lines[newLine - 1];
                 var text = cursorLineViewModel.CurrentText;
                 var count = 0;
                 var offset = CursorColumn - 2;
@@ -1497,6 +1497,9 @@ namespace Jamiras.ViewModels.CodeEditor
             else
             {
                 newColumn--;
+
+                if (newColumn > 1 && Char.IsLowSurrogate(cursorLineViewModel.Text[newColumn - 1]))
+                    newColumn--;
             }
 
             MoveCursorTo(newLine, newColumn, flags);
@@ -1563,6 +1566,10 @@ namespace Jamiras.ViewModels.CodeEditor
             else
             {
                 newColumn++;
+
+                var lineText = cursorLineViewModel.Text;
+                if (newColumn < lineText.Length && Char.IsLowSurrogate(lineText[newColumn - 1]))
+                    newColumn++;
             }
 
             MoveCursorTo(newLine, newColumn, flags);
@@ -1809,7 +1816,8 @@ namespace Jamiras.ViewModels.CodeEditor
                 column = 1;
 
             // update the virtual cursor column
-            var maxColumn = _lines[line - 1].LineLength + 1;
+            var currentLineViewModel = _lines[line - 1];
+            var maxColumn = currentLineViewModel.LineLength + 1;
 
             if ((flags & MoveCursorFlags.RememberColumn) != 0)
             {
@@ -1824,6 +1832,11 @@ namespace Jamiras.ViewModels.CodeEditor
                 if (column > maxColumn)
                     column = maxColumn;
             }
+
+            // if the new cursor position is in the middle of a surrogate pair, move right
+            var text = currentLineViewModel.CurrentText;
+            if (column < text.Length && Char.IsLowSurrogate(text[column - 1]))
+                column++;
 
             // if the cursor moved and we're not typing, stop trying to match braces
             if ((flags & MoveCursorFlags.Typing) == 0)

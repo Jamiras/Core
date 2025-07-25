@@ -159,5 +159,124 @@ namespace Jamiras.ViewModels.CodeEditor
 
             return brush;
         }
+
+        /// <summary>
+        /// Gets the number of pixels requires to display the string using the local
+        /// <see cref="FontName"/>/<see cref="FontSize"/>.
+        /// </summary>
+        /// <param name="str">String to measure</param>
+        /// <param name="index">Indext of first character of string to measure</param>
+        /// <param name="count">Number of characters of string to measure</param>
+        /// <returns>Pixels required for string</returns>
+        public double GetPixelWidth(string str, int index, int count)
+        {
+            if (CharacterWidth > 0)
+            {
+                bool isOnlyAscii = true;
+                var stop = index + count;
+                for (int i = index; i < stop; i++)
+                {
+                    if (!Char.IsAscii(str[i]))
+                    {
+                        isOnlyAscii = false;
+                        break;
+                    }
+                }
+                if (isOnlyAscii)
+                    return count * CharacterWidth;
+            }
+
+            if (index > 0 || count < str.Length)
+                str = str.Substring(index, count);
+
+            var textBlock = new TextBlock
+            {
+                Text = str,
+                FontFamily = new FontFamily(FontName),
+                FontSize = FontSize,
+            };
+            textBlock.Measure(new Size(Double.PositiveInfinity, Double.PositiveInfinity));
+            textBlock.Arrange(new Rect(textBlock.DesiredSize));
+
+            return textBlock.ActualWidth;
+        }
+
+        /// <summary>
+        /// Gets the index of <paramref name="text"/> nearest the specified pixel.
+        /// </summary>
+        /// <param name="text">Text to examine</param>
+        /// <param name="pixelOffset">Offset to map</param>
+        /// <returns>Index of nearest "between characters"</returns>
+        /// <remarks>
+        /// If <paramref name="pixelOffset"/> is within the right 1/4 of a character,
+        /// the next index will be returned. Otherwise, the index of the character
+        /// containing the offset will be returned.
+        /// </remarks>
+        public int GetNearestCharacterIndex(string text, double pixelOffset)
+        {
+            // if clicking in the right fourth of a character, put the cursor after the character
+            var characterWidth = CharacterWidth;
+            var adjustedPixelOffset = pixelOffset + characterWidth / 4;
+
+            // convert the editor relative point to a column index
+            int column = (int)(adjustedPixelOffset / characterWidth);
+
+            if (column > text.Length)
+                column = text.Length;
+
+            // if the string is only ASCII characters, return the calculated column (column indices are 1-based)
+            bool isOnlyAscii = true;
+            for (int i = 0; i < column; i++)
+            {
+                if (!Char.IsAscii(text[i]))
+                {
+                    isOnlyAscii = false;
+                    break;
+                }
+            }
+            if (isOnlyAscii)
+                return column + 1;
+
+            // string contains non-ASCII characters. Find the column before and after
+            // the target pixel
+            if (Char.IsHighSurrogate(text[column - 1]))
+                ++column;
+
+            var textBlock = new TextBlock
+            {
+                Text = text.Substring(0, column),
+                FontFamily = new FontFamily(FontName),
+                FontSize = FontSize,
+            };
+            textBlock.Measure(new Size(Double.PositiveInfinity, Double.PositiveInfinity));
+            textBlock.Arrange(new Rect(textBlock.DesiredSize));
+
+            var width = textBlock.ActualWidth;
+            do
+            {
+                column--;
+                if (Char.IsLowSurrogate(text[column]))
+                    column--;
+
+                textBlock.Text = text.Substring(0, column);
+                textBlock.Measure(new Size(Double.PositiveInfinity, Double.PositiveInfinity));
+                textBlock.Arrange(new Rect(textBlock.DesiredSize));
+
+                var newWidth = textBlock.ActualWidth;
+                if (newWidth < pixelOffset)
+                {
+                    // if clicking in the right fourth of a character, put the cursor after the character
+                    var charWidth = width - newWidth;
+                    if (width - pixelOffset < charWidth / 4)
+                    {
+                        column++;
+                        if (column < text.Length && Char.IsLowSurrogate(text[column]))
+                            column++;
+                    }
+                    return column + 1;
+                }
+                width = newWidth;
+            } while (true);
+        }
     }
 }
