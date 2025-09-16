@@ -1,3 +1,7 @@
+v1.3.7 - 16 Sep 2025
+* Add Tokenizer.ReadWord
+* Handle characters wider than fixed-width in code editor
+
 v1.3.6 - 10 Mar 2025
 * Use native WINAPIs for clipboard access to avoid CLIPBRD_E_CANT_OPEN error
 
