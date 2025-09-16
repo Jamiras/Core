@@ -414,6 +414,19 @@ namespace Jamiras.Components
         }
 
         /// <summary>
+        /// Matches a token containing alphabetic characters.
+        /// </summary>
+        public Token ReadWord()
+        {
+            StartToken();
+
+            while (Char.IsLetter(NextChar))
+                Advance();
+
+            return EndToken();
+        }
+
+        /// <summary>
         /// Matches a token containing alphanumeric characters and/or underscores.
         /// </summary>
         public Token ReadIdentifier()

@@ -154,6 +154,24 @@ namespace Jamiras.Core.Tests.Components
         }
 
         [Test]
+        public void TestReadWord()
+        {
+            var tokenizer = CreateTokenizer("Hello, world!");
+            var token = tokenizer.ReadWord();
+            Assert.That(token.ToString(), Is.EqualTo("Hello"));
+            Assert.That(tokenizer.NextChar, Is.EqualTo(','));
+        }
+
+        [Test]
+        public void TestReadWordIdentifier()
+        {
+            var tokenizer = CreateTokenizer("redSquare2();");
+            var token = tokenizer.ReadWord();
+            Assert.That(token.ToString(), Is.EqualTo("redSquare"));
+            Assert.That(tokenizer.NextChar, Is.EqualTo('2'));
+        }
+
+        [Test]
         [TestCase(false)]
         [TestCase(true)]
         public void TestReadNumberInteger(bool useStream)
