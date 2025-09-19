@@ -1567,7 +1567,7 @@ namespace Jamiras.ViewModels.CodeEditor
             {
                 newColumn++;
 
-                var lineText = cursorLineViewModel.Text;
+                var lineText = cursorLineViewModel.CurrentText;
                 if (newColumn < lineText.Length && Char.IsLowSurrogate(lineText[newColumn - 1]))
                     newColumn++;
             }
