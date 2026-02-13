@@ -24,7 +24,7 @@ namespace Jamiras.Controls
         /// </summary>
         public static object GetSelectedItem(TreeView target)
         {
-            return (object)target.GetValue(SelectedItemProperty);
+            return target.GetValue(SelectedItemProperty);
         }
 
         /// <summary>
@@ -42,19 +42,52 @@ namespace Jamiras.Controls
             bool isAttached = (bool)tv.GetValue(IsSelectedItemAttachedProperty);
             if (!isAttached)
             {
+                if (e.NewValue != null && !tv.IsLoaded)
+                    tv.Loaded += treeView_Loaded;
+
                 tv.SelectedItemChanged += treeView_SelectedItemChanged;
-                tv.SetValue(IsSelectedItemAttachedProperty, false);
+                tv.SetValue(IsSelectedItemAttachedProperty, true);
             }
 
             if (tv.SelectedItem != e.NewValue)
                 SelectItem(tv, e.NewValue);
         }
 
+        private static void treeView_Loaded(object sender, System.EventArgs e)
+        {
+            var tv = (TreeView)sender;
+            tv.Loaded -= treeView_Loaded;
+
+            var item = GetSelectedItem(tv);
+            if (item != null)
+                SelectItem(tv, item);
+        }
+
         private static void SelectItem(TreeView treeView, object item)
         {
-            var tvi = (TreeViewItem)treeView.ItemContainerGenerator.ContainerFromItem(item);
+            var tvi = FindTreeViewItem(treeView, item);
             if (tvi != null)
                 tvi.IsSelected = true;
+        }
+
+        private static TreeViewItem FindTreeViewItem(ItemsControl parent, object item)
+        {
+            var tvi = parent.ItemContainerGenerator.ContainerFromItem(item) as TreeViewItem;
+            if (tvi != null)
+                return tvi;
+
+            foreach (var child in parent.Items)
+            {
+                tvi = parent.ItemContainerGenerator.ContainerFromItem(child) as TreeViewItem;
+                if (tvi != null)
+                {
+                    tvi = FindTreeViewItem(tvi, item);
+                    if (tvi != null)
+                        return tvi;
+                }
+            }
+
+            return null;
         }
 
         private static void treeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
