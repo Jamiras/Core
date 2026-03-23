@@ -38,7 +38,10 @@ namespace Jamiras.Controls
 
             descriptor = DependencyPropertyDescriptor.FromProperty(ScrollViewer.VerticalOffsetProperty, typeof(ScrollViewer));
             if (descriptor != null)
+            {
                 descriptor.AddValueChanged(CodeLinesScrollViewer, OnVerticalOffsetChanged);
+                descriptor.AddValueChanged(CodeLineNumbersScrollViewer, OnLineNumbersVerticalOffsetChanged);
+            }
 
             descriptor = DependencyPropertyDescriptor.FromProperty(ScrollViewer.HorizontalOffsetProperty, typeof(ScrollViewer));
             if (descriptor != null)
@@ -115,6 +118,12 @@ namespace Jamiras.Controls
 
         private static readonly ModelProperty EditorScrollOffsetProperty = ModelProperty.Register(typeof(CodeEditorView), null, typeof(double), 0.0);
         private static readonly ModelProperty HorizontalScrollOffsetProperty = ModelProperty.Register(typeof(CodeEditorView), null, typeof(double), 0.0);
+
+        private void OnLineNumbersVerticalOffsetChanged(object sender, EventArgs e)
+        {
+            var offset = ((ScrollViewer)sender).VerticalOffset;
+            CodeLinesScrollViewer.ScrollToVerticalOffset(offset);
+        }
 
         private void OnVerticalOffsetChanged(object sender, EventArgs e)
         {
