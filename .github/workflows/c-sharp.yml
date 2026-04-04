@@ -8,18 +8,18 @@ on:
 
 jobs:
   Build-and-Tests:
-    runs-on: windows-latest
+    runs-on: windows-2025-vs2026 # TODO: change back to windows-latest after May 5 (see https://github.com/actions/runner-images/issues/13638)
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Setup dotnet
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 6.x
+        dotnet-version: 10.x
 
     - name: Install MSBuild
-      uses: microsoft/setup-msbuild@v1.1
+      uses: microsoft/setup-msbuild@v2
 
     - name: Install dependencies
       run: dotnet restore
@@ -28,7 +28,7 @@ jobs:
       run: msbuild.exe Jamiras.Core.sln -p:Configuration=Release -p:Platform="Any CPU"
 
     - name: Run Core Tests
-      run: dotnet test Core\Tests\bin\Release\net6.0\Jamiras.Core.Tests.dll
+      run: dotnet test Core\Tests\bin\Release\net10.0\Jamiras.Core.Tests.dll
 
     - name: Run UI.WPF Tests
-      run: dotnet test UI\WPF\Tests\bin\Release\net6.0-windows\Jamiras.UI.WPF.Tests.dll
+      run: dotnet test UI\WPF\Tests\bin\Release\net10.0-windows\Jamiras.UI.WPF.Tests.dll

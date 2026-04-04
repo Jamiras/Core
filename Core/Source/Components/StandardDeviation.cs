@@ -31,7 +31,7 @@ namespace Jamiras.Components
         /// </summary>
         public static double Calculate(IEnumerable<int> values)
         {
-            return Calculate(values.Cast<double>(), false);
+            return Calculate(values.Select(n => (double)n), false);
         }
 
         /// <summary>
@@ -40,7 +40,7 @@ namespace Jamiras.Components
         /// <remarks>Applies Bessel's correction to the formula to account for the fact that the values only represent a subset of actual values.</remarks>
         public static double CalculateFromSample(IEnumerable<int> values)
         {
-            return Calculate(values.Cast<double>(), true);
+            return Calculate(values.Select(n => (double)n), true);
         }
 
         private static double Calculate(IEnumerable<double> values, bool isSampleSet)
