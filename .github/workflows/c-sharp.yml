@@ -28,7 +28,7 @@ jobs:
       run: msbuild.exe Jamiras.Core.sln -p:Configuration=Release -p:Platform="Any CPU"
 
     - name: Run Core Tests
-      run: dotnet test Core\Tests\bin\Release\net6.0\Jamiras.Core.Tests.dll
+      run: dotnet test Core\Tests\bin\Release\net10.0\Jamiras.Core.Tests.dll
 
     - name: Run UI.WPF Tests
-      run: dotnet test UI\WPF\Tests\bin\Release\net6.0-windows\Jamiras.UI.WPF.Tests.dll
+      run: dotnet test UI\WPF\Tests\bin\Release\net10.0-windows\Jamiras.UI.WPF.Tests.dll
