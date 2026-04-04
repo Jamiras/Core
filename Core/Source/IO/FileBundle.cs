@@ -79,7 +79,7 @@ namespace Jamiras.IO
         {
             var stream = _fileSystem.OpenFile(fileName, OpenFileMode.Read);
             var signature = new byte[4];
-            stream.Read(signature, 0, 4);
+            stream.ReadExactly(signature, 0, 4);
             if (signature[0] != 'J' || signature[1] != 'B' || signature[2] != 'D')
                 throw new InvalidOperationException(fileName + " is not a Jamiras Bundle");
             if (signature[3] > Version)

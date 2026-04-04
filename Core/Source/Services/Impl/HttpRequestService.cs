@@ -16,8 +16,6 @@ namespace Jamiras.Core.Services.Impl
         public HttpRequestService(ILogService logService)
         {
             _logger = logService.GetLogger("Jamiras.Core");
-
-            ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072; // Tls12 (.NET45 constant)
         }
 
         private readonly ILogger _logger;
