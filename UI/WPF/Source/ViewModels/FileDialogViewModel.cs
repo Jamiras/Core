@@ -182,88 +182,21 @@ namespace Jamiras.ViewModels
 
         #region SelectFolder mode
 
-        private DialogResult ShowVistaSelectFolderDialog()
+        private DialogResult ShowOpenFolderDialog()
         {
-            // OpenFileDialog provides most of the functionality needed to show the Vista folder selection dialog,
-            // we just need to set one additional bit. Unfortunately, it's all hidden behind internals, so we have
-            // to use reflection. The inspiration for this was found here, but it's doing it with System.Windows.Forms:
-            // https://stackoverflow.com/questions/4136477/trying-to-open-a-file-dialog-using-the-new-ifiledialog-and-ifileopendialog-inter
-            var openFileDialog = new OpenFileDialog
-            {
-                AddExtension = false,
-                CheckFileExists = false,
-                DereferenceLinks = true,
-                Filter = "Folders|\n",
-                InitialDirectory = InitialDirectory,
-                Multiselect = false,
-                Title = DialogTitle
-            };
+            var openFolderDialog = new OpenFolderDialog();
+            openFolderDialog.Multiselect = MultiSelect;
 
-            // we are effectively executing the RunVistaDialog method from https://referencesource.microsoft.com/#PresentationFramework/src/Framework/Microsoft/Win32/FileDialog.cs
-            // with the inclusion of one additional line to set the FOS_PICKFOLDERS flag.
-            //
-            //  private bool RunVistaDialog(IntPtr hwndOwner)
-            //  {
-            //      IFileDialog dialog = CreateVistaDialog();
-            //      PrepareVistaDialog(dialog);
-            //
-            //  +   dialog.SetOptions(dialog.GetOptions() | FOS.FOS_PICKFOLDERS);
-            //
-            //      using (VistaDialogEvents events = new VistaDialogEvents(dialog, HandleVistaFileOk))
-            //      {
-            //          return dialog.Show(hwndOwner).Succeeded;
-            //      }
-            //  }
+            if (FileNames != null && FileNames.Length > 0)
+                openFolderDialog.FolderName = FileNames[0];
 
-            //      IFileDialog dialog = CreateVistaDialog();
-            const BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-            var win32Assembly = typeof(OpenFileDialog).Assembly;
-            var iFileDialogType = win32Assembly.GetType("MS.Internal.AppModel.IFileDialog");
-            var createVistaDialogMethodInfo = typeof(OpenFileDialog).GetMethod("CreateVistaDialog", bindingFlags);
-            var iFileDialog = createVistaDialogMethodInfo.Invoke(openFileDialog, new object[] { });
+            openFolderDialog.InitialDirectory = InitialDirectory;
+            openFolderDialog.Title = DialogTitle;
 
-            //      PrepareVistaDialog(dialog);
-            var prepareVistaDialogMethodInfo = typeof(OpenFileDialog).GetMethod("PrepareVistaDialog", bindingFlags);
-            prepareVistaDialogMethodInfo.Invoke(openFileDialog, new[] { iFileDialog });
+            bool? result = openFolderDialog.ShowDialog();
 
-            //  +   dialog.SetOptions(dialog.GetOptions() | FOS.PICKFOLDERS);
-            var getOptionsMethodInfo = iFileDialogType.GetMethod("GetOptions", bindingFlags);
-            var options = (uint)getOptionsMethodInfo.Invoke(iFileDialog, null);
-            options |= 32; // FOS.PICKFOLDERS
-
-            var setOptionsMethodInfo = iFileDialogType.GetMethod("SetOptions", bindingFlags);
-            setOptionsMethodInfo.Invoke(iFileDialog, new object[] { options });
-
-            //      using (VistaDialogEvents events = new VistaDialogEvents(dialog, HandleVistaFileOk))
-            var vistaDialogEventsType = win32Assembly.GetType("Microsoft.Win32.FileDialog+VistaDialogEvents");
-            var vistaDialogEventsConstructorInfo = vistaDialogEventsType.GetConstructors().First();
-            var onOkCallbackDelegateType = vistaDialogEventsConstructorInfo.GetParameters()[1].ParameterType;
-            var handleVistaFileOkMethodInfo = typeof(FileDialog).GetMethod("HandleVistaFileOk", bindingFlags);
-            var handleVistaFileOkMethod = Delegate.CreateDelegate(onOkCallbackDelegateType, openFileDialog, handleVistaFileOkMethodInfo);
-            var vistaDialogEvents = vistaDialogEventsConstructorInfo.Invoke(new object[] { iFileDialog, handleVistaFileOkMethod });
-
-            //          return dialog.Show(hwndOwner).Succeeded;
-            var showMethodInfo = iFileDialogType.GetMethod("Show");
-            bool succeeded = false;
-            try
-            {
-                var ownerWindow = Application.Current.Windows.OfType<Window>().SingleOrDefault(w => w.IsActive);
-                var hWndOwner = (ownerWindow != null) ? new WindowInteropHelper(ownerWindow).Handle : IntPtr.Zero;
-
-                var showResult = showMethodInfo.Invoke(iFileDialog, new object[] { hWndOwner });
-                succeeded = (bool)showResult.GetType().GetProperty("Succeeded").GetValue(showResult, null);
-            }
-            finally
-            {
-                // end of using block
-                ((IDisposable)vistaDialogEvents).Dispose();
-            }
-
-            // end of reflection magic
-
-            FileNames = new string[] { openFileDialog.FileName };
-            DialogResult = succeeded ? DialogResult.Ok : DialogResult.Cancel;
-            return DialogResult;
+            FileNames = openFolderDialog.FolderNames;
+            return (result == true) ? DialogResult.Ok : DialogResult.Cancel;
         }
 
         /// <summary>
@@ -271,17 +204,9 @@ namespace Jamiras.ViewModels
         /// </summary>
         public DialogResult ShowSelectFolderDialog()
         {
-            if (Environment.OSVersion.Version.Major >= 6)
-            {
-                try
-                {
-                    return ShowVistaSelectFolderDialog();
-                }
-                catch (Exception)
-                {
-                    // something in the reflection failed, fallback to pre-Vista logic
-                }
-            }
+            if (Environment.OSVersion.Version.Major > 6 || // Windows 10+
+                (Environment.OSVersion.Version.Major == 6 && Environment.OSVersion.Version.Minor >= 2)) // 6.2 = Windows 8
+                return ShowOpenFolderDialog();
 
             // not Vista or newer, or reflection failed, show Open File dialog and just
             // take the path from the selected file.
