@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace Jamiras.Controls
 {
@@ -93,6 +94,60 @@ namespace Jamiras.Controls
         private static void treeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
             SetSelectedItem((TreeView)sender, e.NewValue);
+        }
+
+        /// <summary>
+        /// Bindable property for the selecting an item within a hierarchical items source on right click.
+        /// </summary>
+        public static readonly DependencyProperty SelectOnRightClickProperty =
+            DependencyProperty.RegisterAttached("SelectedOnRightClick", typeof(bool), typeof(TreeUtils),
+                new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnSelectOnRightClickChanged));
+
+        /// <summary>
+        /// Gets where the <see cref="TreeView"/> being right-clicked should be selected.
+        /// </summary>
+        public static bool GetSelectOnRightClick(TreeView target)
+        {
+            return (bool)target.GetValue(SelectOnRightClickProperty);
+        }
+
+        /// <summary>
+        /// Sets where the <see cref="TreeView"/> being right-clicked should be selected.
+        /// </summary>
+        public static void SetSelectOnRightClick(TreeView target, bool value)
+        {
+            target.SetValue(SelectOnRightClickProperty, value);
+        }
+
+        private static void OnSelectOnRightClickChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            var tv = (TreeView)sender;
+
+            if ((bool)e.NewValue)
+                tv.PreviewMouseRightButtonDown += treeview_PreviewMouseRightButtonDown;
+            else
+                tv.PreviewMouseRightButtonDown += treeview_PreviewMouseRightButtonDown;
+        }
+
+        private static void treeview_PreviewMouseRightButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            // Get the element that was actually clicked
+            DependencyObject obj = (DependencyObject)e.OriginalSource;
+
+            // Traverse up the visual tree to find the TreeViewItem container
+            while (obj != null)
+            {
+                var item = obj as TreeViewItem;
+                if (item != null)
+                {
+                    // Found it. Focus it.
+                    item.Focus();
+                    item.IsSelected = true;
+                    break;
+                }
+
+                obj = VisualTreeHelper.GetParent(obj);
+            }
         }
     }
 }
