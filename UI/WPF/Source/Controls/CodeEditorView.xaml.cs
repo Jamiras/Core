@@ -214,6 +214,7 @@ namespace Jamiras.Controls
         {
             var scrollViewer = CodeLinesScrollViewer;
             var newOffset = (double)ViewModel.CursorLine - (int)(scrollViewer.ViewportHeight / 2);
+            CodeLineNumbersScrollViewer.ScrollToVerticalOffset(newOffset);
             scrollViewer.ScrollToVerticalOffset(newOffset);
 
             ViewModel.IsCenterOnLineRequested = false;
