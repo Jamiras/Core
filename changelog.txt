@@ -1,3 +1,9 @@
+v1.4.0 - 28 Apr 2026
+* Upgrade to .NET 10
+* Add TreeUtils::SelectOnRightClick property
+* Prevent exception pressing left while typing at end of line in code editor
+* Fix editor not scrolling when using scrollwheel on line numbers
+
 v1.3.7 - 16 Sep 2025
 * Add Tokenizer.ReadWord
 * Handle characters wider than fixed-width in code editor
