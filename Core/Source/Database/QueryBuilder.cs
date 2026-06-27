@@ -54,7 +54,7 @@ namespace Jamiras.Database
 
         #region BuildQueryString
 
-        private static readonly string[] ReservedWords = { };// "user", "session", "when", "size", "zone" };
+        private static readonly string[] ReservedWords = { "when" };// "user", "session", "when", "size", "zone" };
 
 
         public string BuildQueryString()
