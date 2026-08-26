@@ -657,6 +657,11 @@ namespace Jamiras.DataModels.Metadata
                 if (dttm.Hour == 0 && dttm.Minute == 0 && dttm.Second == 0)
                     dataType = DataType.Date;
             }
+            else if (dataType == DataType.Date)
+            {
+                if (value is Date && ((Date)value).IsEmpty)
+                    value = null;
+            }
 
             builder.Filters.Add(new FilterDefinition(fieldName, FilterOperation.Equals, value, dataType));
         }
