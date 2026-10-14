@@ -30,6 +30,14 @@ namespace BundleFileViewer
             get { return (int)GetValue(SizeProperty); }
         }
 
+        public static readonly ModelProperty IsSelectedProperty = ModelProperty.Register(typeof(FileViewModel), "IsSelected", typeof(bool), false);
+
+        public bool IsSelected
+        { 
+            get { return (bool)GetValue(IsSelectedProperty); }
+            set { SetValue(IsSelectedProperty, value); }
+        }
+
         public ICommand OpenItemCommand { get; set; }
     }
 }

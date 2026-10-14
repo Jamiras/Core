@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media.Imaging;
-using Jamiras.Commands;
+﻿using Jamiras.Commands;
 using Jamiras.Components;
 using Jamiras.DataModels;
 using Jamiras.DataModels.Metadata;
@@ -16,12 +7,22 @@ using Jamiras.Services;
 using Jamiras.ViewModels;
 using Jamiras.ViewModels.Fields;
 using Jamiras.ViewModels.Grid;
-using Microsoft.Win32;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 
 namespace BundleFileViewer
 {
     public class MainWindowViewModel : ViewModelBase
     {
+        private const int NumBuckets = 2003; // TODO: numBuckets = prime_ceil(bundleFiles / 16)
+
         public MainWindowViewModel()
         {
             Columns = new GridColumnDefinition[] {
@@ -35,6 +36,7 @@ namespace BundleFileViewer
             OpenRecentBundleCommand = new DelegateCommand<string>(OpenBundle);
             MergeFileCommand = new DelegateCommand(MergeFile);
             MergeDirectoryCommand = new DelegateCommand(MergeDirectory);
+            RemoveFilesCommand = new DelegateCommand(RemoveFiles);
             RenameFolderCommand = new DelegateCommand<FolderViewModel>(RenameFolder);
             NewFolderCommand = new DelegateCommand<FolderViewModel>(NewFolder);
             OpenItemCommand = new DelegateCommand<FileViewModel>(OpenItem);
@@ -88,7 +90,7 @@ namespace BundleFileViewer
             {
                 _fileStream = File.Open(FileName, FileMode.Open, FileAccess.ReadWrite);
                 _nextWrite = (int)_fileStream.Length;
-                _bucketTail = new int[1024];
+                _bucketTail = new int[NumBuckets];
             }
 
             public void EndWrite()
@@ -157,18 +159,17 @@ namespace BundleFileViewer
 
         private void CreateBundle()
         {
-            OpenFileDialog dlg = new OpenFileDialog();
+            var dlg = new FileDialogViewModel();
             dlg.AddExtension = true;
             dlg.DefaultExt = "jbd";
-            dlg.Filter = "Jamiras Bundle (*.jbd)|*.jbd";
-            dlg.FilterIndex = 1;
-            dlg.Multiselect = false;
+            dlg.Filters.Add("Jamiras Bundle (*.jbd)", "*.jbd");
+            dlg.MultiSelect = false;
             dlg.CheckFileExists = false;
-            dlg.Title = "Create File";
-            if (dlg.ShowDialog() == true)
+            dlg.DialogTitle = "Create File";
+            if (dlg.ShowSaveFileDialog() == DialogResult.Ok)
             {
-                Bundle = new FileBundleEx(dlg.FileName);
-                AddRecentFile(dlg.FileName);
+                Bundle = new FileBundleEx(dlg.FileNames[0]);
+                AddRecentFile(dlg.FileNames[0]);
             }
         }
 
@@ -176,17 +177,16 @@ namespace BundleFileViewer
 
         private void OpenBundle()
         {
-            OpenFileDialog dlg = new OpenFileDialog();
+            var dlg = new FileDialogViewModel();
             dlg.AddExtension = true;
             dlg.DefaultExt = "jbd";
-            dlg.Filter = "Jamiras Bundle (*.jbd)|*.jbd";
-            dlg.FilterIndex = 1;
-            dlg.Multiselect = false;
+            dlg.Filters.Add("Jamiras Bundle (*.jbd)", "*.jbd");
+            dlg.MultiSelect = false;
             dlg.CheckFileExists = true;
-            dlg.Title = "Open File";
-            if (dlg.ShowDialog() == true)
+            dlg.DialogTitle = "Open File";
+            if (dlg.ShowOpenFileDialog() == DialogResult.Ok)
             {
-                OpenBundle(dlg.FileName);
+                OpenBundle(dlg.FileNames[0]);
             }
         }
 
@@ -224,7 +224,7 @@ namespace BundleFileViewer
             }
 
 #if DEBUG
-            int[] buckets = new int[1024];
+            int[] buckets = new int[NumBuckets];
             int count = 0;
             foreach (var file in _bundle.GetFiles())
             {
@@ -333,12 +333,12 @@ namespace BundleFileViewer
 
         private void MergeFile()
         {
-            OpenFileDialog dlg = new OpenFileDialog();
+            var dlg = new FileDialogViewModel();
             dlg.AddExtension = true;
-            dlg.Multiselect = true;
+            dlg.MultiSelect = true;
             dlg.CheckFileExists = true;
-            dlg.Title = "Merge Files";
-            if (dlg.ShowDialog() == true)
+            dlg.DialogTitle = "Merge Files";
+            if (dlg.ShowOpenFileDialog() == DialogResult.Ok)
             {
                 var path = GetSelectedFolderPath();
                 if (path != null && !_bundle.DirectoryExists(path))
@@ -439,10 +439,9 @@ namespace BundleFileViewer
 
         private void MergeDirectory()
         {
-            OpenFileDialog dlg = new OpenFileDialog();
-            dlg.AddExtension = true;
-            dlg.Title = "Merge Folder";
-            if (dlg.ShowDialog() == true)
+            var dlg = new FileDialogViewModel();
+            dlg.DialogTitle = "Merge Folder";
+            if (dlg.ShowSelectFolderDialog() == DialogResult.Ok)
             {
                 var path = GetSelectedFolderPath();
                 if (path != null && !_bundle.DirectoryExists(path))
@@ -450,9 +449,9 @@ namespace BundleFileViewer
 
                 var bundleFiles = new List<string>(_bundle.GetFiles());
 
-                var newBundle = new FileBundleEx(_bundle.FileName.Replace(".jbd", ".tmp.jbd"), 719); // TODO: numBuckets = prime_ceil(bundleFiles / 16)
+                var newBundle = new FileBundleEx(_bundle.FileName.Replace(".jbd", ".tmp.jbd"), NumBuckets);
 
-                var folder = Path.GetDirectoryName(dlg.FileNames[0]);
+                var folder = dlg.FileNames[0];
                 var files = Directory.GetFiles(folder);
 
                 Progress.Reset(files.Length + bundleFiles.Count);
@@ -511,11 +510,14 @@ namespace BundleFileViewer
                 Progress.Current++;
             }
 
+            Progress.Label = "Writing";
             destBundle.EndWrite();
 
             _backgroundWorkerService.InvokeOnUiThread(() =>
             {
                 Progress.IsEnabled = false;
+
+                _backgroundWorkerService.RunAsync(() => UpdateItems());
             });
         }
 
@@ -526,6 +528,40 @@ namespace BundleFileViewer
                 AddPath(bundle, path.Substring(0, index));
 
             bundle.CreateDirectory(path);
+        }
+
+        public CommandBase RemoveFilesCommand { get; private set; }
+
+        private void RemoveFiles()
+        {
+            var files = new List<string>();
+            foreach (var item in Items)
+            {
+                if (item.IsSelected)
+                    files.Add(item.Name);
+            }
+
+            if (files.Count == 0)
+                return;
+
+            if (TaskDialogViewModel.ShowWarningPrompt("Remove " + files.Count + " files from the bundle?", "Files removed from the bundle will no longer exist.") == DialogResult.No)
+                return;
+
+            var bundleFiles = new List<string>(_bundle.GetFiles());
+            var newBundle = new FileBundleEx(_bundle.FileName.Replace(".jbd", ".tmp.jbd"), NumBuckets);
+
+            Progress.Reset(bundleFiles.Count());
+            Progress.Label = "Removing files";
+            Progress.IsEnabled = true;
+
+            var path = GetSelectedFolderPath();
+            foreach (var file in files)
+            {
+                var fileWithPath = String.Format("{0}\\{1}", path, file);
+                bundleFiles.Remove(fileWithPath);
+            }
+
+            _backgroundWorkerService.RunAsync(() => Merge(newBundle, _bundle, bundleFiles, Enumerable.Empty<string>()));
         }
 
         public CommandBase<FileViewModel> OpenItemCommand { get; private set; }

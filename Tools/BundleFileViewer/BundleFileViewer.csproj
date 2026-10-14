@@ -6,10 +6,12 @@
     <Nullable>disable</Nullable>
     <UseWPF>true</UseWPF>
     <Authors>Jamiras</Authors>
+    <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Source\Jamiras.Core.csproj" />
+    <ProjectReference Include="..\..\Core\Source\Jamiras.Core.csproj" />
+    <ProjectReference Include="..\..\UI\WPF\Source\Jamiras.UI.WPF.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,7 +1,7 @@
 ﻿<Window x:Class="BundleFileViewer.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:jamiras="clr-namespace:Jamiras.Controls;assembly=Jamiras.Core"
+        xmlns:jamiras="clr-namespace:Jamiras.Controls;assembly=Jamiras.UI.WPF"
         Title="{Binding Title}" Height="480" Width="640">
     <Window.Resources>
         <ResourceDictionary>
@@ -27,6 +27,8 @@
             <MenuItem Header="_Merge">
                 <MenuItem Header="_Directory" Command="{Binding MergeDirectoryCommand}" />
                 <MenuItem Header="_File" Command="{Binding MergeFileCommand}" />
+                <Separator />
+                <MenuItem Header="_Remove Files" Command="{Binding RemoveFilesCommand}" />
             </MenuItem>
         </Menu>
         
@@ -113,6 +115,11 @@
             <GridSplitter Width="4" />
 
             <ListView ItemsSource="{Binding Items}" Grid.Column="2" HorizontalAlignment="Stretch" >
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    </Style>
+                </ListView.ItemContainerStyle>
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <Grid jamiras:CommandBinding.DoubleClickCommand="{Binding OpenItemCommand}">
