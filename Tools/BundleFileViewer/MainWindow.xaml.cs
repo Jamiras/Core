@@ -18,6 +18,7 @@ namespace BundleFileViewer
             InitializeComponent();
 
             CoreServices.RegisterServices();
+            UIServices.RegisterServices();
             ServiceRepository.Instance.FindService<IDialogService>().MainWindow = this;
 
             DataContext = MainWindowViewModel.Instance;
